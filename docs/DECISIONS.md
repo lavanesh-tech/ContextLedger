@@ -605,3 +605,31 @@ risks the graph silently diverging when one write fails.
 Phase 15 can publish the same outbox to Kafka instead of polling. The outbox
 grows if the projector is down, and its size is the obvious alert metric
 (Phase 20).
+
+---
+
+## ADR-026: MCP server with a configured principal and an agent privacy ceiling
+
+**Status:** Accepted (Phase 11)
+
+**Context.** Agents call tools with arguments the model produces, and model
+output can be influenced by prompt injection. Anything a tool accepts as an
+argument must be treated as attacker-controllable.
+
+**Decision.**
+- FastMCP (official MCP Python SDK), stdio transport, one process per principal.
+- The organization and user come from server configuration. No tool accepts
+  them, and a test checks every tool schema for that. Membership is re-resolved
+  on every call.
+- Each server has an agent name (recorded on decisions) and a maximum privacy
+  scope that intersects with the user's role ceiling (ADR-023).
+- Tools are thin adapters over the existing services, so REST and MCP cannot
+  drift apart. Domain errors map to tool errors. Other exceptions are logged and
+  returned as a generic "internal error".
+- Writes are two-step: `capture_decision_context` freezes context,
+  `record_decision` must cite versions from that snapshot (enforced by the
+  database, ADR-024).
+
+**Consequences.** Multi-user remote access needs the streamable HTTP transport
+with OAuth (Phase 13). Until then, the MCP server is suitable for local agents
+the operator trusts with that user's permissions.

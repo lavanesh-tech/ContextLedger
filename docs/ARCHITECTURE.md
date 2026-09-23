@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–10)
+## What exists today (Phases 1–11)
 
 ```text
 HTTP request
@@ -212,6 +212,13 @@ impact questions (what depends on this version, source or piece of evidence?)
 and decision lineage with tenant-anchored Cypher, after a PostgreSQL
 permission check, and reports projection lag. Details:
 [PROVENANCE_GRAPH.md](PROVENANCE_GRAPH.md).
+
+**MCP server (Phase 11).** `python -m app.mcp.server` exposes eight tools over
+stdio (search, entity facts, history, capture context, record decision, receipt,
+impact, lineage) as thin adapters over the services above. The principal
+(organization and user) comes from configuration and is never a tool argument.
+Membership is re-checked on every call, and an agent-level privacy ceiling
+narrows the user's role. Details: [MCP.md](MCP.md).
 
 Still running but not yet used: Redis 7.4, Kafka 4 (KRaft).
 
