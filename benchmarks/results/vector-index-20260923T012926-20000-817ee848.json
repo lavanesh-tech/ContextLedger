@@ -1,0 +1,92 @@
+{
+  "benchmark": "vector_index_comparison",
+  "commit_sha": "817ee8481ea1af32113d68c3471d9fa23b04376b",
+  "working_tree_dirty": true,
+  "date": "2026-09-23T01:29:26+00:00",
+  "dataset": "synthetic benchmark dataset (clustered random vectors, fixed seed)",
+  "dataset_size": 20000,
+  "environment": "local",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "postgres": "17.11 (Debian 17.11-1.pgdg12+2)",
+    "pgvector": "0.8.6"
+  },
+  "configuration": {
+    "dimensions": 1536,
+    "clusters": 64,
+    "queries": 200,
+    "k": 10,
+    "distance": "cosine",
+    "ivfflat_lists": 141,
+    "hnsw": {
+      "m": 16,
+      "ef_construction": 64
+    },
+    "latency": "client-side round trip, single connection, after one warm-up query",
+    "generation_seconds": 50.9
+  },
+  "results": [
+    {
+      "strategy": "exact",
+      "query_setting": "seq scan",
+      "build_seconds": 0.0,
+      "index_size_mb": 0.0,
+      "recall_at_10": 1.0,
+      "p50_ms": 65.751,
+      "p95_ms": 68.341,
+      "mean_ms": 66.095
+    },
+    {
+      "strategy": "ivfflat",
+      "query_setting": "ivfflat.probes=1",
+      "build_seconds": 2.19,
+      "index_size_mb": 165.0,
+      "recall_at_10": 0.724,
+      "p50_ms": 1.082,
+      "p95_ms": 1.47,
+      "mean_ms": 1.146
+    },
+    {
+      "strategy": "ivfflat",
+      "query_setting": "ivfflat.probes=10",
+      "build_seconds": 2.19,
+      "index_size_mb": 165.0,
+      "recall_at_10": 1.0,
+      "p50_ms": 2.185,
+      "p95_ms": 3.316,
+      "mean_ms": 2.262
+    },
+    {
+      "strategy": "ivfflat",
+      "query_setting": "ivfflat.probes=20",
+      "build_seconds": 2.19,
+      "index_size_mb": 165.0,
+      "recall_at_10": 1.0,
+      "p50_ms": 3.329,
+      "p95_ms": 3.936,
+      "mean_ms": 3.338
+    },
+    {
+      "strategy": "hnsw",
+      "query_setting": "hnsw.ef_search=40",
+      "build_seconds": 10.417,
+      "index_size_mb": 163.85,
+      "recall_at_10": 0.96,
+      "p50_ms": 1.136,
+      "p95_ms": 1.866,
+      "mean_ms": 1.373
+    },
+    {
+      "strategy": "hnsw",
+      "query_setting": "hnsw.ef_search=100",
+      "build_seconds": 10.417,
+      "index_size_mb": 163.85,
+      "recall_at_10": 0.966,
+      "p50_ms": 1.186,
+      "p95_ms": 1.868,
+      "mean_ms": 1.297
+    }
+  ]
+}
