@@ -254,3 +254,61 @@ PostgreSQL Row-Level Security is a candidate fourth layer for the security phase
 
 **Consequences.** Membership changes within one organization are serialised
 (low volume, so there is no throughput concern). Reads are not locked.
+
+---
+
+## ADR-013: Bitemporal, append-only fact versions
+
+**Status:** Accepted (Phase 4)
+
+**Context.** ContextLedger must answer both "what is true now?" and "what did
+the agent know at the moment it decided?", including after later corrections.
+Overwriting a value, or storing only one timeline, makes the second question
+impossible to answer.
+
+**Decision.**
+- **Fact** = identity (entity + property). **FactVersion** = immutable value.
+- Two timelines per version:
+  - *valid time*, `[valid_from, valid_until)`, half-open, `NULL` = open-ended;
+  - *transaction time*, `recorded_at` (+ `valid_until_recorded_at` when the
+    version is closed), both from the database clock (`now()`, i.e. the transaction timestamp).
+- Supersession rules are pure functions in `app/domain/facts.py`
+  (unit-tested without a database): a new version must start after the latest one;
+  an open latest version is closed at the new start; fixed windows allow gaps
+  but not overlaps. Rewriting history is a **revocation** (Phase 17), not an edit.
+- Writes to one fact are serialised with `SELECT ... FOR UPDATE` on the fact row;
+  a 10-writer race test proves the result is always one gap-free chain.
+- `value` is JSONB (numbers, strings, booleans, arrays, objects; never JSON
+  null), capped at 16 KB. `confidence` is `NUMERIC(4,3)`; `authority` 0–100
+  defaults from the source.
+
+**Alternatives.** Temporal tables / system versioning (not native in PostgreSQL);
+a separate history table (two places to query, easy to forget one); event
+sourcing only (every read rebuilds state, harder to index for retrieval).
+
+**Consequences.** Storage grows with every change (intended: history is the
+product). Reads need temporal predicates, which is what the Phase 5 engine and
+its indexes are for.
+
+---
+
+## ADR-014: Integrity enforced in PostgreSQL, not only in services
+
+**Status:** Accepted (Phase 4)
+
+**Decision.** The rules that make provenance trustworthy are also database constraints:
+- `EXCLUDE USING gist` with `btree_gist`: no overlapping validity per fact;
+- a `BEFORE UPDATE OR DELETE` trigger: `fact_versions` is append-only, and
+  `valid_until` can be set exactly once;
+- **composite, tenant-scoped foreign keys**, e.g. `facts(organization_id,
+  entity_id) → entities(organization_id, id)`: a row can only reference rows of
+  the same organization, even if a bug passes a foreign id;
+- `(fact_id, supersedes_id) → fact_versions(fact_id, id)` and
+  `UNIQUE(supersedes_id)`: lineage stays within one fact and forms a single chain.
+
+Integration tests bypass the services with raw SQL to prove each one fires.
+Objects Alembic cannot model (EXCLUDE constraints, triggers) live only in
+migrations and are excluded from drift checks by name prefix (`ex_`).
+
+**Consequences.** A little more migration SQL, in exchange for guarantees that
+hold for every writer: services, scripts, manual fixes and future workers.

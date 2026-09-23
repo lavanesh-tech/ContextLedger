@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–3)
+## What exists today (Phases 1–4)
 
 ```text
 HTTP request
@@ -108,6 +108,36 @@ User ──< OrganizationMembership (role: ADMIN | ENGINEER | VIEWER) >── Or
   simultaneous demotions cannot leave an organization without an ADMIN, and a
   just-revoked role cannot be used from a stale context.
 
+**Temporal facts (Phase 4).**
+
+```text
+Entity (customer / customer-991)
+  └──< Fact (credit_limit)                 one row per entity + property
+         └──< FactVersion                   append-only, never edited
+                v1  2000  valid [10:30, 14:15)  recorded 10:31  source: billing
+                v2  5000  valid [14:15, ∞)      recorded 14:16  supersedes v1
+FactSource (billing DB, CRM API, document, human, agent) ──< FactVersion
+```
+
+* **Two timelines per version.** *Valid time* `[valid_from, valid_until)` says
+  when the value is true in the world. *Transaction time* (`recorded_at`,
+  `valid_until_recorded_at`, set by the database clock) says when ContextLedger
+  learned it. Phase 5 uses both to answer "current value" and "what did the agent
+  know at 11:00" deterministically.
+* **Single write path.** `FactService.record_version` validates input, checks
+  `facts:write` against the actor's current role, upserts entity and fact
+  race-safely, locks the fact row, plans the new version with pure domain rules
+  (`app/domain/facts.py`), closes the previous open version and inserts the new one.
+* **Guarantees enforced by PostgreSQL**, not only by application code:
+  - `EXCLUDE USING gist (fact_id WITH =, tstzrange(valid_from, valid_until) WITH &&)`:
+    versions of one fact never overlap in valid time;
+  - a trigger makes `fact_versions` append-only (no DELETE; the only UPDATE is
+    closing an open version once);
+  - composite foreign keys `(organization_id, entity_id)`, `(organization_id,
+    source_id)` and `(fact_id, supersedes_id)` keep every reference inside one
+    tenant and lineage inside one fact; `UNIQUE(supersedes_id)` keeps lineage a chain;
+  - CHECK constraints for identifiers, ranges, JSON non-null and lineage consistency.
+
 Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 
 ## Backend layout
@@ -118,7 +148,7 @@ Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 | `app/core` | Settings, logging, correlation IDs | Phase 1 |
 | `app/schemas` | Pydantic request/response models | Phase 1+ |
 | `app/db` | Declarative base, engine, session factory, migration helpers | Phase 2 |
-| `app/models` | ORM models: Organization, User, OrganizationMembership + mixins | Phase 3+ |
+| `app/models` | ORM models: tenants/users/memberships, entities, sources, facts, fact versions | Phase 3+ |
 | `app/repositories` | Tenant-scoped data access | Phase 3+ |
 | `app/services` | Use cases shared by REST and MCP (readiness since Phase 2) | Phase 2+ |
 | `app/domain` | Framework-free rules: roles/permissions, tenant context, validation, errors | Phase 3+ |

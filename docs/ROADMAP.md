@@ -7,8 +7,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 |---|-------|--------|
 | 1 | Repository foundation: FastAPI, settings, JSON logging, correlation IDs, health, Docker Compose (Postgres+pgvector, Redis, Neo4j, Kafka), Ruff, mypy, pytest, CI stub | Done |
 | 2 | Async SQLAlchemy, session lifecycle, readiness checks, Alembic, DB tests | Done |
-| 3 | Organizations, users, memberships, roles, tenant ownership | In review |
-| 4 | Temporal fact domain: Entity, Fact, FactVersion, FactSource, constraints, supersession | Planned |
+| 3 | Organizations, users, memberships, roles, tenant ownership | Done |
+| 4 | Temporal fact domain: Entity, Fact, FactVersion, FactSource, constraints, supersession | In review |
 | 5 | Temporal resolution engine: current, valid-at-T, history, diff T1..T2, lineage | Planned |
 | 6 | Sources and evidence | Planned |
 | 7 | pgvector, embeddings, OpenAI provider, embedding jobs, HNSW vs IVFFlat | Planned |
