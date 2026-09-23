@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–12)
+## What exists today (Phases 1–13)
 
 ```text
 HTTP request
@@ -227,6 +227,13 @@ provenance, search, decision receipts, and impact/lineage. Every error is RFC
 unexpected 500s. Identity is resolved by one dependency (development headers
 now, JWT in Phase 13). The OpenAPI document and a Postman collection are
 committed and drift-tested. Details: [API.md](API.md).
+
+**Authentication and authorization (Phase 13).** ES256 JWTs (pinned algorithm,
+`kid` rotation). Agents are OAuth2 clients (client credentials) acting through
+service users, so the existing RBAC applies unchanged. Token scopes narrow the
+role, agent privacy ceilings narrow reads, and revocation and membership are
+re-checked on every request. A sweep test calls every tenant route as three
+kinds of outsider and requires 403. Details: [AUTH.md](AUTH.md).
 
 Still running but not yet used: Redis 7.4, Kafka 4 (KRaft).
 

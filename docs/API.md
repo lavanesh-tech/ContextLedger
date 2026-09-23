@@ -50,17 +50,19 @@ Every error is `application/problem+json`:
 | 500 | `internal_error` | unexpected; details only in server logs, find them with `correlation_id` |
 | 503 | `service_unavailable` | optional dependency (Neo4j) not configured |
 
-## Authentication (until Phase 13)
+## Authentication
 
-`auth_mode=development-headers` reads the caller's user id from
-`X-ContextLedger-User-Id`. Settings validation refuses this mode in staging and
-production. Phase 13 replaces it with JWT/OAuth. Every endpoint depends on one
-function (`get_principal`), so only that function changes.
+Send `Authorization: Bearer <access token>`. Agents get tokens with OAuth2
+client credentials (`POST /api/v1/oauth/token`). Locally, users can get one from
+`POST /api/v1/auth/dev-token`, or, with `auth_mode=development-headers`, send
+`X-ContextLedger-User-Id` instead. Details: [AUTH.md](AUTH.md).
 
 ```bash
 USER=$(curl -s -X POST localhost:8000/api/v1/users -H 'content-type: application/json' \
   -d '{"email":"ada@example.com","display_name":"Ada"}' | jq -r .id)
-curl -s -X POST localhost:8000/api/v1/organizations -H "X-ContextLedger-User-Id: $USER" \
+TOKEN=$(curl -s -X POST localhost:8000/api/v1/auth/dev-token -H 'content-type: application/json' \
+  -d "{\"user_id\":\"$USER\"}" | jq -r .access_token)
+curl -s -X POST localhost:8000/api/v1/organizations -H "Authorization: Bearer $TOKEN" \
   -H 'content-type: application/json' -d '{"name":"Acme","slug":"acme"}'
 ```
 

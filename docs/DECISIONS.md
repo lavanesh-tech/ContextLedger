@@ -662,3 +662,35 @@ the operator trusts with that user's permissions.
 **Consequences.** Returning service dataclasses couples the wire format to
 service types. A breaking change to one is a breaking change to the API, which
 the committed OpenAPI diff makes visible in review.
+
+---
+
+## ADR-028: Self-issued ES256 JWTs; agents as OAuth2 clients backed by service users
+
+**Status:** Accepted (Phase 13)
+
+**Context.** Agents need machine credentials with less power than a person,
+revocable instantly, and they must not bypass the RBAC and membership rules
+already enforced in the services.
+
+**Decision.**
+- ContextLedger issues and verifies short-lived ES256 JWTs. The algorithm is
+  pinned, the key is selected by `kid` for rotation, and issuer, audience and
+  all time claims are required.
+- Agents are OAuth2 clients (client-credentials grant). Secrets are 256-bit,
+  shown once and stored as salted scrypt hashes.
+- Each agent acts through a dedicated service user that is a member with a
+  non-ADMIN role. Permissions are the role's permissions intersected with the
+  token scopes, enforced in the central `require_permission`. Privacy is the
+  minimum of the role ceiling, the agent ceiling and the request.
+- Every request re-checks revocation and membership in PostgreSQL. Revocation
+  is therefore immediate, at the cost of one indexed lookup per request (Redis
+  can cache it in Phase 14).
+- A route-discovering sweep test calls every tenant route as three kinds of
+  outsider and requires 403.
+- Human SSO (OIDC federation) is out of scope. A dev-token endpoint and header
+  mode exist for local use only, and both are refused outside local/test.
+
+**Consequences.** JWTs are not revocable by themselves. Immediate revocation
+comes from the per-request check, not from token lifetime. Short TTLs limit
+exposure if a check is ever skipped.

@@ -16,8 +16,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 9 | Decision receipts: ContextSnapshot, Decision, DecisionFact | Done |
 | 10 | Neo4j provenance graph and impact traversal | Done |
 | 11 | MCP server and core tools | Done |
-| 12 | Complete REST API, standardized errors, Swagger, Postman | In review |
-| 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | Planned |
+| 12 | Complete REST API, standardized errors, Swagger, Postman | Done |
+| 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | In review |
 | 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | Planned |
 | 15 | Kafka events and idempotent consumers | Planned |
 | 16 | Contradiction detection | Planned |
@@ -54,4 +54,5 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - Expose retrieval over REST (Phase 12) and MCP (Phase 11); agent-specific privacy ceilings (Phase 13).
 - Sign decision receipts with a key held outside the database (e.g. AWS KMS), optionally chain receipt hashes (Phase 28).
 - Relay the graph outbox through Kafka instead of polling (Phase 15); alert on outbox size / projection lag (Phase 20).
-- MCP over streamable HTTP with OAuth 2.1 (MCP authorization spec), per-agent tokens and scopes (Phase 13).
+- MCP over streamable HTTP authenticated with agent access tokens (MCP authorization spec) (Phase 21).
+- Human SSO through an external OIDC provider (JWKS verification) instead of dev tokens.

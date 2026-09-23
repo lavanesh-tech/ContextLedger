@@ -13,7 +13,7 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 12 of 31, REST API.** Only what is listed under
+> **Status: Phase 13 of 31, authentication and authorization.** Only what is listed under
 > "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
 ## What works today
@@ -32,6 +32,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Neo4j provenance graph fed by a trigger-written transactional outbox (idempotent, order-independent, rebuildable projection); impact analysis ("which decisions depend on this source / version / evidence?") and decision lineage, tenant-scoped and privacy-aware. See [docs/PROVENANCE_GRAPH.md](docs/PROVENANCE_GRAPH.md)
 - MCP server (FastMCP, stdio) with eight tools for agents: search, point-in-time facts, history, capture context, record decision, receipts, impact and lineage. The tenant and user are fixed by configuration, never by the model, with an agent-level privacy ceiling. See [docs/MCP.md](docs/MCP.md)
 - REST API for every capability, with RFC 9457 problem details (stable codes and correlation ids), Swagger UI, a committed OpenAPI document and a generated Postman collection. See [docs/API.md](docs/API.md)
+- Authentication and authorization: ES256 JWTs; AI agents as OAuth2 clients (client credentials) with scoped tokens, privacy ceilings, and revocation that takes effect before expiry; RBAC re-checked per request; an automatic sweep verifies every tenant route rejects other tenants. See [docs/AUTH.md](docs/AUTH.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API and embedding worker
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -83,6 +84,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Provenance graph](docs/PROVENANCE_GRAPH.md)
 - [MCP server](docs/MCP.md)
 - [REST API](docs/API.md)
+- [Authentication and authorization](docs/AUTH.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 
 ## Measured results
