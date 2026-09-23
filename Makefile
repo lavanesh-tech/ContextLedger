@@ -19,7 +19,7 @@ TEST_NEO4J_ENV = CONTEXTLEDGER_TEST_NEO4J_URI='bolt://127.0.0.1:$(NEO4J_BOLT_POR
 .PHONY: help install lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
-        worker worker-once graph-projector graph-once bench-vector bench-retrieval
+        worker worker-once graph-projector graph-once mcp bench-vector bench-retrieval
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -63,6 +63,9 @@ graph-projector: ## Run the Neo4j graph projector on your Mac (loop; Ctrl+C to s
 
 graph-once: ## Project everything pending into Neo4j and exit
 	cd $(BACKEND) && CONTEXTLEDGER_NEO4J_PASSWORD='$(NEO4J_PASSWORD)' $(BIN)/python -m app.workers.graph --once
+
+mcp: ## Run the MCP server over stdio (needs CONTEXTLEDGER_MCP_ORGANIZATION_ID / _USER_ID)
+	cd $(BACKEND) && CONTEXTLEDGER_NEO4J_PASSWORD='$(NEO4J_PASSWORD)' $(BIN)/python -m app.mcp.server
 
 # --- Database migrations --------------------------------------------------------
 migrate: ## Apply all migrations to the local database (from your Mac)
