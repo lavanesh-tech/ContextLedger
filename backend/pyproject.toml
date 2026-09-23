@@ -16,6 +16,7 @@ dependencies = [
     "asyncpg>=0.30",
     "alembic>=1.14",
     "httpx>=0.27",
+    "neo4j>=5.23,<6",
 ]
 
 [project.optional-dependencies]
@@ -39,7 +40,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra --strict-markers --strict-config"
 filterwarnings = ["error::DeprecationWarning:app.*"]
-markers = ["integration: needs a running PostgreSQL (make up); skipped locally without it, required in CI"]
+markers = [
+    "integration: needs a running PostgreSQL (make up); skipped locally without it, required in CI",
+    "graph: also needs a running Neo4j (make up); skipped locally without it, required in CI",
+]
 
 # ---------------------------------------------------------------------------
 # coverage

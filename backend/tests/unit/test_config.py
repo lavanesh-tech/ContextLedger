@@ -21,6 +21,7 @@ def test_values_are_read_from_prefixed_environment_variables(
     monkeypatch.setenv("CONTEXTLEDGER_DB_PASSWORD", "from-env")
     monkeypatch.setenv("CONTEXTLEDGER_EMBEDDING_PROVIDER", "openai")
     monkeypatch.setenv("CONTEXTLEDGER_OPENAI_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("CONTEXTLEDGER_NEO4J_PASSWORD", "neo4j-from-env")
     monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "warning")
     monkeypatch.setenv("CONTEXTLEDGER_DOCS_ENABLED", "false")
 
@@ -108,3 +109,20 @@ def test_local_and_test_environments_allow_an_empty_password(
     settings = Settings(_env_file=None, environment=Environment.TEST)
 
     assert settings.db_password.get_secret_value() == ""
+
+
+def test_deployed_environments_require_a_neo4j_password() -> None:
+    with pytest.raises(ValidationError, match="NEO4J_PASSWORD"):
+        Settings(
+            _env_file=None,
+            environment=Environment.STAGING,
+            db_password=SecretStr("x"),
+            embedding_provider="openai",
+            openai_api_key=SecretStr("sk-test-not-real"),
+        )
+
+
+@pytest.mark.parametrize("uri", ["http://neo4j:7474", "neo4j", "bolt:/x"])
+def test_neo4j_uri_scheme_is_validated(uri: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, neo4j_uri=uri)
