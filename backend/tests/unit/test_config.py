@@ -44,7 +44,7 @@ def test_unprefixed_variables_are_ignored(monkeypatch: pytest.MonkeyPatch) -> No
     [
         ("environment", "prod"),
         ("log_level", "VERBOSE"),
-        ("app_name", ""),
+        ("app_name", "x" * 101),
         ("correlation_id_header", "X-Bad Header"),
         ("db_port", "70000"),
         ("db_pool_size", "0"),
@@ -126,3 +126,13 @@ def test_deployed_environments_require_a_neo4j_password() -> None:
 def test_neo4j_uri_scheme_is_validated(uri: str) -> None:
     with pytest.raises(ValidationError):
         Settings(_env_file=None, neo4j_uri=uri)
+
+
+def test_empty_environment_values_mean_not_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CONTEXTLEDGER_MCP_ORGANIZATION_ID", "")
+    monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.mcp_organization_id is None
+    assert settings.log_level == "INFO"

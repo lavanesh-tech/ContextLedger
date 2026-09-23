@@ -17,6 +17,7 @@ dependencies = [
     "alembic>=1.14",
     "httpx>=0.27",
     "neo4j>=5.23,<6",
+    "mcp>=1.10,<2",
 ]
 
 [project.optional-dependencies]

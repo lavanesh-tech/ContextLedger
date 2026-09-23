@@ -10,7 +10,7 @@ import json
 import logging
 import sys
 from datetime import UTC, datetime
-from typing import Final
+from typing import Final, TextIO
 
 from app.core.config import Settings
 from app.core.correlation import get_correlation_id
@@ -65,13 +65,14 @@ class JsonFormatter(logging.Formatter):
 _TEXT_FORMAT: Final = "%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s: %(message)s"
 
 
-def configure_logging(settings: Settings) -> None:
-    """Install the ContextLedger handler on the root logger.
+def configure_logging(settings: Settings, *, stream: TextIO | None = None) -> None:
+    """Install the ContextLedger handler on the root logger (stdout by default).
 
     Safe to call more than once: only the handler this function owns is
     replaced, so handlers added by test tooling (e.g. pytest's caplog) survive.
+    The MCP stdio server passes ``sys.stderr``: its stdout carries the protocol.
     """
-    handler = logging.StreamHandler(sys.stdout)
+    handler = logging.StreamHandler(stream if stream is not None else sys.stdout)
     handler.set_name(HANDLER_NAME)
     handler.addFilter(CorrelationIdFilter())
     handler.setFormatter(JsonFormatter() if settings.log_json else logging.Formatter(_TEXT_FORMAT))

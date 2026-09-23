@@ -9,6 +9,7 @@ from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 from typing import Final, Literal, Self
+from uuid import UUID
 
 from pydantic import AnyHttpUrl, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,6 +19,7 @@ API_V1_PREFIX: Final = "/api/v1"
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 EmbeddingProviderName = Literal["deterministic", "openai"]
+PrivacyScopeName = Literal["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"]
 
 
 class Environment(StrEnum):
@@ -39,6 +41,8 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         # The shared .env also holds Docker Compose variables (POSTGRES_*, ...).
         extra="ignore",
+        # "KEY=" in a .env file means "not set", not "set to an empty string".
+        env_ignore_empty=True,
         frozen=True,
     )
 
@@ -99,6 +103,16 @@ class Settings(BaseSettings):
     neo4j_database: str = Field(default="neo4j", min_length=1, max_length=63)
     graph_batch_size: int = Field(default=200, ge=1, le=5000)
     graph_poll_interval_seconds: float = Field(default=2.0, gt=0)
+
+    # --- MCP server (stdio) -----------------------------------------------------
+    # The principal the local MCP server acts as. Tools never accept a tenant or
+    # user from the model; membership is re-checked on every call. OAuth for the
+    # HTTP transport arrives in Phase 13.
+    mcp_user_id: UUID | None = None
+    mcp_organization_id: UUID | None = None
+    mcp_agent_name: str = Field(default="mcp-agent", min_length=1, max_length=200)
+    # Most sensitive privacy scope this agent may ever read (narrows the user's role).
+    mcp_max_privacy_scope: PrivacyScopeName = "INTERNAL"
 
     # --- Health / migrations ---------------------------------------------------
     readiness_timeout_seconds: float = Field(default=3.0, gt=0)
