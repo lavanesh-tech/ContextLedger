@@ -293,7 +293,7 @@ class DecisionService:
     async def receipt(self, ctx: TenantContext, decision_id: UUID) -> DecisionReceipt:
         async with self._session.begin():
             role = await require_permission(self._session, ctx, Permission.READ_DECISIONS)
-            visible = visible_privacy_scopes(role)
+            visible = visible_privacy_scopes(role, ctx.max_privacy_scope)
             repository = DecisionRepository(self._session, ctx.organization_id)
             decision = await repository.get_decision(decision_id)
             if decision is None:

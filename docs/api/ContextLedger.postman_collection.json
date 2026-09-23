@@ -18,6 +18,10 @@
       "value": ""
     },
     {
+      "key": "agent_client_id",
+      "value": ""
+    },
+    {
       "key": "user_id",
       "value": ""
     },
@@ -98,6 +102,166 @@
                 "v1",
                 "health",
                 "ready"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "OAuth2 token endpoint (client credentials)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/oauth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "oauth",
+                "token"
+              ]
+            },
+            "description": "Exchange an agent's client credentials for a short-lived, scoped access token."
+          }
+        },
+        {
+          "name": "Issue a user token (local and test environments only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/dev-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "dev-token"
+              ]
+            },
+            "description": "Human sign-in via an external identity provider is out of scope for this project;\nthis endpoint lets developers obtain a user token locally. It does not exist\n(404) in staging or production.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register an agent (returns its secret once)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/agent-clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "agent-clients"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"credit-review-agent\",\n  \"scopes\": [\n    \"facts:read\",\n    \"decisions:read\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List agents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/agent-clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "agent-clients"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Revoke an agent (its tokens stop working immediately)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/agent-clients/{{agent_client_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "agent-clients",
+                "{{agent_client_id}}"
               ]
             },
             "description": ""

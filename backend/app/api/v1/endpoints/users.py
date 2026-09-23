@@ -27,7 +27,7 @@ async def register_user(body: UserCreate, session: SessionDep) -> UserOut:
 @router.get("/me", summary="The calling user", responses=problem_responses(401, 404))
 async def get_me(principal: PrincipalDep, session: SessionDep) -> UserOut:
     async with session.begin():
-        user = await UserRepository(session).get(principal)
+        user = await UserRepository(session).get(principal.user_id)
     if user is None:
         raise NotFoundError("user not found")
     return UserOut.model_validate(user)

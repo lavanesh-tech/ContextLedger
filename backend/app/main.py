@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from app import __version__
 from app.api.errors import install_error_handlers
 from app.api.v1.router import api_router
+from app.auth.tokens import TokenService
 from app.core.config import API_V1_PREFIX, Settings, get_settings
 from app.core.correlation import CorrelationIdMiddleware
 from app.core.logging import configure_logging
@@ -30,6 +31,7 @@ logger = logging.getLogger("contextledger")
 
 OPENAPI_TAGS = [
     {"name": "health", "description": "Liveness and readiness."},
+    {"name": "auth", "description": "Access tokens (OAuth2 client credentials) and agents."},
     {"name": "users", "description": "User accounts (global, not tenant-owned)."},
     {"name": "organizations", "description": "Tenants and their members (RBAC)."},
     {"name": "sources", "description": "Where facts and evidence come from."},
@@ -101,6 +103,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if app.state.graph_driver is None
         else GraphReader(app.state.graph_driver, settings.neo4j_database)
     )
+
+    app.state.token_service = TokenService.from_settings(settings)
 
     install_error_handlers(app)
     app.add_middleware(CorrelationIdMiddleware, header_name=settings.correlation_id_header)

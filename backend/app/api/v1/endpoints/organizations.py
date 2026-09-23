@@ -6,6 +6,7 @@ from fastapi import APIRouter, Response, status
 
 from app.api.dependencies import PrincipalDep, SessionDep, TenantDep
 from app.api.errors import problem_responses
+from app.domain.errors import PermissionDeniedError
 from app.schemas.api import (
     MemberAdd,
     MemberOut,
@@ -28,8 +29,10 @@ router = APIRouter(prefix="/organizations", tags=["organizations"])
 async def create_organization(
     body: OrganizationCreate, principal: PrincipalDep, session: SessionDep
 ) -> OrganizationOut:
+    if principal.agent_client_id is not None:
+        raise PermissionDeniedError("agents cannot create organizations")
     organization = await OrganizationService(session).create(
-        name=body.name, slug=body.slug, creator_user_id=principal
+        name=body.name, slug=body.slug, creator_user_id=principal.user_id
     )
     return OrganizationOut.model_validate(organization)
 

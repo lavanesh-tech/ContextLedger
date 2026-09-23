@@ -164,7 +164,7 @@ class RetrievalService:
             await self._session.connection(execution_options={"isolation_level": "REPEATABLE READ"})
             await self._session.execute(text("SET TRANSACTION READ ONLY"))
             role = await require_permission(self._session, ctx, Permission.READ_FACTS)
-            scopes = visible_privacy_scopes(role, request.max_privacy_scope)
+            scopes = visible_privacy_scopes(role, request.max_privacy_scope, ctx.max_privacy_scope)
             # pgvector >= 0.8: keep scanning the HNSW graph until enough rows pass
             # the WHERE filters, instead of returning too few filtered results.
             await self._session.execute(text("SET LOCAL hnsw.iterative_scan = relaxed_order"))

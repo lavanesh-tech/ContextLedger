@@ -17,7 +17,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from app.domain.evidence import EvidenceRelation, EvidenceType
 from app.domain.facts import PrivacyScope, SourceType
 from app.domain.retrieval import DEFAULT_TRUST_WEIGHT, MAX_LIMIT
-from app.domain.roles import MembershipRole
+from app.domain.roles import MembershipRole, Permission
 from app.services.retrieval import RetrievalQuery
 from app.temporal.model import ResolvedFact, TimelineEntry
 
@@ -219,3 +219,41 @@ class DecisionCreate(Request):
 
 class DecisionRefs(BaseModel):
     decision_ids: list[UUID]
+
+
+# --- authentication and agent clients -------------------------------------------------
+
+
+class AgentClientCreate(Request):
+    name: str = Field(examples=["credit-review-agent"])
+    role: MembershipRole = Field(
+        default=MembershipRole.VIEWER, description="ENGINEER or VIEWER (never ADMIN)"
+    )
+    scopes: list[Permission] = Field(min_length=1, examples=[["facts:read", "decisions:read"]])
+    privacy_ceiling: PrivacyScope = PrivacyScope.INTERNAL
+
+
+class AgentClientOut(Response):
+    id: UUID
+    name: str
+    client_id: str
+    service_user_id: UUID
+    allowed_scopes: list[str]
+    privacy_ceiling: PrivacyScope
+    created_at: datetime
+    revoked_at: datetime | None
+
+
+class AgentClientCreated(AgentClientOut):
+    client_secret: str = Field(description="Shown once. Store it in a secret manager.")
+
+
+class DevTokenRequest(Request):
+    user_id: UUID
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"  # noqa: S105 (the OAuth2 token type, not a secret)
+    expires_in: int
+    scope: str | None = None

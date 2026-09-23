@@ -90,7 +90,9 @@ class ToolHandlers:
             )
 
     def _visible(self, ctx: TenantContext) -> frozenset[PrivacyScope]:
-        return visible_privacy_scopes(ctx.role, self._rt.identity.max_privacy_scope)
+        return visible_privacy_scopes(
+            ctx.role, self._rt.identity.max_privacy_scope, ctx.max_privacy_scope
+        )
 
     # --- retrieval ------------------------------------------------------------------
 

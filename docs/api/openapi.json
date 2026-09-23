@@ -58,6 +58,337 @@
         }
       }
     },
+    "/api/v1/oauth/token": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "OAuth2 token endpoint (client credentials)",
+        "description": "Exchange an agent's client credentials for a short-lived, scoped access token.",
+        "operationId": "token_api_v1_oauth_token_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_token_api_v1_oauth_token_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request / invalid_scope"
+          },
+          "401": {
+            "description": "invalid_client"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/dev-token": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Issue a user token (local and test environments only)",
+        "description": "Human sign-in via an external identity provider is out of scope for this project;\nthis endpoint lets developers obtain a user token locally. It does not exist\n(404) in staging or production.",
+        "operationId": "dev_token_api_v1_auth_dev_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization_id}/agent-clients": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register an agent (returns its secret once)",
+        "operationId": "create_agent_client_api_v1_organizations__organization_id__agent_clients_post",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentClientCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentClientCreated"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List agents",
+        "operationId": "list_agent_clients_api_v1_organizations__organization_id__agent_clients_get",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentClientOut"
+                  },
+                  "title": "Response List Agent Clients Api V1 Organizations  Organization Id  Agent Clients Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization_id}/agent-clients/{agent_client_id}": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Revoke an agent (its tokens stop working immediately)",
+        "operationId": "revoke_agent_client_api_v1_organizations__organization_id__agent_clients__agent_client_id__delete",
+        "parameters": [
+          {
+            "name": "agent_client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Agent Client Id"
+            }
+          },
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentClientOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users": {
       "post": {
         "tags": [
@@ -2547,6 +2878,175 @@
         ],
         "title": "AffectedDecision"
       },
+      "AgentClientCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "credit-review-agent"
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole",
+            "description": "ENGINEER or VIEWER (never ADMIN)",
+            "default": "VIEWER"
+          },
+          "scopes": {
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Scopes",
+            "examples": [
+              [
+                "facts:read",
+                "decisions:read"
+              ]
+            ]
+          },
+          "privacy_ceiling": {
+            "$ref": "#/components/schemas/PrivacyScope",
+            "default": "INTERNAL"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "scopes"
+        ],
+        "title": "AgentClientCreate"
+      },
+      "AgentClientCreated": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "service_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Service User Id"
+          },
+          "allowed_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Scopes"
+          },
+          "privacy_ceiling": {
+            "$ref": "#/components/schemas/PrivacyScope"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "client_secret": {
+            "type": "string",
+            "title": "Client Secret",
+            "description": "Shown once. Store it in a secret manager."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "client_id",
+          "service_user_id",
+          "allowed_scopes",
+          "privacy_ceiling",
+          "created_at",
+          "revoked_at",
+          "client_secret"
+        ],
+        "title": "AgentClientCreated"
+      },
+      "AgentClientOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "service_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Service User Id"
+          },
+          "allowed_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Scopes"
+          },
+          "privacy_ceiling": {
+            "$ref": "#/components/schemas/PrivacyScope"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "client_id",
+          "service_user_id",
+          "allowed_scopes",
+          "privacy_ceiling",
+          "created_at",
+          "revoked_at"
+        ],
+        "title": "AgentClientOut"
+      },
       "AttachResult": {
         "properties": {
           "linked": {
@@ -2560,6 +3060,40 @@
           "linked"
         ],
         "title": "AttachResult"
+      },
+      "Body_token_api_v1_oauth_token_post": {
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "title": "Grant Type"
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "type": "string",
+            "title": "Client Secret"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grant_type",
+          "client_id",
+          "client_secret"
+        ],
+        "title": "Body_token_api_v1_oauth_token_post"
       },
       "CapturedContext": {
         "properties": {
@@ -2847,6 +3381,21 @@
           "down"
         ],
         "title": "DependencyStatus"
+      },
+      "DevTokenRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "DevTokenRequest"
       },
       "EntityFacts": {
         "properties": {
@@ -3796,6 +4345,21 @@
         ],
         "title": "OrganizationOut"
       },
+      "Permission": {
+        "type": "string",
+        "enum": [
+          "organization:read",
+          "members:read",
+          "members:manage",
+          "facts:read",
+          "facts:write",
+          "facts:revoke",
+          "decisions:read",
+          "decisions:record",
+          "audit:read"
+        ],
+        "title": "Permission"
+      },
       "PrivacyScope": {
         "type": "string",
         "enum": [
@@ -4637,6 +5201,40 @@
         ],
         "title": "TimelineEntry"
       },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "expires_in"
+        ],
+        "title": "TokenResponse"
+      },
       "UserCreate": {
         "properties": {
           "email": {
@@ -4851,6 +5449,10 @@
     {
       "name": "health",
       "description": "Liveness and readiness."
+    },
+    {
+      "name": "auth",
+      "description": "Access tokens (OAuth2 client credentials) and agents."
     },
     {
       "name": "users",

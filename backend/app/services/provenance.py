@@ -155,7 +155,7 @@ class ProvenanceService:
     async def decision_lineage(self, ctx: TenantContext, decision_id: UUID) -> DecisionLineage:
         """Upstream provenance of a decision: versions → entity, source, evidence."""
         role, pending = await self._authorize(ctx)
-        visible = {str(scope) for scope in visible_privacy_scopes(role)}
+        visible = {str(scope) for scope in visible_privacy_scopes(role, ctx.max_privacy_scope)}
         await self._require(ctx, "Decision", decision_id)
         records = await self._graph.decision_lineage(
             org=ctx.organization_id, decision_id=decision_id

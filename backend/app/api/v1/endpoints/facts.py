@@ -42,7 +42,7 @@ WRITE = problem_responses(401, 403, 404, 409, 422)
 
 
 def _visible(ctx: TenantContext) -> frozenset[PrivacyScope]:
-    return visible_privacy_scopes(ctx.role)
+    return visible_privacy_scopes(ctx.role, ctx.max_privacy_scope)
 
 
 def _all_visible(versions: list[VersionSnapshot | None], ctx: TenantContext) -> bool:

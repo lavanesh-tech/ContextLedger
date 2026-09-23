@@ -6,6 +6,7 @@ and their own database.
 """
 
 from collections.abc import AsyncIterator
+from dataclasses import dataclass, replace
 from typing import Annotated, cast
 from uuid import UUID
 
@@ -13,10 +14,16 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.api.errors import AuthenticationRequiredError, ServiceUnavailableError
+from app.auth.tokens import InvalidTokenError, TokenService
 from app.core.config import Settings
+from app.domain.errors import PermissionDeniedError
+from app.domain.facts import PrivacyScope
+from app.domain.roles import MembershipRole, Permission
 from app.domain.tenancy import TenantContext
 from app.provenance.graph import GraphReader
 from app.providers.embeddings import EmbeddingProvider
+from app.services.agent_clients import AgentClientService
+from app.services.authorization import NOT_A_MEMBER
 from app.services.tenancy import TenancyService
 
 
@@ -50,25 +57,63 @@ SessionDep = Annotated[AsyncSession, Depends(get_db_session)]
 USER_ID_HEADER = "X-ContextLedger-User-Id"
 
 
-async def get_principal(request: Request, settings: SettingsDep) -> UUID:
-    """The authenticated user's id.
+@dataclass(frozen=True, slots=True)
+class Principal:
+    """Who is calling. Agents are bound to one organization and carry narrowed rights."""
 
-    Phase 12 supports only ``development-headers`` (refused in staging and
-    production by settings validation). Phase 13 replaces this with JWT
-    verification; every endpoint already depends on this single function.
+    user_id: UUID
+    organization_id: UUID | None = None  # agents: the only organization they may touch
+    scopes: frozenset[Permission] | None = None
+    max_privacy_scope: PrivacyScope | None = None
+    agent_client_id: UUID | None = None
+
+
+def get_token_service(request: Request) -> TokenService:
+    return cast(TokenService, request.app.state.token_service)
+
+
+TokenServiceDep = Annotated[TokenService, Depends(get_token_service)]
+
+
+async def get_principal(
+    request: Request, settings: SettingsDep, tokens: TokenServiceDep
+) -> Principal:
+    """Authenticate the caller.
+
+    * ``Authorization: Bearer <jwt>``: always accepted (users and agents).
+    * ``X-ContextLedger-User-Id``: only with ``auth_mode=development-headers``
+      (refused in staging/production by settings validation).
     """
+    authorization = request.headers.get("Authorization")
+    if authorization:
+        scheme, _, token = authorization.partition(" ")
+        if scheme.lower() != "bearer" or not token:
+            raise AuthenticationRequiredError("use 'Authorization: Bearer <access token>'")
+        try:
+            claims = tokens.verify(token.strip())
+        except InvalidTokenError:
+            raise AuthenticationRequiredError("invalid or expired access token") from None
+        return Principal(
+            user_id=claims.user_id,
+            organization_id=claims.organization_id,
+            scopes=claims.scopes,
+            max_privacy_scope=claims.max_privacy_scope,
+            agent_client_id=claims.agent_client_id,
+        )
     if settings.auth_mode != "development-headers":
-        raise AuthenticationRequiredError("JWT authentication is not implemented yet (Phase 13)")
+        raise AuthenticationRequiredError("send 'Authorization: Bearer <access token>'")
     raw = request.headers.get(USER_ID_HEADER)
     if not raw:
-        raise AuthenticationRequiredError(f"send your user id in the {USER_ID_HEADER} header")
+        raise AuthenticationRequiredError(
+            f"send a Bearer token or (development only) the {USER_ID_HEADER} header"
+        )
     try:
-        return UUID(raw)
+        return Principal(user_id=UUID(raw))
     except ValueError:
         raise AuthenticationRequiredError(f"{USER_ID_HEADER} must be a UUID") from None
 
 
-PrincipalDep = Annotated[UUID, Depends(get_principal)]
+PrincipalDep = Annotated[Principal, Depends(get_principal)]
 
 
 async def get_tenant(
@@ -76,10 +121,27 @@ async def get_tenant(
 ) -> TenantContext:
     """TenantContext for the caller inside the organization in the path.
 
-    Unknown organization, non-member and inactive user all fail identically
-    (403), so organization ids cannot be probed.
+    Unknown organization, non-member, inactive user, revoked agent and an agent
+    token used for another organization all fail identically (403), so
+    organization ids cannot be probed.
     """
-    return await TenancyService(session).resolve(organization_id=organization_id, user_id=principal)
+    if principal.organization_id is not None and principal.organization_id != organization_id:
+        raise PermissionDeniedError(NOT_A_MEMBER)
+    if principal.agent_client_id is not None and not await AgentClientService(session).is_active(
+        principal.agent_client_id
+    ):
+        raise PermissionDeniedError(NOT_A_MEMBER)
+    ctx = await TenancyService(session).resolve(
+        organization_id=organization_id, user_id=principal.user_id
+    )
+    if principal.agent_client_id is not None and ctx.role is MembershipRole.ADMIN:
+        raise PermissionDeniedError("agents may not act with the ADMIN role")
+    return replace(
+        ctx,
+        scopes=principal.scopes,
+        max_privacy_scope=principal.max_privacy_scope,
+        agent_client_id=principal.agent_client_id,
+    )
 
 
 TenantDep = Annotated[TenantContext, Depends(get_tenant)]
