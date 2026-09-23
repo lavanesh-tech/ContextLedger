@@ -1,0 +1,23 @@
+{
+  "benchmark": "foundation_metrics",
+  "commit_sha": "25dfc1a0b923691fda78b99bdbee70dc5f457020",
+  "working_tree_dirty": false,
+  "date": "2026-09-23T00:09:53+00:00",
+  "dataset_size": null,
+  "environment": "local",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64"
+  },
+  "configuration": {
+    "docker_image": "contextledger-api:local"
+  },
+  "metrics": {
+    "pytest_tests_collected": 34,
+    "pytest_passed": true,
+    "pytest_duration_seconds": 0.404,
+    "docker_image_size_bytes": 59525300,
+    "docker_image_size_mb": 59.5
+  }
+}
