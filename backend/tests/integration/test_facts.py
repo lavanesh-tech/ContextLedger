@@ -323,6 +323,9 @@ async def test_concurrent_writes_to_one_fact_form_a_single_valid_chain(sessions:
         assert current.supersedes_id == previous.id
         assert previous.valid_until == current.valid_from
         assert previous.valid_from < current.valid_from
+        # Transaction time never goes backwards along the chain, even under contention.
+        assert previous.recorded_at < current.recorded_at
+        assert previous.valid_until_recorded_at == current.recorded_at
     assert history[-1].valid_until is None
 
 

@@ -101,7 +101,8 @@ class FactService:
         2. find or create the entity and fact (race-safe upserts);
         3. lock the fact row, so concurrent writes to one fact run in order;
         4. plan the new version from the latest one (domain rules);
-        5. close the previous version if it was open, then insert the new one.
+        5. take one transaction timestamp (strictly after the previous version's);
+        6. close the previous version if it was open, then insert the new one.
         The exclusion constraint and append-only trigger back this up in the DB.
         """
         entity_type = normalize_identifier(command.entity_type, field="entity_type")
@@ -142,8 +143,13 @@ class FactService:
                 ),
                 window,
             )
+            # Transaction time is taken *after* the lock and is strictly increasing
+            # per fact, so "what was known at K" always sees a prefix of the chain.
+            recorded_at = await repository.next_transaction_time(latest)
             if latest is not None and plan.close_previous_at is not None:
-                await repository.close_version(latest, plan.close_previous_at)
+                await repository.close_version(
+                    latest, plan.close_previous_at, recorded_at=recorded_at
+                )
 
             fact_version = repository.new_version(
                 fact_id=fact.id,
@@ -157,11 +163,9 @@ class FactService:
                 authority=authority,
                 confidence=confidence,
                 privacy_scope=privacy_scope,
+                recorded_at=recorded_at,
             )
             await self._session.flush()
-            if window.valid_until is not None:
-                # valid_until_recorded_at was set by a SQL expression (now()); load it.
-                await self._session.refresh(fact_version)
         return fact_version
 
     async def get_version(self, ctx: TenantContext, version_id: UUID) -> FactVersion:

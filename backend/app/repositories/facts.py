@@ -5,12 +5,12 @@ and filters every query by it. Never commits.
 """
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select, update
+from sqlalchemy import DateTime, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -125,7 +125,26 @@ class FactRepository:
         )
         return result.one_or_none()
 
-    async def close_version(self, version: FactVersion, valid_until: datetime) -> None:
+    async def next_transaction_time(self, latest: FactVersion | None) -> datetime:
+        """Wall-clock time from the database, strictly after the latest version's.
+
+        ``clock_timestamp()`` (not ``now()``, which is fixed at transaction start)
+        is read while the fact row lock is held, so it is later than anything
+        committed for this fact before. The +1 microsecond guard also covers a
+        server clock that stepped backwards.
+        """
+        now = await self._session.scalar(
+            select(func.clock_timestamp(type_=DateTime(timezone=True)))
+        )
+        if not isinstance(now, datetime):  # pragma: no cover - defensive
+            raise TypeError("clock_timestamp() did not return a datetime")
+        if latest is not None and now <= latest.recorded_at:
+            return latest.recorded_at + timedelta(microseconds=1)
+        return now
+
+    async def close_version(
+        self, version: FactVersion, valid_until: datetime, *, recorded_at: datetime
+    ) -> None:
         """Set the end of an open version. The DB trigger allows this exactly once."""
         await self._session.execute(
             update(FactVersion)
@@ -134,7 +153,7 @@ class FactRepository:
                 FactVersion.id == version.id,
                 FactVersion.valid_until.is_(None),
             )
-            .values(valid_until=valid_until, valid_until_recorded_at=func.now())
+            .values(valid_until=valid_until, valid_until_recorded_at=recorded_at)
             .execution_options(synchronize_session=False)
         )
         await self._session.refresh(version)
@@ -153,6 +172,7 @@ class FactRepository:
         authority: int,
         confidence: Decimal,
         privacy_scope: PrivacyScope,
+        recorded_at: datetime,
     ) -> FactVersion:
         fact_version = FactVersion(
             organization_id=self.organization_id,
@@ -162,8 +182,9 @@ class FactRepository:
             source_id=source_id,
             valid_from=valid_from,
             valid_until=valid_until,
-            # A version created with a fixed end "learns" that end at insert time.
-            valid_until_recorded_at=None if valid_until is None else func.now(),
+            # A version created with a fixed end "learns" that end when it is recorded.
+            valid_until_recorded_at=None if valid_until is None else recorded_at,
+            recorded_at=recorded_at,
             observed_at=observed_at,
             supersedes_id=supersedes_id,
             authority=authority,
