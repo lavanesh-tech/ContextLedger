@@ -9,8 +9,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 2 | Async SQLAlchemy, session lifecycle, readiness checks, Alembic, DB tests | Done |
 | 3 | Organizations, users, memberships, roles, tenant ownership | Done |
 | 4 | Temporal fact domain: Entity, Fact, FactVersion, FactSource, constraints, supersession | Done |
-| 5 | Temporal resolution engine: current, valid-at-T, as-known-at-K, history, diff T1..T2, lineage | In review |
-| 6 | Sources and evidence | Planned |
+| 5 | Temporal resolution engine: current, valid-at-T, as-known-at-K, history, diff T1..T2, lineage | Done |
+| 6 | Sources and evidence: immutable, content-addressed evidence linked to fact versions | In review |
 | 7 | pgvector, embeddings, OpenAI provider, embedding jobs, HNSW vs IVFFlat | Planned |
 | 8 | Hybrid temporal RAG: vector + full-text + metadata + temporal + tenant filters | Planned |
 | 9 | Decision receipts: ContextSnapshot, Decision, DecisionFact | Planned |
@@ -47,3 +47,4 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - Restrict who can call the readiness endpoint, or trim its detail, in production (Phase 28).
 - PostgreSQL Row-Level Security as a second tenant-isolation layer (evaluate in Phase 13 / 28).
 - Time-ordered UUIDv7 primary keys once the runtime supports them natively (index locality).
+- Audited redaction process for evidence that must be removed (legal takedown) (Phase 28).

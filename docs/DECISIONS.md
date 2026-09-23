@@ -358,3 +358,34 @@ strictly increasing transaction times along the chain.
 
 **Consequences.** Transaction time is monotonic per fact. Across different facts,
 timestamps come from the same database clock and remain comparable.
+
+---
+
+## ADR-017: Immutable, content-addressed evidence with append-only links
+
+**Status:** Accepted (Phase 6)
+
+**Context.** A decision receipt is only trustworthy if the material behind each
+fact version cannot be silently changed or detached later.
+
+**Decision.**
+- `evidence` rows are immutable. Identity within a source is the SHA-256 of the
+  normalised excerpt (`\r\n` → `\n`, trimmed), with
+  `UNIQUE(organization_id, source_id, content_sha256)`. Capturing the same content
+  again returns the existing row (idempotent, race-safe upsert). The first
+  capture's metadata wins, and the response says whether a row was created.
+- Excerpts are capped at 8,000 characters. Larger documents are stored externally
+  (S3 in the AWS phases) and referenced by `uri`; the excerpt holds the relevant passage.
+- `fact_version_evidence` links are append-only and carry a relation
+  (`SUPPORTS` now; `CONTRADICTS` is used by contradiction detection in Phase 16),
+  `linked_at` and `linked_by_user_id`. Re-linking with a different relation is a
+  conflict, never an overwrite.
+- One reusable trigger function forbids UPDATE/DELETE on provenance tables.
+- Composite FKs `(organization_id, fact_version_id)` and
+  `(organization_id, evidence_id)` make cross-tenant links impossible, even via raw SQL.
+- Evidence may come from a different source than the one that asserted the value
+  (corroboration). Evidence has its own `privacy_scope`, which is enforced at retrieval time.
+
+**Consequences.** Removing evidence (legal takedown, mistaken upload) needs an
+explicit, audited redaction process instead of DELETE. It is deferred to the
+security review (Phase 28) and noted in the roadmap.

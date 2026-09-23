@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–5)
+## What exists today (Phases 1–6)
 
 ```text
 HTTP request
@@ -146,6 +146,24 @@ an entity: `facts_at(valid_at, known_at)`, `history`, `changes_between`,
 combine "valid at T as known at K" with vector search and tenant filters in one
 query. A seeded differential test compares the two implementations at every
 boundary, ±1 µs, in both timelines. Full contract: [TEMPORAL.md](TEMPORAL.md).
+
+**Sources and evidence (Phase 6).**
+
+```text
+FactSource ──< Evidence (excerpt, sha256, uri, metadata, captured_at)   immutable
+                  │
+                  └─[SUPPORTS | CONTRADICTS]─> FactVersion              append-only link
+```
+
+`EvidenceService.capture_evidence` stores material content-addressed by the
+SHA-256 of its normalised text, so re-ingesting the same content is idempotent
+(race-safe `ON CONFLICT DO NOTHING`). `RecordFactVersion.evidence_ids` links
+evidence in the same transaction as the version: an unknown or foreign id rolls
+back the version too. `EvidenceService.provenance(version)` returns the version,
+its asserting source and every linked piece of evidence with who linked it and
+when. A shared trigger function (`contextledger_forbid_modification`) makes both
+tables append-only, and composite foreign keys keep links inside one tenant.
+Phase 10 projects exactly these rows into the Neo4j provenance graph.
 
 Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 
