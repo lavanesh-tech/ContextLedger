@@ -15,8 +15,10 @@ def settings() -> Settings:
 
 
 @pytest.fixture
-def app(settings: Settings) -> FastAPI:
-    return create_app(settings)
+async def app(settings: Settings) -> AsyncIterator[FastAPI]:
+    application = create_app(settings)
+    yield application
+    await application.state.db_engine.dispose()
 
 
 @pytest.fixture

@@ -28,6 +28,10 @@ RUN groupadd --system --gid 10001 app \
 COPY --from=builder /opt/venv /opt/venv
 
 WORKDIR /srv
+# Migrations ship with the image so the same artifact can run
+# `alembic upgrade head` as a one-off deploy step (root-owned, read-only).
+COPY alembic.ini ./
+COPY migrations ./migrations
 USER app
 EXPOSE 8000
 

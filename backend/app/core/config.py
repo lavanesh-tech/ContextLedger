@@ -7,10 +7,12 @@ instead of failing on the first request that happens to touch a bad value.
 
 from enum import StrEnum
 from functools import lru_cache
-from typing import Final, Literal
+from pathlib import Path
+from typing import Final, Literal, Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import URL
 
 API_V1_PREFIX: Final = "/api/v1"
 
@@ -39,6 +41,7 @@ class Settings(BaseSettings):
         frozen=True,
     )
 
+    # --- Application ---------------------------------------------------------
     app_name: str = Field(default="ContextLedger", min_length=1, max_length=100)
     environment: Environment = Environment.LOCAL
     log_level: LogLevel = "INFO"
@@ -49,14 +52,59 @@ class Settings(BaseSettings):
         pattern=r"^[A-Za-z][A-Za-z0-9-]{0,63}$",
     )
 
+    # --- PostgreSQL (system of record) ---------------------------------------
+    # Separate fields rather than one DSN string: they map 1:1 onto the JSON
+    # secret AWS RDS stores in Secrets Manager, and URL.create() escapes
+    # special characters in passwords correctly.
+    db_host: str = Field(default="localhost", min_length=1)
+    db_port: int = Field(default=5432, ge=1, le=65535)
+    db_user: str = Field(default="contextledger", min_length=1)
+    db_password: SecretStr = SecretStr("")
+    db_name: str = Field(default="contextledger", min_length=1, max_length=63)
+    db_application_name: str = Field(default="contextledger-api", min_length=1, max_length=63)
+
+    # Connection pool. Sized for one API process; tuned with measurements later.
+    db_pool_size: int = Field(default=5, ge=1, le=100)
+    db_max_overflow: int = Field(default=10, ge=0, le=100)
+    db_pool_timeout_seconds: float = Field(default=10.0, gt=0)
+    db_pool_recycle_seconds: int = Field(default=1800, gt=0)
+    db_connect_timeout_seconds: float = Field(default=5.0, gt=0)
+    # Server-side cap on any single statement, so one bad query cannot hold a
+    # connection (and a pool slot) forever.
+    db_statement_timeout_ms: int = Field(default=30_000, ge=0)
+    db_echo: bool = False
+
+    # --- Health / migrations ---------------------------------------------------
+    readiness_timeout_seconds: float = Field(default=3.0, gt=0)
+    alembic_ini_path: Path = Path("alembic.ini")
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _normalise_log_level(cls, value: object) -> object:
         return value.upper() if isinstance(value, str) else value
 
+    @model_validator(mode="after")
+    def _require_db_password_outside_local(self) -> Self:
+        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        if deployed and not self.db_password.get_secret_value():
+            raise ValueError("CONTEXTLEDGER_DB_PASSWORD must be set in staging and production")
+        return self
+
     @property
     def is_production(self) -> bool:
         return self.environment is Environment.PRODUCTION
+
+    @property
+    def database_url(self) -> URL:
+        """SQLAlchemy URL for the async (asyncpg) driver. Never log this object's string form."""
+        return URL.create(
+            drivername="postgresql+asyncpg",
+            username=self.db_user,
+            password=self.db_password.get_secret_value() or None,
+            host=self.db_host,
+            port=self.db_port,
+            database=self.db_name,
+        )
 
 
 @lru_cache(maxsize=1)

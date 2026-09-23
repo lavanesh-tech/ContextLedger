@@ -12,6 +12,9 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9,<3",
     "pydantic-settings>=2.6,<3",
+    "sqlalchemy[asyncio]>=2.0.36,<3",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
 ]
 
 [project.optional-dependencies]
@@ -36,6 +39,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra --strict-markers --strict-config"
 filterwarnings = ["error::DeprecationWarning:app.*"]
+markers = ["integration: needs a running PostgreSQL (make up); skipped locally without it, required in CI"]
 
 # ---------------------------------------------------------------------------
 # coverage

@@ -1,5 +1,5 @@
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 
 from app.core.config import Environment, Settings
 
@@ -18,6 +18,7 @@ def test_values_are_read_from_prefixed_environment_variables(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("CONTEXTLEDGER_ENVIRONMENT", "production")
+    monkeypatch.setenv("CONTEXTLEDGER_DB_PASSWORD", "from-env")
     monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "warning")
     monkeypatch.setenv("CONTEXTLEDGER_DOCS_ENABLED", "false")
 
@@ -42,6 +43,8 @@ def test_unprefixed_variables_are_ignored(monkeypatch: pytest.MonkeyPatch) -> No
         ("log_level", "VERBOSE"),
         ("app_name", ""),
         ("correlation_id_header", "X-Bad Header"),
+        ("db_port", "70000"),
+        ("db_pool_size", "0"),
     ],
 )
 def test_invalid_values_fail_fast(monkeypatch: pytest.MonkeyPatch, field: str, value: str) -> None:
@@ -56,3 +59,50 @@ def test_settings_are_immutable() -> None:
 
     with pytest.raises(ValidationError):
         settings.log_level = "DEBUG"  # type: ignore[misc]
+
+
+def test_database_url_is_built_from_parts_and_escapes_the_password() -> None:
+    settings = Settings(
+        _env_file=None,
+        db_host="db.internal",
+        db_port=6543,
+        db_user="app",
+        db_password=SecretStr("p@ss:w/rd"),
+        db_name="ledger",
+    )
+
+    url = settings.database_url
+
+    assert url.drivername == "postgresql+asyncpg"
+    assert (url.host, url.port) == ("db.internal", 6543)
+    assert (url.username, url.database) == ("app", "ledger")
+    assert url.password == "p@ss:w/rd"
+    assert "p%40ss%3Aw%2Frd" in url.render_as_string(hide_password=False)
+
+
+def test_password_never_appears_in_repr_or_default_url_rendering() -> None:
+    settings = Settings(_env_file=None, db_password=SecretStr("top-secret"))
+
+    assert "top-secret" not in repr(settings)
+    assert "top-secret" not in str(settings.database_url)
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+def test_deployed_environments_require_a_database_password(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setenv("CONTEXTLEDGER_ENVIRONMENT", environment)
+    monkeypatch.delenv("CONTEXTLEDGER_DB_PASSWORD", raising=False)
+
+    with pytest.raises(ValidationError, match="DB_PASSWORD"):
+        Settings(_env_file=None)
+
+
+def test_local_and_test_environments_allow_an_empty_password(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("CONTEXTLEDGER_DB_PASSWORD", raising=False)
+
+    settings = Settings(_env_file=None, environment=Environment.TEST)
+
+    assert settings.db_password.get_secret_value() == ""
