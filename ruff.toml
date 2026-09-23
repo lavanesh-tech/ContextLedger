@@ -1,0 +1,29 @@
+# Ruff configuration for the whole repository (backend, benchmarks, scripts).
+target-version = "py312"
+line-length = 100
+src = ["backend"]
+
+[lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "N",        # pep8-naming
+    "S",        # bandit (security)
+    "C4",       # comprehensions
+    "SIM",      # simplify
+    "RUF",      # ruff-specific
+    "ASYNC",    # async pitfalls
+    "PT",       # pytest style
+    "DTZ",      # timezone-naive datetimes (critical for temporal data)
+    "T20",      # stray print()
+]
+
+[lint.per-file-ignores]
+"backend/tests/**" = ["S101"]           # assert is how pytest works
+"benchmarks/scripts/**" = ["T20", "S603", "S607"]  # CLI script: prints and runs git/docker/pytest
+
+[format]
+quote-style = "double"

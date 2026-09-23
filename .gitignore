@@ -1,0 +1,44 @@
+# --- Secrets -----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials.json
+*.postman_environment.json
+!*.postman_environment.json.example
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --- Node / frontend (later phases) ------------------------------------------
+node_modules/
+.next/
+
+# --- Terraform (later phases) ------------------------------------------------
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# --- Editors / OS ------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+.DS_Store
