@@ -15,8 +15,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 8 | Hybrid temporal RAG: vector + full-text + metadata + temporal + tenant filters | Done |
 | 9 | Decision receipts: ContextSnapshot, Decision, DecisionFact | Done |
 | 10 | Neo4j provenance graph and impact traversal | Done |
-| 11 | MCP server and core tools | In review |
-| 12 | Complete REST API, standardized errors, Swagger, Postman | Planned |
+| 11 | MCP server and core tools | Done |
+| 12 | Complete REST API, standardized errors, Swagger, Postman | In review |
 | 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | Planned |
 | 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | Planned |
 | 15 | Kafka events and idempotent consumers | Planned |
@@ -42,7 +42,6 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - Add a dependency lock file (e.g. `uv lock`) for reproducible installs (by Phase 21).
 - Split dependency installation into its own Docker layer for faster rebuilds (Phase 21).
 - Pin container images by digest (Phase 21).
-- Correlation ID header on Starlette-generated 500 responses (Phase 12).
 - Tune DB pool size and statement timeout with load-test measurements (Phase 27).
 - Restrict who can call the readiness endpoint, or trim its detail, in production (Phase 28).
 - PostgreSQL Row-Level Security as a second tenant-isolation layer (evaluate in Phase 13 / 28).

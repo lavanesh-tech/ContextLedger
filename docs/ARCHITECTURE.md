@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–11)
+## What exists today (Phases 1–12)
 
 ```text
 HTTP request
@@ -219,6 +219,14 @@ impact, lineage) as thin adapters over the services above. The principal
 (organization and user) comes from configuration and is never a tool argument.
 Membership is re-checked on every call, and an agent-level privacy ceiling
 narrows the user's role. Details: [MCP.md](MCP.md).
+
+**REST API (Phase 12).** 30+ endpoints under `/api/v1` cover users,
+organizations and members, sources, facts and temporal queries, evidence and
+provenance, search, decision receipts, and impact/lineage. Every error is RFC
+9457 problem details with a stable code and the correlation id, including
+unexpected 500s. Identity is resolved by one dependency (development headers
+now, JWT in Phase 13). The OpenAPI document and a Postman collection are
+committed and drift-tested. Details: [API.md](API.md).
 
 Still running but not yet used: Redis 7.4, Kafka 4 (KRaft).
 

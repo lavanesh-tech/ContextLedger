@@ -633,3 +633,32 @@ argument must be treated as attacker-controllable.
 **Consequences.** Multi-user remote access needs the streamable HTTP transport
 with OAuth (Phase 13). Until then, the MCP server is suitable for local agents
 the operator trusts with that user's permissions.
+
+---
+
+## ADR-027: REST conventions: problem details, one principal dependency, dataclass read models
+
+**Status:** Accepted (Phase 12)
+
+**Decision.**
+- Every error is RFC 9457 `application/problem+json` with a stable `code` and
+  the request's `correlation_id`. Domain errors map by type (NotFound 404,
+  PermissionDenied 403, Conflict/InvariantViolation 409, ValidationFailed 422).
+  Unexpected exceptions are answered inside the correlation middleware as a
+  generic 500 that still carries the correlation id.
+- Identity comes from a single dependency, `get_principal`. Phase 12 ships
+  `development-headers` (refused in staging and production by settings
+  validation), and Phase 13 swaps in JWT without touching the endpoints.
+- Tenant resolution (`TenantDep`) returns the same 403 for unknown
+  organizations and non-members, so organization ids cannot be probed.
+- Requests are strict pydantic models (`extra="forbid"`, timezone-aware
+  datetimes). ORM rows are mapped through explicit `*Out` models. Read models
+  that already exist as frozen service dataclasses (receipts, search results,
+  impact reports) are returned directly, so REST, MCP and the services share
+  one definition.
+- The OpenAPI document and a generated Postman collection are committed, and a
+  test fails when they drift from the code.
+
+**Consequences.** Returning service dataclasses couples the wire format to
+service types. A breaking change to one is a breaking change to the API, which
+the committed OpenAPI diff makes visible in review.
