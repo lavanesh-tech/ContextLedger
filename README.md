@@ -13,7 +13,7 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 4 of 31, temporal fact domain.** Only what is listed under
+> **Status: Phase 5 of 31, temporal resolution engine.** Only what is listed under
 > "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
 ## What works today
@@ -24,6 +24,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Async SQLAlchemy 2 + asyncpg with a per-request session, Alembic migrations (revision `0001` enables pgvector)
 - Multi-tenant foundation: organizations, users, memberships with ADMIN / ENGINEER / VIEWER roles, a permission matrix, tenant-bound repositories, and a row-locked "at least one ADMIN" invariant, with cross-tenant attack tests
 - Bitemporal fact versions (valid time + transaction time): append-only history, automatic supersession, and PostgreSQL-enforced guarantees (no overlapping validity via an EXCLUDE constraint, an immutability trigger, tenant-safe composite foreign keys)
+- Deterministic temporal resolution: current value, value at time T, **what was known at time K**, history, changes between T1 and T2, lineage. A differential test checks the SQL engine against a pure-Python reference on random histories. See [docs/TEMPORAL.md](docs/TEMPORAL.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft)
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -63,6 +64,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Architecture decisions](docs/DECISIONS.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Temporal semantics](docs/TEMPORAL.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 
 ## Measured results

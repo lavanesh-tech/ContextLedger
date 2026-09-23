@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–4)
+## What exists today (Phases 1–5)
 
 ```text
 HTTP request
@@ -138,6 +138,15 @@ FactSource (billing DB, CRM API, document, human, agent) ──< FactVersion
     tenant and lineage inside one fact; `UNIQUE(supersedes_id)` keeps lineage a chain;
   - CHECK constraints for identifiers, ranges, JSON non-null and lineage consistency.
 
+**Temporal resolution (Phase 5).** `TemporalService` answers time questions for
+an entity: `facts_at(valid_at, known_at)`, `history`, `changes_between`,
+`lineage`, `entity_timeline`. The semantics are defined once, as pure functions
+(`app/temporal/reference.py`), and implemented in SQL
+(`app/repositories/temporal.py`, `valid_at_condition`) so that later phases can
+combine "valid at T as known at K" with vector search and tenant filters in one
+query. A seeded differential test compares the two implementations at every
+boundary, ±1 µs, in both timelines. Full contract: [TEMPORAL.md](TEMPORAL.md).
+
 Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 
 ## Backend layout
@@ -152,7 +161,7 @@ Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 | `app/repositories` | Tenant-scoped data access | Phase 3+ |
 | `app/services` | Use cases shared by REST and MCP (readiness since Phase 2) | Phase 2+ |
 | `app/domain` | Framework-free rules: roles/permissions, tenant context, validation, errors | Phase 3+ |
-| `app/temporal` | Temporal resolution engine | Phase 5 |
+| `app/temporal` | Bitemporal value types and reference semantics | Phase 5 |
 | `app/providers` | OpenAI adapters (mocked in tests) | Phase 7 |
 | `app/workers` | Embedding and re-index jobs | Phase 7+ |
 | `app/retrieval` | Hybrid temporal RAG | Phase 8 |

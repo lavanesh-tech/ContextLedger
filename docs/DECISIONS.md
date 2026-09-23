@@ -312,3 +312,49 @@ migrations and are excluded from drift checks by name prefix (`ex_`).
 
 **Consequences.** A little more migration SQL, in exchange for guarantees that
 hold for every writer: services, scripts, manual fixes and future workers.
+
+---
+
+## ADR-015: Temporal resolution: one definition, two implementations, differential tests
+
+**Status:** Accepted (Phase 5)
+
+**Context.** Temporal answers must be exactly right: "what did the agent know at
+11:00" is the product's core promise. Bitemporal edge cases (boundaries, open
+ends learned later, gaps, late-arriving knowledge) are easy to get subtly wrong
+in SQL.
+
+**Decision.**
+- The semantics are defined once, as small pure functions
+  (`app/temporal/reference.py`), with unit tests that control both timelines
+  (including a "late sync" scenario where the true value differs from what was known).
+- Production queries use SQL (`valid_at_condition`), so they can later be
+  combined with pgvector similarity, full-text search and tenant filters in one statement.
+- A **differential test** records seeded random histories (gaps, fixed ends,
+  several facts) in PostgreSQL, then compares SQL answers to the reference at
+  every boundary, ±1 µs, across both timelines (250 sampled (T, K) pairs).
+- `changes_between`, `lineage` and `history` reuse the reference functions over
+  the (small, per-entity) set of fetched versions.
+
+**Consequences.** Any future SQL optimisation (indexes, rewritten predicates) is
+safe to make: the differential test catches semantic drift.
+
+---
+
+## ADR-016: Transaction time from `clock_timestamp()` under the fact lock
+
+**Status:** Accepted (Phase 5; corrects Phase 4)
+
+**Context.** Phase 4 used `now()` for `recorded_at`. In PostgreSQL `now()` is the
+*transaction start* time. Under contention, a writer that started earlier but
+waited for the fact lock could record a *later* version with an *earlier*
+timestamp, breaking "the versions known at K form a prefix of the chain".
+
+**Decision.** After acquiring the fact's row lock, read `clock_timestamp()` once,
+bump it to `previous.recorded_at + 1 µs` if needed (clock steps), and use that
+single value for the new version's `recorded_at` and for closing the previous
+version (`valid_until_recorded_at`). The 10-writer race test now also asserts
+strictly increasing transaction times along the chain.
+
+**Consequences.** Transaction time is monotonic per fact. Across different facts,
+timestamps come from the same database clock and remain comparable.
