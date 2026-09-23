@@ -12,11 +12,14 @@ POSTGRES_USER ?= contextledger
 POSTGRES_PASSWORD ?=
 POSTGRES_PORT ?= 5432
 TEST_DATABASE_URL ?= postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@127.0.0.1:$(POSTGRES_PORT)/contextledger_test
+NEO4J_PASSWORD ?=
+NEO4J_BOLT_PORT ?= 7687
+TEST_NEO4J_ENV = CONTEXTLEDGER_TEST_NEO4J_URI='bolt://127.0.0.1:$(NEO4J_BOLT_PORT)' CONTEXTLEDGER_TEST_NEO4J_PASSWORD='$(NEO4J_PASSWORD)'
 
 .PHONY: help install lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
-        worker worker-once bench-vector bench-retrieval
+        worker worker-once graph-projector graph-once bench-vector bench-retrieval
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -39,7 +42,7 @@ typecheck: ## mypy --strict
 	cd $(BACKEND) && $(BIN)/mypy
 
 test: ## All tests with coverage (database tests need `make up` running)
-	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/pytest --cov --cov-report=term-missing
+	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(TEST_NEO4J_ENV) $(BIN)/pytest --cov --cov-report=term-missing
 
 test-unit: ## Only tests that need no database
 	cd $(BACKEND) && $(BIN)/pytest -m "not integration"
@@ -54,6 +57,12 @@ worker: ## Run the embedding worker on your Mac (loop; Ctrl+C to stop)
 
 worker-once: ## Embed one batch of pending fact versions and exit
 	cd $(BACKEND) && $(BIN)/python -m app.workers.embeddings --once
+
+graph-projector: ## Run the Neo4j graph projector on your Mac (loop; Ctrl+C to stop)
+	cd $(BACKEND) && CONTEXTLEDGER_NEO4J_PASSWORD='$(NEO4J_PASSWORD)' $(BIN)/python -m app.workers.graph
+
+graph-once: ## Project everything pending into Neo4j and exit
+	cd $(BACKEND) && CONTEXTLEDGER_NEO4J_PASSWORD='$(NEO4J_PASSWORD)' $(BIN)/python -m app.workers.graph --once
 
 # --- Database migrations --------------------------------------------------------
 migrate: ## Apply all migrations to the local database (from your Mac)
@@ -78,7 +87,7 @@ up: require-env ## Build, start data stores, run migrations, start the API
 	docker compose build api
 	docker compose up -d --wait postgres redis neo4j kafka
 	docker compose run --rm --no-deps api alembic upgrade head
-	docker compose up -d --wait api worker
+	docker compose up -d --wait api worker graph-projector
 
 down: ## Stop the stack (keeps data volumes)
 	docker compose down

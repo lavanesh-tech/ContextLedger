@@ -30,6 +30,8 @@ services:
       CONTEXTLEDGER_EMBEDDING_PROVIDER: ${CONTEXTLEDGER_EMBEDDING_PROVIDER:-deterministic}
       CONTEXTLEDGER_EMBEDDING_MODEL: ${CONTEXTLEDGER_EMBEDDING_MODEL:-text-embedding-3-small}
       CONTEXTLEDGER_OPENAI_API_KEY: ${CONTEXTLEDGER_OPENAI_API_KEY:-}
+      CONTEXTLEDGER_NEO4J_URI: bolt://neo4j:7687
+      CONTEXTLEDGER_NEO4J_PASSWORD: ${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env (min 8 chars)}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
@@ -56,6 +58,27 @@ services:
       retries: 3
     depends_on:
       postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  graph-projector:
+    # Projects PostgreSQL provenance into Neo4j from the outbox (app/workers/graph.py).
+    image: contextledger-api:latest
+    pull_policy: never
+    command: ["python", "-m", "app.workers.graph", "--heartbeat-file", "/tmp/worker.heartbeat"]
+    environment:
+      <<: *backend-env
+      CONTEXTLEDGER_DB_APPLICATION_NAME: contextledger-graph-projector
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/tmp/worker.heartbeat') < 600 else 1)"]
+      interval: 15s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
         condition: service_healthy
     restart: unless-stopped
 

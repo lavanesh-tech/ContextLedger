@@ -41,6 +41,9 @@ check pgvector docker compose exec -T postgres \
 check worker docker compose exec -T worker python -c \
   "import os, sys, time; age = time.time() - os.path.getmtime('/tmp/worker.heartbeat'); print(f'embedding worker heartbeat {age:.0f}s ago'); sys.exit(age >= 600)"
 
+check graph docker compose exec -T graph-projector python -c \
+  "import os, sys, time; age = time.time() - os.path.getmtime('/tmp/worker.heartbeat'); print(f'graph projector heartbeat {age:.0f}s ago'); sys.exit(age >= 600)"
+
 check redis docker compose exec -T redis redis-cli ping
 
 check neo4j docker compose exec -T neo4j \
