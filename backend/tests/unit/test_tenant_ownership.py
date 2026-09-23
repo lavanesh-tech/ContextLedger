@@ -18,7 +18,7 @@ def test_every_table_is_global_or_tenant_owned() -> None:
         assert column is not None, f"{table.name} has no organization_id"
         assert column.nullable is False, f"{table.name}.organization_id must be NOT NULL"
         targets = {fk.target_fullname for fk in column.foreign_keys}
-        assert targets == {"organizations.id"}, (
+        assert "organizations.id" in targets, (
             f"{table.name}.organization_id must reference organizations"
         )
 

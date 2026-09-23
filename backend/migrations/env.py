@@ -19,6 +19,7 @@ import app.models  # noqa: F401  (registers every model on Base.metadata)
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.db.base import Base
+from app.db.migrations import include_name
 
 config = context.config
 target_metadata = Base.metadata
@@ -36,6 +37,7 @@ def _configure(**kwargs: Any) -> None:
         target_metadata=target_metadata,
         compare_type=True,
         compare_server_default=True,
+        include_name=include_name,
         **kwargs,
     )
 

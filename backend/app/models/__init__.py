@@ -5,8 +5,20 @@ when Alembic autogenerates or checks migrations.
 """
 
 from app.db.base import Base
+from app.models.entity import Entity
+from app.models.fact import Fact, FactVersion
 from app.models.membership import OrganizationMembership
 from app.models.organization import Organization
+from app.models.source import FactSource
 from app.models.user import User
 
-__all__ = ["Base", "Organization", "OrganizationMembership", "User"]
+__all__ = [
+    "Base",
+    "Entity",
+    "Fact",
+    "FactSource",
+    "FactVersion",
+    "Organization",
+    "OrganizationMembership",
+    "User",
+]
