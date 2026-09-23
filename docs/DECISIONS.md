@@ -547,3 +547,33 @@ the one read inside the retrieval transaction, not the caller's cached context.
 
 **Consequences.** Agent-specific scopes (an OAuth client allowed less than its
 user) are enforced in Phase 13 by passing a narrower `max_privacy_scope`.
+
+---
+
+## ADR-024: Decision receipts as frozen snapshots sealed by a canonical hash
+
+**Status:** Accepted (Phase 9)
+
+**Context.** An agent's decision has to be explainable later, after the facts
+it used have been corrected, superseded or revoked. Re-running retrieval later
+answers a different question: what would it decide *now*.
+
+**Decision.**
+- Capturing context pins `known_at` (default: database `clock_timestamp()`) and
+  stores the ranked retrieval result as an immutable `ContextSnapshot` with
+  per-fact score breakdowns. Receipts show facts through the Phase 5
+  `as_known(known_at)` rule, and evidence only if it was linked by `known_at`.
+- A `Decision` references exactly one snapshot. `DecisionFact` rows carry a
+  composite FK to `context_snapshot_facts`, so citing a fact that was not in
+  context is impossible even through raw SQL.
+- `receipt_sha256` is SHA-256 over canonical JSON (`contextledger.receipt.v1`)
+  of the decision, the context and every snapshot fact (id, position, value
+  hash, relied-on). It is recomputed on every read and reported as
+  `integrity_verified`.
+- Readers below a fact's privacy scope see it redacted. Hashing covers the
+  unredacted rows, so integrity is verifiable without disclosure.
+
+**Consequences.** Snapshots store references plus scores, not copies of values.
+This is sufficient because fact versions are immutable and append-only (Phase 4).
+The hash detects edits but not a coordinated rewrite of row and hash.
+Signing with an external key (KMS) is deferred to Phase 28.

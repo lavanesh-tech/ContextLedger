@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–8)
+## What exists today (Phases 1–9)
 
 ```text
 HTTP request
@@ -193,6 +193,16 @@ metadata filters are pre-filters in both branches. The pure ranking module fuses
 the branches with Reciprocal Rank Fusion and a trust factor (authority ×
 confidence), and returns a score breakdown per result. If the provider is down,
 retrieval falls back to full text and says so. Details: [RETRIEVAL.md](RETRIEVAL.md).
+
+**Decision receipts (Phase 9).** `DecisionService.capture_context` pins
+`known_at` to the database clock, runs hybrid retrieval and stores the ranked
+result as an immutable context snapshot. `record_decision` stores the action,
+outcome, rationale and the snapshot facts the decision relied on. A composite
+foreign key makes it impossible to cite a fact that was not in context. The
+receipt is sealed with a SHA-256 over canonical JSON and re-verified on every
+read. Receipts show facts and evidence exactly as known at decision time, and
+redact facts above the reader's privacy ceiling. Details:
+[DECISION_RECEIPTS.md](DECISION_RECEIPTS.md).
 
 Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 
