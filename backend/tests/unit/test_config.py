@@ -19,6 +19,8 @@ def test_values_are_read_from_prefixed_environment_variables(
 ) -> None:
     monkeypatch.setenv("CONTEXTLEDGER_ENVIRONMENT", "production")
     monkeypatch.setenv("CONTEXTLEDGER_DB_PASSWORD", "from-env")
+    monkeypatch.setenv("CONTEXTLEDGER_EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("CONTEXTLEDGER_OPENAI_API_KEY", "sk-test-not-real")
     monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "warning")
     monkeypatch.setenv("CONTEXTLEDGER_DOCS_ENABLED", "false")
 

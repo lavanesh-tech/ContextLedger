@@ -10,13 +10,14 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Final, Literal, Self
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
 API_V1_PREFIX: Final = "/api/v1"
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+EmbeddingProviderName = Literal["deterministic", "openai"]
 
 
 class Environment(StrEnum):
@@ -74,6 +75,23 @@ class Settings(BaseSettings):
     db_statement_timeout_ms: int = Field(default=30_000, ge=0)
     db_echo: bool = False
 
+    # --- Embeddings -------------------------------------------------------------
+    # "deterministic" (default) needs no network or API key: a hashing embedder
+    # for local development, CI and demos. It is lexical, not semantic.
+    # "openai" calls the OpenAI embeddings API and needs CONTEXTLEDGER_OPENAI_API_KEY.
+    embedding_provider: EmbeddingProviderName = "deterministic"
+    embedding_model: str = Field(default="text-embedding-3-small", min_length=1, max_length=100)
+    embedding_batch_size: int = Field(default=64, ge=1, le=512)
+    embedding_max_attempts: int = Field(default=5, ge=1, le=20)
+    embedding_retry_base_seconds: float = Field(default=10.0, ge=0)
+    embedding_retry_cap_seconds: float = Field(default=900.0, gt=0)
+    embedding_lease_seconds: int = Field(default=300, ge=10)
+    embedding_poll_interval_seconds: float = Field(default=5.0, gt=0)
+    openai_api_key: SecretStr = SecretStr("")
+    openai_base_url: AnyHttpUrl = AnyHttpUrl("https://api.openai.com/v1")
+    openai_timeout_seconds: float = Field(default=30.0, gt=0)
+    openai_max_retries: int = Field(default=3, ge=0, le=10)
+
     # --- Health / migrations ---------------------------------------------------
     readiness_timeout_seconds: float = Field(default=3.0, gt=0)
     alembic_ini_path: Path = Path("alembic.ini")
@@ -88,6 +106,15 @@ class Settings(BaseSettings):
         deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
         if deployed and not self.db_password.get_secret_value():
             raise ValueError("CONTEXTLEDGER_DB_PASSWORD must be set in staging and production")
+        return self
+
+    @model_validator(mode="after")
+    def _require_real_embeddings_when_configured(self) -> Self:
+        if self.embedding_provider == "openai" and not self.openai_api_key.get_secret_value():
+            raise ValueError("CONTEXTLEDGER_OPENAI_API_KEY is required when the provider is openai")
+        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        if deployed and self.embedding_provider != "openai":
+            raise ValueError("staging and production must use the openai embedding provider")
         return self
 
     @property
