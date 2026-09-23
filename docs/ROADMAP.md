@@ -6,8 +6,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | # | Phase | Status |
 |---|-------|--------|
 | 1 | Repository foundation: FastAPI, settings, JSON logging, correlation IDs, health, Docker Compose (Postgres+pgvector, Redis, Neo4j, Kafka), Ruff, mypy, pytest, CI stub | Done |
-| 2 | Async SQLAlchemy, session lifecycle, readiness checks, Alembic, DB tests | In review |
-| 3 | Organizations, users, memberships, roles, tenant ownership | Planned |
+| 2 | Async SQLAlchemy, session lifecycle, readiness checks, Alembic, DB tests | Done |
+| 3 | Organizations, users, memberships, roles, tenant ownership | In review |
 | 4 | Temporal fact domain: Entity, Fact, FactVersion, FactSource, constraints, supersession | Planned |
 | 5 | Temporal resolution engine: current, valid-at-T, history, diff T1..T2, lineage | Planned |
 | 6 | Sources and evidence | Planned |
@@ -45,3 +45,5 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - Correlation ID header on Starlette-generated 500 responses (Phase 12).
 - Tune DB pool size and statement timeout with load-test measurements (Phase 27).
 - Restrict who can call the readiness endpoint, or trim its detail, in production (Phase 28).
+- PostgreSQL Row-Level Security as a second tenant-isolation layer (evaluate in Phase 13 / 28).
+- Time-ordered UUIDv7 primary keys once the runtime supports them natively (index locality).

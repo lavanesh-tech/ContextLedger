@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–2)
+## What exists today (Phases 1–3)
 
 ```text
 HTTP request
@@ -84,6 +84,30 @@ credentials are stored in `alembic.ini`. Revision IDs are sequential
 (`make up`, `make migrate`, or a deploy job), never inside API startup, so several
 API replicas never race to migrate. Revision `0001` enables pgvector.
 
+**Multi-tenancy (Phase 3).** Shared database, shared schema, tenant column:
+every tenant-owned table has `organization_id NOT NULL REFERENCES organizations
+ON DELETE RESTRICT` (`TenantOwnedMixin`). Only `organizations` and `users` are
+global, and a unit test fails if any other table lacks the tenant column.
+
+```text
+User ──< OrganizationMembership (role: ADMIN | ENGINEER | VIEWER) >── Organization
+                                                                          │
+                          every later table: organization_id ─────────────┘
+```
+
+* **Tenant-bound repositories.** `MembershipRepository(session, organization_id)`
+  has no method that accepts another organization id, so a cross-tenant query
+  cannot be written through it.
+* **TenantContext** (organization, user, role) is resolved from a verified
+  membership. "Unknown organization", "not a member" and "inactive user" all
+  produce the same error, so organization ids cannot be probed.
+* **RBAC.** Code checks permissions (`members:manage`, `facts:write`, ...), never
+  role names. The matrix lives in `app/domain/roles.py`.
+* **Invariant under concurrency.** Membership changes lock the organization
+  row (`SELECT ... FOR UPDATE`) and re-read the actor's *current* role, so two
+  simultaneous demotions cannot leave an organization without an ADMIN, and a
+  just-revoked role cannot be used from a stale context.
+
 Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 
 ## Backend layout
@@ -94,10 +118,10 @@ Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 | `app/core` | Settings, logging, correlation IDs | Phase 1 |
 | `app/schemas` | Pydantic request/response models | Phase 1+ |
 | `app/db` | Declarative base, engine, session factory, migration helpers | Phase 2 |
-| `app/models` | SQLAlchemy ORM models | Phase 3+ |
+| `app/models` | ORM models: Organization, User, OrganizationMembership + mixins | Phase 3+ |
 | `app/repositories` | Tenant-scoped data access | Phase 3+ |
 | `app/services` | Use cases shared by REST and MCP (readiness since Phase 2) | Phase 2+ |
-| `app/domain` | Framework-free domain rules | Phase 4+ |
+| `app/domain` | Framework-free rules: roles/permissions, tenant context, validation, errors | Phase 3+ |
 | `app/temporal` | Temporal resolution engine | Phase 5 |
 | `app/providers` | OpenAI adapters (mocked in tests) | Phase 7 |
 | `app/workers` | Embedding and re-index jobs | Phase 7+ |

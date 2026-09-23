@@ -200,3 +200,57 @@ now and will be tuned with load-test measurements (Phase 27).
 
 **Consequences.** Deployments need an explicit "migrate" step before rolling
 out new API instances, which is standard practice and will be modelled in the AWS phases.
+
+---
+
+## ADR-011: Multi-tenancy by shared schema + `organization_id`, enforced in three layers
+
+**Status:** Accepted (Phase 3)
+
+**Context.** Every fact, decision and embedding belongs to exactly one
+organization. A leak across tenants is the most serious failure this product can have.
+
+**Options considered.** Database-per-tenant (strong isolation, expensive and
+slow to operate), schema-per-tenant (migrations multiply per tenant), shared
+schema with a tenant column (cheap, simple, but only safe if enforced everywhere).
+
+**Decision.** Shared schema with a tenant column, enforced in three layers:
+1. **Database.** `organization_id NOT NULL` + FK `ON DELETE RESTRICT` on every
+   tenant-owned table, plus CHECK/UNIQUE constraints. A unit test fails if a new
+   table is neither tenant-owned nor explicitly listed in `GLOBAL_TABLES`.
+2. **Repositories.** Tenant-owned repositories are constructed with one
+   `organization_id` and expose no way to query another.
+3. **Services.** Every call takes a `TenantContext`. Mutations re-verify the
+   actor's membership inside the transaction.
+
+Cross-tenant attempts are tested explicitly (resolving another org, listing,
+changing, removing, forged contexts). "Not found" and "not a member" responses
+do not reveal whether another tenant's ids exist.
+
+**Consequences.** Composite indexes must lead with `organization_id`.
+PostgreSQL Row-Level Security is a candidate fourth layer for the security phases.
+
+---
+
+## ADR-012: RBAC via a permission matrix; last-ADMIN invariant under row lock
+
+**Status:** Accepted (Phase 3)
+
+**Decision.**
+- Roles live on the **membership** (per organization), not on the user.
+- Roles: `ADMIN ⊃ ENGINEER ⊃ VIEWER` (strict supersets, unit-tested).
+  Code checks **permissions** (`facts:write`, `members:manage`, ...), so the
+  matrix can change in one file.
+- Roles are stored as `VARCHAR + CHECK` (via a `StringEnum` column type), not a
+  native PostgreSQL ENUM, because adding a value later is an ordinary migration.
+- **Invariant: an organization always has at least one ADMIN.** Creating an
+  organization writes the org and its first ADMIN membership in one transaction.
+  Demote/remove operations take `SELECT ... FOR UPDATE` on the organization
+  row, then re-read the actor's current role and count admins. An integration
+  test runs two concurrent cross-demotions on separate connections and proves
+  exactly one succeeds.
+- Users have no password column. Identity comes from OAuth2/JWT in Phase 13;
+  the TenantContext will then be built from the verified token.
+
+**Consequences.** Membership changes within one organization are serialised
+(low volume, so there is no throughput concern). Reads are not locked.
