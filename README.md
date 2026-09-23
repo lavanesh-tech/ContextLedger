@@ -13,7 +13,7 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 9 of 31, decision receipts.** Only what is listed under
+> **Status: Phase 10 of 31, provenance graph.** Only what is listed under
 > "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
 ## What works today
@@ -29,6 +29,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Embeddings: every fact version is embedded by a background worker (PostgreSQL job queue with `SKIP LOCKED`, leases, retries with backoff, per-tenant reuse of identical text) into pgvector with an HNSW cosine index. Offline deterministic provider by default; OpenAI adapter with retries and strict validation, tested without network calls. See [docs/VECTOR_INDEXING.md](docs/VECTOR_INDEXING.md)
 - Hybrid temporal retrieval: pgvector similarity + PostgreSQL full-text search in one statement, pre-filtered by tenant, "valid at T as known at K", role-capped privacy scope and metadata; Reciprocal Rank Fusion with an authority × confidence trust factor and a per-result score breakdown; full-text fallback when the embedding provider is down. See [docs/RETRIEVAL.md](docs/RETRIEVAL.md)
 - Decision receipts: the retrieved context is frozen at decision time; the decision records which of those facts it relied on (enforced by a foreign key); a canonical SHA-256 receipt hash is re-verified on every read; facts and evidence are shown exactly as known when the decision was made. See [docs/DECISION_RECEIPTS.md](docs/DECISION_RECEIPTS.md)
+- Neo4j provenance graph fed by a trigger-written transactional outbox (idempotent, order-independent, rebuildable projection); impact analysis ("which decisions depend on this source / version / evidence?") and decision lineage, tenant-scoped and privacy-aware. See [docs/PROVENANCE_GRAPH.md](docs/PROVENANCE_GRAPH.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API and embedding worker
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -44,6 +45,7 @@ make check                    # ruff + mypy + pytest (DB tests use the running P
 make smoke                    # verify API, readiness, pgvector, Redis, Neo4j, Kafka
 make run                      # API from source on http://127.0.0.1:8000/docs
 make worker-once              # embed one batch of pending fact versions
+make graph-once               # project pending changes into Neo4j
 make bench-vector             # HNSW vs IVFFlat vs exact search (synthetic data)
 make bench-retrieval          # hybrid retrieval latency p50/p95/p99 (synthetic data)
 make migrate                  # apply migrations from your Mac
@@ -75,6 +77,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Embeddings and vector indexing](docs/VECTOR_INDEXING.md)
 - [Hybrid temporal retrieval](docs/RETRIEVAL.md)
 - [Decision receipts](docs/DECISION_RECEIPTS.md)
+- [Provenance graph](docs/PROVENANCE_GRAPH.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 
 ## Measured results

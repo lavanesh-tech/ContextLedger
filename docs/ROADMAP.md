@@ -13,8 +13,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 6 | Sources and evidence: immutable, content-addressed evidence linked to fact versions | Done |
 | 7 | pgvector, embeddings, OpenAI provider, embedding jobs, HNSW vs IVFFlat | Done |
 | 8 | Hybrid temporal RAG: vector + full-text + metadata + temporal + tenant filters | Done |
-| 9 | Decision receipts: ContextSnapshot, Decision, DecisionFact | In review |
-| 10 | Neo4j provenance graph and impact traversal | Planned |
+| 9 | Decision receipts: ContextSnapshot, Decision, DecisionFact | Done |
+| 10 | Neo4j provenance graph and impact traversal | In review |
 | 11 | MCP server and core tools | Planned |
 | 12 | Complete REST API, standardized errors, Swagger, Postman | Planned |
 | 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | Planned |
@@ -54,3 +54,4 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - Evaluate a reranker (cross-encoder or LLM) against RRF-only retrieval with Phase 18 metrics.
 - Expose retrieval over REST (Phase 12) and MCP (Phase 11); agent-specific privacy ceilings (Phase 13).
 - Sign decision receipts with a key held outside the database (e.g. AWS KMS), optionally chain receipt hashes (Phase 28).
+- Relay the graph outbox through Kafka instead of polling (Phase 15); alert on outbox size / projection lag (Phase 20).

@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–9)
+## What exists today (Phases 1–10)
 
 ```text
 HTTP request
@@ -204,7 +204,16 @@ read. Receipts show facts and evidence exactly as known at decision time, and
 redact facts above the reader's privacy ceiling. Details:
 [DECISION_RECEIPTS.md](DECISION_RECEIPTS.md).
 
-Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
+**Provenance graph (Phase 10).** Triggers on the ten provenance tables write a
+transactional outbox. The `graph-projector` worker drains it into Neo4j with
+idempotent `MERGE`s (entities, facts, versions, sources, evidence, snapshots,
+decisions and their relationships, never values). `ProvenanceService` answers
+impact questions (what depends on this version, source or piece of evidence?)
+and decision lineage with tenant-anchored Cypher, after a PostgreSQL
+permission check, and reports projection lag. Details:
+[PROVENANCE_GRAPH.md](PROVENANCE_GRAPH.md).
+
+Still running but not yet used: Redis 7.4, Kafka 4 (KRaft).
 
 ## Backend layout
 

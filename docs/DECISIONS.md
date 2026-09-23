@@ -577,3 +577,31 @@ answers a different question: what would it decide *now*.
 This is sufficient because fact versions are immutable and append-only (Phase 4).
 The hash detects edits but not a coordinated rewrite of row and hash.
 Signing with an external key (KMS) is deferred to Phase 28.
+
+---
+
+## ADR-025: Neo4j as a projection fed by a trigger-written transactional outbox
+
+**Status:** Accepted (Phase 10)
+
+**Context.** Impact questions ("which decisions depend on this source?") are
+variable-depth traversals across facts, versions, evidence, snapshots and
+decisions. Writing to two databases from application code (dual writes)
+risks the graph silently diverging when one write fails.
+
+**Decision.**
+- PostgreSQL remains the only system of record. Neo4j is a rebuildable projection.
+- `AFTER INSERT OR UPDATE` triggers on the ten provenance tables write
+  `(organization_id, table_name, row_key)` to `graph_outbox` in the same transaction.
+- A projector claims events with `FOR UPDATE SKIP LOCKED`, re-reads the current
+  rows, writes them in one Neo4j transaction of idempotent `MERGE`s, and deletes
+  the events before committing: at-least-once delivery, exactly-once effect.
+  Relationships to not-yet-projected nodes create placeholders, so order does not matter.
+- The graph stores ids, times, scopes and hashes, never values or excerpts.
+- Queries anchor on `{id, org}` after a PostgreSQL permission check, and report
+  `pending_events` so eventual consistency is visible to callers.
+
+**Consequences.** Projection lag is roughly the poll interval (2 s by default).
+Phase 15 can publish the same outbox to Kafka instead of polling. The outbox
+grows if the projector is down, and its size is the obvious alert metric
+(Phase 20).
