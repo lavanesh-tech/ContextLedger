@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.errors import ConflictError, NotFoundError
+from app.domain.evidence import EvidenceRelation
 from app.domain.facts import (
     LatestVersion,
     PrivacyScope,
@@ -40,6 +41,7 @@ from app.models.fact import Fact, FactVersion
 from app.models.source import FactSource
 from app.repositories.facts import FactRepository
 from app.services.authorization import require_permission
+from app.services.evidence import link_evidence
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +59,8 @@ class RecordFactVersion:
     authority: int | None = None  # defaults to the source's default_authority
     confidence: Decimal | float | str = field(default=Decimal("1.000"))
     privacy_scope: PrivacyScope = PrivacyScope.INTERNAL
+    # Evidence (already captured) that supports this version; linked atomically.
+    evidence_ids: tuple[UUID, ...] = ()
 
 
 class FactService:
@@ -166,6 +170,15 @@ class FactService:
                 recorded_at=recorded_at,
             )
             await self._session.flush()
+            # Same transaction: if any evidence id is unknown or foreign, the
+            # version itself is rolled back too.
+            await link_evidence(
+                self._session,
+                ctx,
+                fact_version_id=fact_version.id,
+                evidence_ids=command.evidence_ids,
+                relation=EvidenceRelation.SUPPORTS,
+            )
         return fact_version
 
     async def get_version(self, ctx: TenantContext, version_id: UUID) -> FactVersion:

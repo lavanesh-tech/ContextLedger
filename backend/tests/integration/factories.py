@@ -1,10 +1,12 @@
 """Test-data builders that go through the real services (so rules are exercised)."""
 
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.domain.evidence import EvidenceType
 from app.domain.facts import SourceType
 from app.domain.roles import MembershipRole
 from app.domain.tenancy import TenantContext
@@ -12,6 +14,7 @@ from app.models.fact import FactVersion
 from app.models.organization import Organization
 from app.models.source import FactSource
 from app.models.user import User
+from app.services.evidence import CapturedEvidence, EvidenceService
 from app.services.facts import FactService, RecordFactVersion
 from app.services.memberships import MembershipService
 from app.services.organizations import OrganizationService
@@ -89,3 +92,21 @@ async def admin_workspace(sessions: Sessions) -> tuple[TenantContext, FactSource
     org = await make_org(sessions, admin)
     ctx = await context(sessions, org.id, admin.id)
     return ctx, await make_source(sessions, ctx)
+
+
+async def capture(
+    sessions: Sessions,
+    ctx: TenantContext,
+    source: FactSource,
+    excerpt: str = "Credit limit for customer-991 is 2000 USD.",
+) -> CapturedEvidence:
+    async with sessions() as session:
+        return await EvidenceService(session).capture_evidence(
+            ctx,
+            source_id=source.id,
+            evidence_type=EvidenceType.DOCUMENT_EXCERPT,
+            excerpt=excerpt,
+            captured_at=datetime(2026, 1, 15, 10, 29, tzinfo=UTC),
+            uri="s3://contracts/customer-991.pdf",
+            metadata={"page": 3},
+        )
