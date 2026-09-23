@@ -5,6 +5,12 @@ when Alembic autogenerates or checks migrations.
 """
 
 from app.db.base import Base
+from app.models.decision import (
+    ContextSnapshot,
+    ContextSnapshotFact,
+    Decision,
+    DecisionFact,
+)
 from app.models.embedding import EmbeddingJob, FactEmbedding
 from app.models.entity import Entity
 from app.models.evidence import Evidence, FactVersionEvidence
@@ -17,6 +23,10 @@ from app.models.user import User
 
 __all__ = [
     "Base",
+    "ContextSnapshot",
+    "ContextSnapshotFact",
+    "Decision",
+    "DecisionFact",
     "EmbeddingJob",
     "Entity",
     "Evidence",
