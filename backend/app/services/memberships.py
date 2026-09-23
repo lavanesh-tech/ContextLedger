@@ -21,12 +21,13 @@ from app.domain.errors import (
     NotFoundError,
     PermissionDeniedError,
 )
-from app.domain.roles import MembershipRole, Permission, has_permission
+from app.domain.roles import MembershipRole, Permission
 from app.domain.tenancy import TenantContext
 from app.models.membership import OrganizationMembership
 from app.repositories.memberships import MembershipRepository
 from app.repositories.organizations import OrganizationRepository
 from app.repositories.users import UserRepository
+from app.services.authorization import NOT_A_MEMBER, require_permission
 
 LAST_ADMIN = "an organization must keep at least one ADMIN"
 
@@ -40,7 +41,7 @@ class MembershipService:
     async def list_members(self, ctx: TenantContext) -> Sequence[OrganizationMembership]:
         async with self._session.begin():
             members = self._members(ctx)
-            await self._authorize(ctx, members, Permission.READ_MEMBERS)
+            await self._authorize(ctx, Permission.READ_MEMBERS)
             return await members.list_members()
 
     async def add_member(
@@ -48,7 +49,7 @@ class MembershipService:
     ) -> OrganizationMembership:
         async with self._session.begin():
             members = self._members(ctx)
-            await self._authorize(ctx, members, Permission.MANAGE_MEMBERS, lock=True)
+            await self._authorize(ctx, Permission.MANAGE_MEMBERS, lock=True)
 
             user = await self._users.get(user_id)
             if user is None or not user.is_active:
@@ -68,7 +69,7 @@ class MembershipService:
     ) -> OrganizationMembership:
         async with self._session.begin():
             members = self._members(ctx)
-            await self._authorize(ctx, members, Permission.MANAGE_MEMBERS, lock=True)
+            await self._authorize(ctx, Permission.MANAGE_MEMBERS, lock=True)
 
             membership = await self._require_member(members, user_id)
             if membership.role is MembershipRole.ADMIN and role is not MembershipRole.ADMIN:
@@ -80,7 +81,7 @@ class MembershipService:
     async def remove_member(self, ctx: TenantContext, *, user_id: UUID) -> None:
         async with self._session.begin():
             members = self._members(ctx)
-            await self._authorize(ctx, members, Permission.MANAGE_MEMBERS, lock=True)
+            await self._authorize(ctx, Permission.MANAGE_MEMBERS, lock=True)
 
             membership = await self._require_member(members, user_id)
             if membership.role is MembershipRole.ADMIN:
@@ -95,20 +96,14 @@ class MembershipService:
     async def _authorize(
         self,
         ctx: TenantContext,
-        members: MembershipRepository,
         permission: Permission,
         *,
         lock: bool = False,
     ) -> None:
-        """Authorize against the actor's *current* membership, not the context snapshot."""
+        """Lock the organization row (for mutations), then check the actor's current role."""
         if lock and not await self._organizations.lock(ctx.organization_id):
-            raise PermissionDeniedError("not a member of this organization")
-        actor = await self._users.get(ctx.user_id)
-        current = await members.get(ctx.user_id)
-        if actor is None or not actor.is_active or current is None:
-            raise PermissionDeniedError("not a member of this organization")
-        if not has_permission(current.role, permission):
-            raise PermissionDeniedError(f"role {current.role} lacks permission {permission}")
+            raise PermissionDeniedError(NOT_A_MEMBER)
+        await require_permission(self._session, ctx, permission)
 
     @staticmethod
     async def _require_member(

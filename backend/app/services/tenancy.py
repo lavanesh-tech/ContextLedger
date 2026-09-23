@@ -6,10 +6,9 @@ from app.domain.errors import PermissionDeniedError
 from app.domain.tenancy import TenantContext
 from app.repositories.memberships import MembershipRepository
 from app.repositories.users import UserRepository
+from app.services.authorization import NOT_A_MEMBER
 
-# One message for "organization does not exist", "not a member" and "user
-# inactive", so callers cannot probe which organization ids exist.
-NOT_A_MEMBER = "not a member of this organization"
+__all__ = ["NOT_A_MEMBER", "TenancyService"]
 
 
 class TenancyService:

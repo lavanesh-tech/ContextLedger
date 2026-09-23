@@ -13,13 +13,19 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 import app.models  # noqa: F401  (registers every model)
 from app.db.base import Base
+from app.db.migrations import include_name
 
 pytestmark = pytest.mark.integration
 
 
 def _diff(connection: Connection) -> list[Any]:
     context = MigrationContext.configure(
-        connection, opts={"compare_type": True, "compare_server_default": True}
+        connection,
+        opts={
+            "compare_type": True,
+            "compare_server_default": True,
+            "include_name": include_name,
+        },
     )
     return list(compare_metadata(context, Base.metadata))
 
