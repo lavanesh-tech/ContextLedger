@@ -1,0 +1,1090 @@
+{
+  "info": {
+    "name": "ContextLedger API",
+    "description": "Generated from the OpenAPI document by app/api/docs_export.py. Set `userId` to a user id (development-headers auth), then the path variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "organization_id",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "source_id",
+      "value": ""
+    },
+    {
+      "key": "entity_type",
+      "value": ""
+    },
+    {
+      "key": "external_id",
+      "value": ""
+    },
+    {
+      "key": "fact_id",
+      "value": ""
+    },
+    {
+      "key": "version_id",
+      "value": ""
+    },
+    {
+      "key": "decision_id",
+      "value": ""
+    },
+    {
+      "key": "evidence_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "health",
+      "item": [
+        {
+          "name": "Liveness check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Readiness check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health",
+                "ready"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "users",
+      "item": [
+        {
+          "name": "Register a user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "Open registration for local development. Phase 13 replaces it with OAuth sign-in.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ada@example.com\",\n  \"display_name\": \"Ada Lovelace\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "The calling user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "organizations",
+      "item": [
+        {
+          "name": "Create an organization (you become its first ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Credit\",\n  \"slug\": \"acme-credit\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List members",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "members"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Add a member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "members"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"role\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change a member's role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/members/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "members",
+                "{{user_id}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove a member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/members/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "members",
+                "{{user_id}}"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "sources",
+      "item": [
+        {
+          "name": "Register a source",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/sources",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "sources"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"billing-db\",\n  \"source_type\": \"SYSTEM_OF_RECORD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List sources",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/sources",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "sources"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get a source",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/sources/{{source_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "sources",
+                "{{source_id}}"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "facts",
+      "item": [
+        {
+          "name": "Record a fact version",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/facts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "facts"
+              ]
+            },
+            "description": "Source S says: entity E's property P has value V from `valid_from`.\n\nSupersedes the current version when `valid_from` is later; the database\nguarantees versions of one fact never overlap in valid time.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entity_type\": \"customer\",\n  \"external_id\": \"customer-991\",\n  \"property\": \"credit_limit\",\n  \"value\": 5000,\n  \"source_id\": \"{{source_id}}\",\n  \"valid_from\": \"2026-01-15T09:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Facts of an entity at a point in time",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/entities/{{entity_type}}/{{external_id}}/facts?valid_at=&known_at=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "entities",
+                "{{entity_type}}",
+                "{{external_id}}",
+                "facts"
+              ],
+              "query": [
+                {
+                  "key": "valid_at",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "known_at",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Values valid at `valid_at` (default: now) as known at `known_at` (default: latest)."
+          }
+        },
+        {
+          "name": "Every version of every fact of an entity",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/entities/{{entity_type}}/{{external_id}}/timeline?known_at=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "entities",
+                "{{entity_type}}",
+                "{{external_id}}",
+                "timeline"
+              ],
+              "query": [
+                {
+                  "key": "known_at",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "What changed between two instants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/entities/{{entity_type}}/{{external_id}}/changes?start=&end=&known_at=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "entities",
+                "{{entity_type}}",
+                "{{external_id}}",
+                "changes"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "",
+                  "disabled": false
+                },
+                {
+                  "key": "end",
+                  "value": "",
+                  "disabled": false
+                },
+                {
+                  "key": "known_at",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "All versions of one fact",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/facts/{{fact_id}}/history?known_at=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "facts",
+                "{{fact_id}}",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "known_at",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "What a version superseded and what superseded it",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/fact-versions/{{version_id}}/lineage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "fact-versions",
+                "{{version_id}}",
+                "lineage"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "evidence",
+      "item": [
+        {
+          "name": "Capture evidence (idempotent by content)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "evidence"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_id\": \"{{source_id}}\",\n  \"evidence_type\": \"DOCUMENT_EXCERPT\",\n  \"excerpt\": \"Credit limit for customer-991 is 5000 USD.\",\n  \"captured_at\": \"2026-01-15T09:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Link evidence to a fact version",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/fact-versions/{{version_id}}/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "fact-versions",
+                "{{version_id}}",
+                "evidence"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evidence_id\": \"{{evidence_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "The version, its source and every linked piece of evidence",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/fact-versions/{{version_id}}/provenance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "fact-versions",
+                "{{version_id}}",
+                "provenance"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "item": [
+        {
+          "name": "Hybrid temporal search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "search"
+              ]
+            },
+            "description": "Vector + full-text search over facts valid at `valid_at` as known at `known_at`,\npre-filtered by tenant, privacy scope and metadata; each result explains its score.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What is the credit limit of customer-991?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "decisions",
+      "item": [
+        {
+          "name": "Retrieve and freeze decision context",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/context-snapshots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "context-snapshots"
+              ]
+            },
+            "description": "Runs hybrid search with `known_at` pinned (default: now) and stores the result\nimmutably. Cite its fact versions when recording the decision.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What is the credit limit of customer-991?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Record a decision and get its sealed receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/decisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "decisions"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snapshot_id\": \"{{snapshot_id}}\",\n  \"action\": \"credit.approve_increase\",\n  \"outcome\": {\n    \"approved\": true,\n    \"new_limit\": 7500\n  },\n  \"relied_on\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "A decision receipt, re-verified on read",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/decisions/{{decision_id}}/receipt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "decisions",
+                "{{decision_id}}",
+                "receipt"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Decisions that relied on a fact version",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/fact-versions/{{version_id}}/decisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "fact-versions",
+                "{{version_id}}",
+                "decisions"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "provenance",
+      "item": [
+        {
+          "name": "Decisions depending on a fact version",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/impact/fact-versions/{{version_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "impact",
+                "fact-versions",
+                "{{version_id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Versions and decisions depending on a source",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/impact/sources/{{source_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "impact",
+                "sources",
+                "{{source_id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Versions and decisions depending on a piece of evidence",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/impact/evidence/{{evidence_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "impact",
+                "evidence",
+                "{{evidence_id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "What a decision rests on",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/decisions/{{decision_id}}/lineage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "decisions",
+                "{{decision_id}}",
+                "lineage"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    }
+  ]
+}
