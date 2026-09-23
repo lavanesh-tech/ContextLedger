@@ -24,6 +24,12 @@ echo "ContextLedger local stack smoke test"
 
 check api curl -fsS "$API_URL/api/v1/health"
 
+check ready curl -fsS "$API_URL/api/v1/health/ready"
+
+check schema docker compose exec -T postgres \
+  psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -tAc \
+  "SELECT 'alembic revision ' || version_num FROM alembic_version"
+
 check postgres docker compose exec -T postgres \
   psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -tAc \
   "SELECT 'pgvector ' || extversion FROM pg_extension WHERE extname = 'vector'"

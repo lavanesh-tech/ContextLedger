@@ -6,10 +6,19 @@ BACKEND := backend
 VENV := $(BACKEND)/.venv
 BIN := $(abspath $(VENV))/bin
 
-.PHONY: help install lint format typecheck test check run up down down-volumes logs ps smoke docker-build metrics clean
+# Read POSTGRES_* from .env (if present) to build the test database URL.
+-include .env
+POSTGRES_USER ?= contextledger
+POSTGRES_PASSWORD ?=
+POSTGRES_PORT ?= 5432
+TEST_DATABASE_URL ?= postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@127.0.0.1:$(POSTGRES_PORT)/contextledger_test
+
+.PHONY: help install lint format typecheck test test-unit check run \
+        migrate migration migrate-check migrate-docker \
+        require-env up down down-volumes logs ps smoke docker-build metrics clean
 
 help: ## Show available targets
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 # --- Python ---------------------------------------------------------------------
 install: ## Create backend/.venv and install the backend with dev tools
@@ -28,20 +37,41 @@ format: ## Auto-fix lint issues and format code
 typecheck: ## mypy --strict
 	cd $(BACKEND) && $(BIN)/mypy
 
-test: ## Run pytest with coverage
-	cd $(BACKEND) && $(BIN)/pytest --cov --cov-report=term-missing
+test: ## All tests with coverage (database tests need `make up` running)
+	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/pytest --cov --cov-report=term-missing
+
+test-unit: ## Only tests that need no database
+	cd $(BACKEND) && $(BIN)/pytest -m "not integration"
 
 check: lint typecheck test ## Everything CI runs, locally
 
-run: ## Run the API with auto-reload on http://127.0.0.1:8000
+run: ## Run the API on your Mac with auto-reload on http://127.0.0.1:8000
 	cd $(BACKEND) && $(BIN)/uvicorn app.main:create_app --factory --reload --no-access-log --port 8000
 
-# --- Docker ---------------------------------------------------------------------
-.env:
-	@echo "No .env found. Run: cp .env.example .env  (then change the passwords)" && exit 1
+# --- Database migrations --------------------------------------------------------
+migrate: ## Apply all migrations to the local database (from your Mac)
+	cd $(BACKEND) && $(BIN)/alembic upgrade head
 
-up: .env ## Build and start the full local stack, waiting for health checks
-	docker compose up -d --build --wait
+migration: ## New migration: make migration m="create facts table"
+	@test -n "$(m)" || (echo 'usage: make migration m="describe the change"' && exit 1)
+	cd $(BACKEND) && next=$$(printf "%04d" $$(( $$(ls migrations/versions/[0-9]*.py | wc -l) + 1 ))) && \
+	  $(BIN)/alembic revision --autogenerate --rev-id "$$next" -m "$(m)"
+
+migrate-check: ## Fail if ORM models and migrations have drifted apart
+	cd $(BACKEND) && $(BIN)/alembic check
+
+migrate-docker: require-env ## Apply migrations using the API image (as a deploy job would)
+	docker compose run --rm --no-deps api alembic upgrade head
+
+# --- Docker ---------------------------------------------------------------------
+require-env:
+	@test -f .env || (echo "No .env found. Run: cp .env.example .env  (then change the passwords)" && exit 1)
+
+up: require-env ## Build, start data stores, run migrations, start the API
+	docker compose build api
+	docker compose up -d --wait postgres redis neo4j kafka
+	docker compose run --rm --no-deps api alembic upgrade head
+	docker compose up -d --wait api
 
 down: ## Stop the stack (keeps data volumes)
 	docker compose down
@@ -55,7 +85,7 @@ logs: ## Follow logs of all services
 ps: ## Show service status
 	docker compose ps
 
-smoke: .env ## Verify every running service actually answers
+smoke: require-env ## Verify every running service actually answers
 	./scripts/smoke_local_stack.sh
 
 docker-build: ## Build the API image on its own
@@ -63,7 +93,7 @@ docker-build: ## Build the API image on its own
 
 # --- Benchmarks -----------------------------------------------------------------
 metrics: ## Record foundation metrics (test count, image size) to benchmarks/results/
-	$(BIN)/python benchmarks/scripts/collect_foundation_metrics.py
+	CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/python benchmarks/scripts/collect_foundation_metrics.py
 
 clean: ## Remove caches (not the virtualenv)
 	find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +

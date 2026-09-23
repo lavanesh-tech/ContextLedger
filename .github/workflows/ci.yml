@@ -14,9 +14,36 @@ concurrency:
 
 jobs:
   backend:
-    name: Lint, type-check, test
+    name: Lint, type-check, migrate, test
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: contextledger
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: contextledger
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U contextledger -d contextledger"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      # Throwaway credentials for the CI-only database container above.
+      CONTEXTLEDGER_DB_HOST: 127.0.0.1
+      CONTEXTLEDGER_DB_PORT: "5432"
+      CONTEXTLEDGER_DB_USER: contextledger
+      CONTEXTLEDGER_DB_PASSWORD: ci-only-password
+      CONTEXTLEDGER_DB_NAME: contextledger
+      CONTEXTLEDGER_TEST_DATABASE_URL: postgresql+asyncpg://contextledger:ci-only-password@127.0.0.1:5432/contextledger_test
+      # In CI a missing database is a failure, never a skip.
+      CONTEXTLEDGER_REQUIRE_DB_TESTS: "1"
+
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +68,21 @@ jobs:
         working-directory: backend
         run: mypy
 
-      - name: pytest
+      - name: Alembic upgrade to head
+        working-directory: backend
+        run: alembic upgrade head
+
+      - name: Alembic drift check (models vs migrations)
+        working-directory: backend
+        run: alembic check
+
+      - name: Alembic downgrade to base and back
+        working-directory: backend
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: pytest (unit + PostgreSQL integration)
         working-directory: backend
         run: pytest --cov --cov-report=term-missing
 
@@ -64,7 +105,7 @@ jobs:
       - name: Report image size
         run: docker image inspect contextledger-api:ci --format 'image size bytes={{.Size}}'
 
-      - name: Smoke test /api/v1/health
+      - name: Smoke test /api/v1/health (liveness needs no database)
         run: |
           docker run -d --name api -p 8000:8000 contextledger-api:ci
           for i in $(seq 1 30); do
@@ -73,3 +114,9 @@ jobs:
           done
           docker logs api
           exit 1
+
+      - name: Readiness reports 503 without a database
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/v1/health/ready)
+          echo "readiness status: $code"
+          test "$code" = "503"
