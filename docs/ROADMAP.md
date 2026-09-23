@@ -5,8 +5,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | Repository foundation: FastAPI, settings, JSON logging, correlation IDs, health, Docker Compose (Postgres+pgvector, Redis, Neo4j, Kafka), Ruff, mypy, pytest, CI stub | In review |
-| 2 | Async SQLAlchemy, session lifecycle, readiness checks, Alembic, DB tests | Planned |
+| 1 | Repository foundation: FastAPI, settings, JSON logging, correlation IDs, health, Docker Compose (Postgres+pgvector, Redis, Neo4j, Kafka), Ruff, mypy, pytest, CI stub | Done |
+| 2 | Async SQLAlchemy, session lifecycle, readiness checks, Alembic, DB tests | In review |
 | 3 | Organizations, users, memberships, roles, tenant ownership | Planned |
 | 4 | Temporal fact domain: Entity, Fact, FactVersion, FactSource, constraints, supersession | Planned |
 | 5 | Temporal resolution engine: current, valid-at-T, history, diff T1..T2, lineage | Planned |
@@ -43,3 +43,5 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - Split dependency installation into its own Docker layer for faster rebuilds (Phase 21).
 - Pin container images by digest (Phase 21).
 - Correlation ID header on Starlette-generated 500 responses (Phase 12).
+- Tune DB pool size and statement timeout with load-test measurements (Phase 27).
+- Restrict who can call the readiness endpoint, or trim its detail, in production (Phase 28).

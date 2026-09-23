@@ -45,4 +45,8 @@ in the README or a résumé can be traced to a JSON file in `benchmarks/results/
 
 ## Results so far
 
-None recorded yet. Run `make metrics` after the Phase 1 commit to record the first baseline.
+| Date (UTC) | Commit | Metric | Value | Environment | File |
+|---|---|---|---|---|---|
+| 2026-09-23 | `25dfc1a` | pytest tests collected | 34 (all passed) | local, macOS arm64, Python 3.12.14 | `benchmarks/results/foundation-20260923T000953Z-25dfc1a0.json` |
+| 2026-09-23 | `25dfc1a` | pytest duration | 0.404 s | same | same |
+| 2026-09-23 | `25dfc1a` | API image size (`docker image inspect`) | 59.5 MB | same | same |

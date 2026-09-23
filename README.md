@@ -13,16 +13,17 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 1 of 31, repository foundation.** Only what is listed under
+> **Status: Phase 2 of 31, database foundation.** Only what is listed under
 > "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
 ## What works today
 
 - FastAPI app factory with typed, validated settings (`pydantic-settings`)
 - Structured JSON logging with per-request correlation IDs (`X-Correlation-ID`)
-- `GET /api/v1/health` liveness endpoint, Swagger UI at `/docs`
+- `GET /api/v1/health` liveness and `GET /api/v1/health/ready` readiness (PostgreSQL + migration state), Swagger UI at `/docs`
+- Async SQLAlchemy 2 + asyncpg with a per-request session, Alembic migrations (revision `0001` enables pgvector)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft)
-- Ruff, mypy `--strict`, pytest + pytest-asyncio, GitHub Actions CI
+- Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
 ## Quick start
 
@@ -31,11 +32,11 @@ Requirements: Python 3.12+, Docker Desktop, GNU Make.
 ```bash
 cp .env.example .env          # then change the passwords
 make install                  # backend/.venv with dev tools
-make check                    # ruff + mypy + pytest
-make run                      # API on http://127.0.0.1:8000/docs
-
-make up                       # full Docker stack, waits for health checks
-make smoke                    # verify API, pgvector, Redis, Neo4j, Kafka answer
+make up                       # Docker stack + migrations, waits for health checks
+make check                    # ruff + mypy + pytest (DB tests use the running Postgres)
+make smoke                    # verify API, readiness, pgvector, Redis, Neo4j, Kafka
+make run                      # API from source on http://127.0.0.1:8000/docs
+make migrate                  # apply migrations from your Mac
 make down                     # stop (keeps data)
 ```
 
@@ -64,5 +65,10 @@ scripts/            Developer scripts (local stack smoke test)
 
 ## Measured results
 
-No benchmark results have been recorded yet. Every number that appears here
-will link to a JSON file in `benchmarks/results/` with its commit SHA and environment.
+Every number links to a JSON file in `benchmarks/results/` with its commit SHA
+and environment. See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) for the full table.
+
+| Metric | Value | Measured |
+|---|---|---|
+| API Docker image size | 59.5 MB | Phase 1, local macOS arm64 |
+| pytest suite | 34 tests, 0.40 s | Phase 1, local macOS arm64 |

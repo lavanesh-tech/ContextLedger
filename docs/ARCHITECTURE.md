@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phase 1)
+## What exists today (Phases 1–2)
 
 ```text
 HTTP request
@@ -63,12 +63,28 @@ uvicorn ──► FastAPI app (built by app.main.create_app)
               │     • echo it on the response header
               │     • log one "request.completed" JSON line with status + duration
               │
-              └─ /api/v1 router ──► GET /api/v1/health  (liveness only)
+              └─ /api/v1 router
+                    ├─ GET /api/v1/health        liveness: process is up (no I/O)
+                    └─ GET /api/v1/health/ready  readiness: PostgreSQL reachable
+                                                  and migrated? 200 / 503
 ```
 
-Local infrastructure (Docker Compose) is running and health-checked but **not
-yet used by the API**: PostgreSQL 17 + pgvector, Redis 7.4, Neo4j 5, and Kafka 4
-in KRaft mode.
+**Database layer (Phase 2).** `create_app()` builds one async SQLAlchemy engine
+(asyncpg driver, pooled, `pool_pre_ping`, server-side `statement_timeout`,
+`application_name`) and one session factory, stored on `app.state`. Creating the
+engine does not connect, so the API starts even if PostgreSQL is down; readiness
+reports it. Each request that needs the database gets its own `AsyncSession`
+through the `SessionDep` dependency; services own transaction boundaries
+(`async with session.begin():`). The lifespan disposes the engine on shutdown.
+
+**Migrations.** Alembic lives in `backend/migrations/` (named so it cannot
+shadow the `alembic` package). `env.py` builds the URL from settings, so no
+credentials are stored in `alembic.ini`. Revision IDs are sequential
+(`0001`, `0002`, ...). Migrations run as a separate one-off step
+(`make up`, `make migrate`, or a deploy job), never inside API startup, so several
+API replicas never race to migrate. Revision `0001` enables pgvector.
+
+Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 
 ## Backend layout
 
@@ -77,9 +93,10 @@ in KRaft mode.
 | `app/api` | Thin HTTP routers, dependencies | Phase 1+ |
 | `app/core` | Settings, logging, correlation IDs | Phase 1 |
 | `app/schemas` | Pydantic request/response models | Phase 1+ |
-| `app/models` | SQLAlchemy ORM models | Phase 2+ |
-| `app/repositories` | Tenant-scoped data access | Phase 2+ |
-| `app/services` | Use cases shared by REST and MCP | Phase 3+ |
+| `app/db` | Declarative base, engine, session factory, migration helpers | Phase 2 |
+| `app/models` | SQLAlchemy ORM models | Phase 3+ |
+| `app/repositories` | Tenant-scoped data access | Phase 3+ |
+| `app/services` | Use cases shared by REST and MCP (readiness since Phase 2) | Phase 2+ |
 | `app/domain` | Framework-free domain rules | Phase 4+ |
 | `app/temporal` | Temporal resolution engine | Phase 5 |
 | `app/providers` | OpenAI adapters (mocked in tests) | Phase 7 |

@@ -141,3 +141,62 @@ frameworks would double the build, test and security surface for no benefit.
 **Consequences.** The backend architecture does not change. Adding the UI later
 needs CORS configuration for the frontend origin (secure CORS is part of the
 security phases) and a frontend job in CI (lint, type-check, build).
+
+---
+
+## ADR-009: Async SQLAlchemy 2 + asyncpg, one engine per process, session per request
+
+**Status:** Accepted (Phase 2)
+
+**Context.** The API is async end to end. Blocking database calls on the event
+loop would stall every concurrent request.
+
+**Decision.**
+- SQLAlchemy 2.x async ORM with the **asyncpg** driver.
+- `create_app()` builds **one engine per process** (connection pool) and one
+  `async_sessionmaker`, stored on `app.state`; the lifespan disposes the engine.
+- Pool: `pool_pre_ping=True` (survives DB restarts/failovers), bounded
+  `pool_size`/`max_overflow`/`pool_timeout`, `pool_recycle`.
+- Server-side `statement_timeout` (30 s default) and `application_name` are set
+  per connection, so a runaway query cannot hold a pool slot forever and
+  connections are identifiable in `pg_stat_activity`.
+- **One `AsyncSession` per request** via the `SessionDep` dependency.
+  **Services own transactions** (`async with session.begin():`); routers never commit.
+- `expire_on_commit=False`, because implicit lazy loads after commit are illegal I/O in async code.
+- DB settings are separate fields (`CONTEXTLEDGER_DB_HOST`, `..._PASSWORD`, ...)
+  combined with `URL.create()`, which escapes special characters; they map
+  directly onto an AWS RDS Secrets Manager secret. The password is a `SecretStr`
+  and is **required** in staging and production.
+- Every `Mapped[datetime]` column is `TIMESTAMP WITH TIME ZONE`, and constraint
+  names follow a fixed naming convention so migrations can alter them later.
+
+**Consequences.** Creating the engine does not connect, so the API can start
+while PostgreSQL is down, and readiness reports it. Pool sizes are defaults for
+now and will be tuned with load-test measurements (Phase 27).
+
+---
+
+## ADR-010: Alembic migrations as a separate step; readiness semantics
+
+**Status:** Accepted (Phase 2)
+
+**Decision.**
+- Alembic lives in `backend/migrations/` (not `backend/alembic/`, which would
+  shadow the installed `alembic` package for Python and mypy).
+- `env.py` gets the URL from application settings. No credentials in `alembic.ini`.
+- Sequential revision IDs (`0001`, `0002`, ...). A unit test enforces one head, a
+  linear history and a `downgrade()` in every migration.
+- **Migrations never run inside API startup.** They run as a one-off step
+  (`make up` / `make migrate` locally, a deploy job in AWS later). This avoids
+  several replicas racing to migrate and keeps a failed migration from crash-looping the API.
+- Migrations ship inside the API image, so the same artifact runs them.
+- CI runs `alembic upgrade head`, `alembic check` (models vs migrations drift),
+  a full `downgrade base` / `upgrade head` round trip, then the tests.
+- **Readiness** (`GET /api/v1/health/ready`) returns 503 when PostgreSQL is
+  unreachable or has never been migrated. A revision *mismatch* is reported
+  (`up_to_date: false`) but still counts as ready, because expand/contract
+  migrations keep the previous release compatible during rolling deploys.
+  Errors expose only the exception type, never connection details.
+
+**Consequences.** Deployments need an explicit "migrate" step before rolling
+out new API instances, which is standard practice and will be modelled in the AWS phases.
