@@ -11,6 +11,7 @@ from app.models.evidence import Evidence, FactVersionEvidence
 from app.models.fact import Fact, FactVersion
 from app.models.membership import OrganizationMembership
 from app.models.organization import Organization
+from app.models.search import FactSearchDocument
 from app.models.source import FactSource
 from app.models.user import User
 
@@ -21,6 +22,7 @@ __all__ = [
     "Evidence",
     "Fact",
     "FactEmbedding",
+    "FactSearchDocument",
     "FactSource",
     "FactVersion",
     "FactVersionEvidence",
