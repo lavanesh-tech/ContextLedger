@@ -12,7 +12,12 @@ import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.engine import URL
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.pool import NullPool
 
 from app.main import create_app
@@ -60,3 +65,9 @@ async def db_client(db_app: FastAPI) -> AsyncIterator[AsyncClient]:
     transport = ASGITransport(app=db_app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client
+
+
+@pytest.fixture
+def sessions(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    """Session factory on a NullPool engine: every session gets its own real connection."""
+    return async_sessionmaker(engine, expire_on_commit=False)
