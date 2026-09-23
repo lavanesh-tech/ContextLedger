@@ -8,6 +8,7 @@ The middleware is written as plain ASGI rather than Starlette's
 and keeps the ``ContextVar`` visible to the downstream handler.
 """
 
+import json
 import logging
 import re
 import time
@@ -61,9 +62,12 @@ class CorrelationIdMiddleware:
         status_code = 500  # assumed until the app actually starts a response
         failed = False
 
+        response_started = False
+
         async def send_with_header(message: Message) -> None:
-            nonlocal status_code
+            nonlocal status_code, response_started
             if message["type"] == "http.response.start":
+                response_started = True
                 status_code = message["status"]
                 MutableHeaders(scope=message)[self.header_name] = correlation_id
             await send(message)
@@ -72,7 +76,33 @@ class CorrelationIdMiddleware:
             await self.app(scope, receive, send_with_header)
         except Exception:
             failed = True
-            raise
+            if response_started:  # too late to replace the response: let the server abort it
+                raise
+            # Answer here, inside the middleware, so even an unexpected error carries
+            # the correlation ID the client can quote. No internals are exposed.
+            status_code = 500
+            body = json.dumps(
+                {
+                    "type": "about:blank",
+                    "title": "Internal Server Error",
+                    "status": 500,
+                    "code": "internal_error",
+                    "detail": "An unexpected error occurred. Quote the correlation ID.",
+                    "correlation_id": correlation_id,
+                }
+            ).encode()
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 500,
+                    "headers": [
+                        (b"content-type", b"application/problem+json"),
+                        (b"content-length", str(len(body)).encode()),
+                        (self.header_name.lower().encode(), correlation_id.encode()),
+                    ],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
         finally:
             # Query strings are deliberately not logged: they can carry
             # identifiers or tokens that do not belong in log storage.

@@ -22,6 +22,7 @@ def test_values_are_read_from_prefixed_environment_variables(
     monkeypatch.setenv("CONTEXTLEDGER_EMBEDDING_PROVIDER", "openai")
     monkeypatch.setenv("CONTEXTLEDGER_OPENAI_API_KEY", "sk-test-not-real")
     monkeypatch.setenv("CONTEXTLEDGER_NEO4J_PASSWORD", "neo4j-from-env")
+    monkeypatch.setenv("CONTEXTLEDGER_AUTH_MODE", "jwt")
     monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "warning")
     monkeypatch.setenv("CONTEXTLEDGER_DOCS_ENABLED", "false")
 
@@ -136,3 +137,15 @@ def test_empty_environment_values_mean_not_set(monkeypatch: pytest.MonkeyPatch) 
 
     assert settings.mcp_organization_id is None
     assert settings.log_level == "INFO"
+
+
+def test_header_authentication_is_refused_in_deployed_environments() -> None:
+    with pytest.raises(ValidationError, match="development-headers"):
+        Settings(
+            _env_file=None,
+            environment=Environment.PRODUCTION,
+            db_password=SecretStr("x"),
+            embedding_provider="openai",
+            openai_api_key=SecretStr("sk-test-not-real"),
+            neo4j_password=SecretStr("y"),
+        )

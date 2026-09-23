@@ -97,9 +97,13 @@ async def test_unhandled_errors_are_logged_as_500(
 ) -> None:
     caplog.set_level(logging.INFO, logger="contextledger.http")
 
-    response = await client.get("/boom")
+    response = await client.get("/boom", headers={HEADER: "trace-500"})
 
     assert response.status_code == 500
+    assert response.headers[HEADER] == "trace-500"
+    assert response.headers["content-type"] == "application/problem+json"
+    assert response.json()["correlation_id"] == "trace-500"
+    assert "handler failed" not in response.text  # no internals leak
     [record] = [r for r in caplog.records if r.name == "contextledger.http"]
     assert record.levelno == logging.ERROR
     assert record.__dict__["http_status"] == 500

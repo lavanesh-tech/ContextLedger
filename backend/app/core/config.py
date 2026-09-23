@@ -19,6 +19,7 @@ API_V1_PREFIX: Final = "/api/v1"
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 EmbeddingProviderName = Literal["deterministic", "openai"]
+AuthMode = Literal["development-headers", "jwt"]
 PrivacyScopeName = Literal["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"]
 
 
@@ -104,6 +105,12 @@ class Settings(BaseSettings):
     graph_batch_size: int = Field(default=200, ge=1, le=5000)
     graph_poll_interval_seconds: float = Field(default=2.0, gt=0)
 
+    # --- API authentication --------------------------------------------------------
+    # "development-headers": the caller's user id is taken from the
+    # X-ContextLedger-User-Id header. Convenient for local development and tests,
+    # and therefore refused in staging and production. "jwt" arrives in Phase 13.
+    auth_mode: AuthMode = "development-headers"
+
     # --- MCP server (stdio) -----------------------------------------------------
     # The principal the local MCP server acts as. Tools never accept a tenant or
     # user from the model; membership is re-checked on every call. OAuth for the
@@ -144,6 +151,13 @@ class Settings(BaseSettings):
         deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
         if deployed and not self.neo4j_password.get_secret_value():
             raise ValueError("CONTEXTLEDGER_NEO4J_PASSWORD must be set in staging and production")
+        return self
+
+    @model_validator(mode="after")
+    def _forbid_header_auth_outside_local(self) -> Self:
+        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        if deployed and self.auth_mode == "development-headers":
+            raise ValueError("development-headers auth is not allowed in staging/production")
         return self
 
     @property

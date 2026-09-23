@@ -16,14 +16,29 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app import __version__
+from app.api.errors import install_error_handlers
 from app.api.v1.router import api_router
 from app.core.config import API_V1_PREFIX, Settings, get_settings
 from app.core.correlation import CorrelationIdMiddleware
 from app.core.logging import configure_logging
 from app.db.migrations import expected_schema_revision
 from app.db.session import create_engine, create_session_factory
+from app.provenance.graph import GraphReader, build_driver
+from app.providers.embeddings import build_embedding_provider, build_openai_http_client
 
 logger = logging.getLogger("contextledger")
+
+OPENAPI_TAGS = [
+    {"name": "health", "description": "Liveness and readiness."},
+    {"name": "users", "description": "User accounts (global, not tenant-owned)."},
+    {"name": "organizations", "description": "Tenants and their members (RBAC)."},
+    {"name": "sources", "description": "Where facts and evidence come from."},
+    {"name": "facts", "description": "Bitemporal facts: record versions, ask about any time."},
+    {"name": "evidence", "description": "Immutable, content-addressed supporting material."},
+    {"name": "search", "description": "Hybrid temporal retrieval (vector + full text)."},
+    {"name": "decisions", "description": "Frozen context snapshots and sealed decision receipts."},
+    {"name": "provenance", "description": "Impact analysis and lineage (Neo4j graph)."},
+]
 
 
 @asynccontextmanager
@@ -42,6 +57,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        if app.state.graph_driver is not None:
+            await app.state.graph_driver.close()
+        if app.state.http_client is not None:
+            await app.state.http_client.aclose()
         engine: AsyncEngine = app.state.db_engine
         await engine.dispose()
         logger.info("application.shutdown")
@@ -58,6 +77,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         docs_url="/docs" if settings.docs_enabled else None,
         redoc_url="/redoc" if settings.docs_enabled else None,
         openapi_url="/openapi.json" if settings.docs_enabled else None,
+        openapi_tags=OPENAPI_TAGS,
         lifespan=lifespan,
     )
     app.state.settings = settings
@@ -68,6 +88,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.db_sessionmaker = create_session_factory(engine)
     app.state.expected_schema_revision = expected_schema_revision(settings.alembic_ini_path)
 
+    # Created lazily too: no network I/O happens until a request needs it.
+    app.state.http_client = (
+        build_openai_http_client(settings) if settings.embedding_provider == "openai" else None
+    )
+    app.state.embedding_provider = build_embedding_provider(settings, app.state.http_client)
+    app.state.graph_driver = (
+        build_driver(settings) if settings.neo4j_password.get_secret_value() else None
+    )
+    app.state.graph_reader = (
+        None
+        if app.state.graph_driver is None
+        else GraphReader(app.state.graph_driver, settings.neo4j_database)
+    )
+
+    install_error_handlers(app)
     app.add_middleware(CorrelationIdMiddleware, header_name=settings.correlation_id_header)
     app.include_router(api_router, prefix=API_V1_PREFIX)
     return app
