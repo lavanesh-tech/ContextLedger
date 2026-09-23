@@ -50,3 +50,29 @@ in the README or a résumé can be traced to a JSON file in `benchmarks/results/
 | 2026-09-23 | `25dfc1a` | pytest tests collected | 34 (all passed) | local, macOS arm64, Python 3.12.14 | `benchmarks/results/foundation-20260923T000953Z-25dfc1a0.json` |
 | 2026-09-23 | `25dfc1a` | pytest duration | 0.404 s | same | same |
 | 2026-09-23 | `25dfc1a` | API image size (`docker image inspect`) | 59.5 MB | same | same |
+
+### Vector index comparison (Phase 7)
+
+Synthetic benchmark dataset: 20,000 clustered random vectors × 1536 dims, 200
+queries, top-10 by cosine distance. Local macOS arm64, PostgreSQL 17.11, pgvector
+0.8.6, single connection, client-side latency. Run on commit `817ee84` with the
+Phase 7 changes uncommitted (`working_tree_dirty: true`). File: `benchmarks/results/vector-index-20260923T012926-20000-817ee848.json`.
+
+| Strategy | Query setting | Build (s) | Index size (MB) | Recall@10 | p50 (ms) | p95 (ms) |
+|---|---|---|---|---|---|---|
+| exact (seq scan) | – | – | – | 1.000 | 65.75 | 68.34 |
+| IVFFlat (lists=141) | probes=1 | 2.19 | 165.0 | 0.724 | 1.08 | 1.47 |
+| IVFFlat (lists=141) | probes=10 | 2.19 | 165.0 | 1.000 | 2.19 | 3.32 |
+| IVFFlat (lists=141) | probes=20 | 2.19 | 165.0 | 1.000 | 3.33 | 3.94 |
+| HNSW (m=16, ef_construction=64) | ef_search=40 | 10.42 | 163.85 | 0.960 | 1.14 | 1.87 |
+| HNSW (m=16, ef_construction=64) | ef_search=100 | 10.42 | 163.85 | 0.966 | 1.19 | 1.87 |
+
+**Reading it honestly.** Both indexes are roughly 30–60× faster than an exact
+scan at this size. On this dataset, **IVFFlat built after all data was loaded
+beat HNSW on recall** (1.000 at probes=10 vs 0.966) and built about 5× faster.
+HNSW had the lower p50 at comparable recall and its recall barely moved between
+ef_search 40 and 100. The dataset is only 64 well-separated clusters, which
+suits IVFFlat's k-means lists. This benchmark does not test the scenario behind
+ADR-020: an index created on an empty table that grows afterwards. That is
+measured next, not assumed.
+

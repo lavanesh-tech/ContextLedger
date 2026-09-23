@@ -389,3 +389,94 @@ fact version cannot be silently changed or detached later.
 **Consequences.** Removing evidence (legal takedown, mistaken upload) needs an
 explicit, audited redaction process instead of DELETE. It is deferred to the
 security review (Phase 28) and noted in the roadmap.
+
+---
+
+## ADR-018: Embedding provider abstraction, offline by default
+
+**Status:** Accepted (Phase 7)
+
+**Context.** Embeddings are needed in every environment. Calling a paid API from
+unit tests, CI or a laptop without a key would make tests slow, flaky and costly.
+
+**Decision.**
+- An `EmbeddingProvider` protocol (`model_id`, `max_batch_size`, `embed`) with two
+  implementations: `DeterministicHashEmbeddingProvider` (feature hashing of words
+  and word pairs, L2-normalised, 1536 dimensions, offline) and
+  `OpenAIEmbeddingProvider`.
+- The OpenAI adapter uses `httpx` directly instead of the SDK: a small, fully
+  tested surface with explicit retry rules (408/409/429/5xx and transport errors,
+  `Retry-After`, jittered exponential backoff), strict response validation, and
+  errors that never include the key.
+- `deterministic` is the default. Settings validation requires a key when
+  `openai` is selected and forbids the deterministic provider in staging and
+  production.
+- Tests use `httpx.MockTransport`. No test calls the real API.
+- `model_id` (`openai:text-embedding-3-small`, `deterministic:hash-v1`) is stored
+  with every vector, so vectors from different models are never compared.
+
+**Consequences.** Local retrieval quality with the hash provider reflects word
+overlap, not meaning. Quality numbers (Phase 18) must state which provider
+produced them.
+
+---
+
+## ADR-019: PostgreSQL job queue for embeddings
+
+**Status:** Accepted (Phase 7)
+
+**Context.** Embedding must not happen inside the fact write transaction: an API
+outage would block fact recording. Kafka arrives in Phase 15, and even then a
+durable record of "what still needs embedding" is required.
+
+**Decision.**
+- `embedding_jobs` table, one row per `(fact_version_id, model)`.
+- Claiming uses `SELECT … FOR UPDATE SKIP LOCKED`, so concurrent workers get
+  disjoint jobs without a coordinator. A claim sets RUNNING, increments
+  `attempts` and issues a fresh lease token.
+- The provider is called outside any database transaction. Completion is
+  conditional on the lease token, so a worker whose lease expired cannot mark a
+  job done. Vectors are written with `ON CONFLICT DO NOTHING` and are never overwritten.
+- Leases older than `embedding_lease_seconds` are reclaimable (crash recovery).
+  A CHECK constraint ties RUNNING to having a lease.
+- Failures go back to PENDING with exponential backoff (`min(cap, base·2^(n-1))`)
+  and become FAILED after `embedding_max_attempts`, with the last error kept.
+- `enqueue_missing` reconciles from `fact_versions`, so the queue can always be
+  rebuilt from the source of truth.
+- Per-tenant reuse by content hash avoids paying twice for identical text.
+
+**Consequences.** Polling adds up to `embedding_poll_interval_seconds` of latency
+before a new version is searchable. Phase 15 can trigger the worker from Kafka
+events. Queue throughput is bounded by PostgreSQL, which is ample at this
+project's scale. A dedicated broker would only be justified by measurements.
+
+---
+
+## ADR-020: HNSW cosine index; `ann_` indexes outside autogenerate
+
+**Status:** Accepted (Phase 7)
+
+**Context.** pgvector offers IVFFlat and HNSW. Fact data starts empty and grows
+continuously.
+
+**Decision.**
+- HNSW with `vector_cosine_ops`, `m = 16`, `ef_construction = 64` (pgvector
+  defaults), named `ann_fact_embeddings_embedding_cosine`.
+- IVFFlat is rejected as the default: its lists are trained on the rows present
+  at build time, so an index built on an empty or small table degrades as data
+  grows and needs periodic rebuilds.
+- The benchmark (`make bench-vector`, synthetic benchmark dataset) records build
+  time, size, recall@10 and latency for exact, IVFFlat and HNSW, so the trade-off
+  is measured, not assumed. See [VECTOR_INDEXING.md](VECTOR_INDEXING.md).
+- Alembic cannot describe operator classes and index parameters faithfully, so
+  indexes prefixed `ann_` (like the existing `ex_` exclusion constraints) are
+  created in hand-written migrations and excluded from drift detection.
+- The `vector` column type is a small `UserDefinedType` using pgvector's text
+  format, so no extra client library is required.
+
+**Consequences.** HNSW builds are slower and use more memory. `hnsw.ef_search`
+is the query-time recall/latency knob, to be tuned with Phase 18 and Phase 27
+measurements. The first benchmark (static, pre-loaded synthetic data) favoured
+IVFFlat on recall and build time. The decision rests on the growing-table case,
+which must be measured before it is claimed. If IVFFlat still wins there, this
+ADR is revisited.

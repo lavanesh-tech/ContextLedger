@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–6)
+## What exists today (Phases 1–7)
 
 ```text
 HTTP request
@@ -165,6 +165,25 @@ when. A shared trigger function (`contextledger_forbid_modification`) makes both
 tables append-only, and composite foreign keys keep links inside one tenant.
 Phase 10 projects exactly these rows into the Neo4j provenance graph.
 
+**Embeddings (Phase 7).**
+
+```text
+FactVersion ──(embedding_jobs: PENDING → RUNNING → SUCCEEDED | FAILED)──► worker
+                                                                            │ render "fact-text-v1"
+                                                                            │ reuse tenant vector by SHA-256
+                                                                            │ provider.embed (outside transactions)
+                                                                            ▼
+                                         fact_embeddings (vector(1536), HNSW cosine index)
+```
+
+A separate worker process (`python -m app.workers.embeddings`, Compose service
+`worker`) claims jobs with `FOR UPDATE SKIP LOCKED` and lease tokens, retries
+with exponential backoff, and reclaims jobs from crashed workers. The provider
+is the offline deterministic one by default and OpenAI in staging and
+production. `EmbeddingRepository.nearest` is the tenant-scoped cosine search
+that Phase 8 combines with temporal filters. Details and the HNSW vs IVFFlat
+benchmark: [VECTOR_INDEXING.md](VECTOR_INDEXING.md).
+
 Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 
 ## Backend layout
@@ -180,8 +199,8 @@ Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 | `app/services` | Use cases shared by REST and MCP (readiness since Phase 2) | Phase 2+ |
 | `app/domain` | Framework-free rules: roles/permissions, tenant context, validation, errors | Phase 3+ |
 | `app/temporal` | Bitemporal value types and reference semantics | Phase 5 |
-| `app/providers` | OpenAI adapters (mocked in tests) | Phase 7 |
-| `app/workers` | Embedding and re-index jobs | Phase 7+ |
+| `app/providers` | Embedding providers: deterministic (offline) and OpenAI (mocked in tests) | Phase 7 |
+| `app/workers` | Embedding worker (Postgres job queue) | Phase 7 |
 | `app/retrieval` | Hybrid temporal RAG | Phase 8 |
 | `app/provenance` | Neo4j provenance graph | Phase 10 |
 | `app/mcp` | MCP server | Phase 11 |

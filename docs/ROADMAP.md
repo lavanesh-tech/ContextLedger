@@ -10,8 +10,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 3 | Organizations, users, memberships, roles, tenant ownership | Done |
 | 4 | Temporal fact domain: Entity, Fact, FactVersion, FactSource, constraints, supersession | Done |
 | 5 | Temporal resolution engine: current, valid-at-T, as-known-at-K, history, diff T1..T2, lineage | Done |
-| 6 | Sources and evidence: immutable, content-addressed evidence linked to fact versions | In review |
-| 7 | pgvector, embeddings, OpenAI provider, embedding jobs, HNSW vs IVFFlat | Planned |
+| 6 | Sources and evidence: immutable, content-addressed evidence linked to fact versions | Done |
+| 7 | pgvector, embeddings, OpenAI provider, embedding jobs, HNSW vs IVFFlat | In review |
 | 8 | Hybrid temporal RAG: vector + full-text + metadata + temporal + tenant filters | Planned |
 | 9 | Decision receipts: ContextSnapshot, Decision, DecisionFact | Planned |
 | 10 | Neo4j provenance graph and impact traversal | Planned |
@@ -48,3 +48,6 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - PostgreSQL Row-Level Security as a second tenant-isolation layer (evaluate in Phase 13 / 28).
 - Time-ordered UUIDv7 primary keys once the runtime supports them natively (index locality).
 - Audited redaction process for evidence that must be removed (legal takedown) (Phase 28).
+- Trigger the embedding worker from Kafka fact events instead of polling only (Phase 15).
+- Tune `hnsw.ef_search` from retrieval-quality and load-test measurements (Phases 18, 27).
+- Benchmark IVFFlat vs HNSW on a growing table (index built on a small prefix, then inserts) to confirm or revisit ADR-020.

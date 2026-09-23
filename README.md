@@ -13,7 +13,7 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 6 of 31, sources and evidence.** Only what is listed under
+> **Status: Phase 7 of 31, embeddings and vector indexing.** Only what is listed under
 > "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
 ## What works today
@@ -26,7 +26,8 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Bitemporal fact versions (valid time + transaction time): append-only history, automatic supersession, and PostgreSQL-enforced guarantees (no overlapping validity via an EXCLUDE constraint, an immutability trigger, tenant-safe composite foreign keys)
 - Deterministic temporal resolution: current value, value at time T, **what was known at time K**, history, changes between T1 and T2, lineage. A differential test checks the SQL engine against a pure-Python reference on random histories. See [docs/TEMPORAL.md](docs/TEMPORAL.md)
 - Provenance: immutable, content-addressed (SHA-256) evidence from each source, linked append-only to the exact fact versions it supports; recorded atomically with the version
-- Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft)
+- Embeddings: every fact version is embedded by a background worker (PostgreSQL job queue with `SKIP LOCKED`, leases, retries with backoff, per-tenant reuse of identical text) into pgvector with an HNSW cosine index. Offline deterministic provider by default; OpenAI adapter with retries and strict validation, tested without network calls. See [docs/VECTOR_INDEXING.md](docs/VECTOR_INDEXING.md)
+- Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API and embedding worker
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
 ## Quick start
@@ -40,6 +41,8 @@ make up                       # Docker stack + migrations, waits for health chec
 make check                    # ruff + mypy + pytest (DB tests use the running Postgres)
 make smoke                    # verify API, readiness, pgvector, Redis, Neo4j, Kafka
 make run                      # API from source on http://127.0.0.1:8000/docs
+make worker-once              # embed one batch of pending fact versions
+make bench-vector             # HNSW vs IVFFlat vs exact search (synthetic data)
 make migrate                  # apply migrations from your Mac
 make down                     # stop (keeps data)
 ```
@@ -66,6 +69,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Architecture decisions](docs/DECISIONS.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Temporal semantics](docs/TEMPORAL.md)
+- [Embeddings and vector indexing](docs/VECTOR_INDEXING.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 
 ## Measured results
