@@ -20,8 +20,10 @@ def expected_schema_revision(alembic_ini: Path) -> str | None:
 
 # Objects Alembic's autogenerate cannot represent in SQLAlchemy metadata, so
 # they are defined only in migrations (raw SQL) and excluded from drift checks.
-# "ex_" = PostgreSQL EXCLUDE constraints (and the GiST index backing them).
-UNMANAGED_NAME_PREFIXES: tuple[str, ...] = ("ex_",)
+# "ex_"  = PostgreSQL EXCLUDE constraints (and the GiST index backing them);
+# "ann_" = approximate-nearest-neighbour vector indexes (HNSW / IVFFlat), whose
+#          operator classes and build parameters Alembic cannot compare.
+UNMANAGED_NAME_PREFIXES: tuple[str, ...] = ("ex_", "ann_")
 
 
 def include_name(name: str | None, type_: str, parent_names: object) -> bool:
