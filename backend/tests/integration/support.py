@@ -115,3 +115,15 @@ def settings_for(url: URL) -> Settings:
         db_name=url.database or "",
         alembic_ini_path=ALEMBIC_INI,
     )
+
+
+NEO4J_URI_ENV = "CONTEXTLEDGER_TEST_NEO4J_URI"
+NEO4J_USER_ENV = "CONTEXTLEDGER_TEST_NEO4J_USER"
+NEO4J_PASSWORD_ENV = "CONTEXTLEDGER_TEST_NEO4J_PASSWORD"
+
+
+def get_test_neo4j() -> tuple[str, str, str]:
+    uri = os.environ.get(NEO4J_URI_ENV)
+    if not uri:
+        unavailable(f"{NEO4J_URI_ENV} is not set (use `make test` with `make up` running)")
+    return uri, os.environ.get(NEO4J_USER_ENV, "neo4j"), os.environ.get(NEO4J_PASSWORD_ENV, "")

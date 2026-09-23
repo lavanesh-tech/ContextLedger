@@ -220,7 +220,7 @@ async def test_receipt_tables_are_append_only(
     with pytest.raises(DBAPIError, match="append-only"):
         async with engine.begin() as connection:
             await connection.execute(
-                text(f"DELETE FROM {table} WHERE organization_id = :o"),  # noqa: S608
+                text(f"DELETE FROM {table} WHERE organization_id = :o"),
                 {"o": ctx.organization_id},
             )
 
