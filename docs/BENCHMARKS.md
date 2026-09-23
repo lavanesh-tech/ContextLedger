@@ -76,3 +76,24 @@ suits IVFFlat's k-means lists. This benchmark does not test the scenario behind
 ADR-020: an index created on an empty table that grows afterwards. That is
 measured next, not assumed.
 
+### Hybrid retrieval latency (Phase 8)
+
+Synthetic benchmark dataset (seeded entities, facts and multi-version histories),
+offline `deterministic:hash-v1` embeddings. End-to-end `RetrievalService.search`
+(permission checks, query embedding, one hybrid SQL statement, fusion,
+hydration), single client, sequential, 300 queries after 20 warm-up queries,
+70 % "now" and 30 % historical `valid_at`. Local macOS arm64, PostgreSQL 17 +
+pgvector 0.8.6 in Docker. Run on commit `1cf1d99` with the Phase 8 changes
+uncommitted.
+
+| Fact versions | p50 (ms) | p95 (ms) | p99 (ms) | Mean (ms) | Embed + HNSW build | Sanity: target in top-10 | File |
+|---|---|---|---|---|---|---|---|
+| 10,000 | 22.20 | 26.32 | 32.81 | 21.76 | 4.4 s | 97 / 117 | `benchmarks/results/retrieval-20260923T134834-10000-1cf1d99c.json` |
+| 100,000 | 56.78 | 81.37 | 93.18 | 56.32 | 91.2 s | 113 / 126 | `benchmarks/results/retrieval-20260923T135034-100000-1cf1d99c.json` |
+
+10× the data cost about 2.6× the median latency. The "target in top-10" column is
+a sanity check on synthetic questions ("What is the <property> of <entity>?"), not
+a retrieval-quality metric. Quality is measured in Phase 18. Not measured here:
+concurrent clients (Phase 27) and real OpenAI embeddings, whose API round trip
+adds network latency on top of these numbers.
+

@@ -13,7 +13,7 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 7 of 31, embeddings and vector indexing.** Only what is listed under
+> **Status: Phase 8 of 31, hybrid temporal retrieval.** Only what is listed under
 > "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
 ## What works today
@@ -27,6 +27,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Deterministic temporal resolution: current value, value at time T, **what was known at time K**, history, changes between T1 and T2, lineage. A differential test checks the SQL engine against a pure-Python reference on random histories. See [docs/TEMPORAL.md](docs/TEMPORAL.md)
 - Provenance: immutable, content-addressed (SHA-256) evidence from each source, linked append-only to the exact fact versions it supports; recorded atomically with the version
 - Embeddings: every fact version is embedded by a background worker (PostgreSQL job queue with `SKIP LOCKED`, leases, retries with backoff, per-tenant reuse of identical text) into pgvector with an HNSW cosine index. Offline deterministic provider by default; OpenAI adapter with retries and strict validation, tested without network calls. See [docs/VECTOR_INDEXING.md](docs/VECTOR_INDEXING.md)
+- Hybrid temporal retrieval: pgvector similarity + PostgreSQL full-text search in one statement, pre-filtered by tenant, "valid at T as known at K", role-capped privacy scope and metadata; Reciprocal Rank Fusion with an authority × confidence trust factor and a per-result score breakdown; full-text fallback when the embedding provider is down. See [docs/RETRIEVAL.md](docs/RETRIEVAL.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API and embedding worker
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -43,6 +44,7 @@ make smoke                    # verify API, readiness, pgvector, Redis, Neo4j, K
 make run                      # API from source on http://127.0.0.1:8000/docs
 make worker-once              # embed one batch of pending fact versions
 make bench-vector             # HNSW vs IVFFlat vs exact search (synthetic data)
+make bench-retrieval          # hybrid retrieval latency p50/p95/p99 (synthetic data)
 make migrate                  # apply migrations from your Mac
 make down                     # stop (keeps data)
 ```
@@ -70,6 +72,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Roadmap](docs/ROADMAP.md)
 - [Temporal semantics](docs/TEMPORAL.md)
 - [Embeddings and vector indexing](docs/VECTOR_INDEXING.md)
+- [Hybrid temporal retrieval](docs/RETRIEVAL.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 
 ## Measured results
@@ -81,3 +84,5 @@ and environment. See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) for the full table
 |---|---|---|
 | API Docker image size | 59.5 MB | Phase 1, local macOS arm64 |
 | pytest suite | 34 tests, 0.40 s | Phase 1, local macOS arm64 |
+| Hybrid retrieval latency, 10K fact versions (synthetic) | p50 22.2 ms, p95 26.3 ms | Phase 8, local macOS arm64 |
+| Hybrid retrieval latency, 100K fact versions (synthetic) | p50 56.8 ms, p95 81.4 ms | Phase 8, local macOS arm64 |

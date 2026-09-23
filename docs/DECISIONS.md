@@ -480,3 +480,70 @@ measurements. The first benchmark (static, pre-loaded synthetic data) favoured
 IVFFlat on recall and build time. The decision rests on the growing-table case,
 which must be measured before it is claimed. If IVFFlat still wins there, this
 ADR is revisited.
+
+---
+
+## ADR-021: Hybrid retrieval with pre-filtering and Reciprocal Rank Fusion
+
+**Status:** Accepted (Phase 8)
+
+**Context.** Pure vector search misses exact identifiers and rare words, and pure
+keyword search misses paraphrases. Every result must also respect tenant, time
+and privacy rules, and those must not depend on the model.
+
+**Decision.**
+- Two branches, vector (pgvector cosine, same embedding model only) and full text
+  (PostgreSQL `ts_rank_cd`). Both run in one SQL statement (`UNION ALL`) inside a
+  REPEATABLE READ, read-only transaction, so they see one snapshot.
+- Tenant, valid-at-T-as-known-at-K (Phase 5's `valid_at_condition`), privacy
+  scope and metadata filters are **pre-filters** inside each branch. With
+  `hnsw.iterative_scan = relaxed_order` (pgvector ≥ 0.8), HNSW keeps scanning
+  until enough rows pass them.
+- Fusion by Reciprocal Rank Fusion (k = 60), then a transparent trust factor
+  `authority/100 × confidence` weighted by `trust_weight` (default 0.3). The
+  scoring function is pure and unit tested. Every result carries its score breakdown.
+- The query is embedded outside any transaction. A provider failure degrades to
+  full text only and is reported in the result (`vector_search="unavailable"`).
+- No reranker yet. Phase 18 measures whether one earns its latency and cost.
+
+**Consequences.** RRF ignores score magnitudes: a barely-relevant rank-1 hit
+counts like a strong one. The branch candidate pool (4 × limit, 40–200) bounds
+the work per query. Latency is measured by `make bench-retrieval`.
+
+---
+
+## ADR-022: Full-text documents maintained by a database trigger
+
+**Status:** Accepted (Phase 8)
+
+**Context.** The searchable text needs the entity type, external id and property,
+which live in other tables. A generated column cannot join, and maintaining the
+document in application code would miss other write paths (bulk loads,
+backfills, future consumers).
+
+**Decision.**
+- `fact_search_documents` (one row per version, `tsvector`, GIN index) is filled
+  by an `AFTER INSERT` trigger on `fact_versions`. The migration backfills
+  existing versions. The table is append-only, like the versions it indexes.
+- The text is built by an `IMMUTABLE` SQL function frozen in migration 0006.
+  Migrations never import application code.
+- Configuration `english`. Questions are parsed with `plainto_tsquery` and their
+  terms OR-combined.
+
+**Consequences.** Changing the search text or configuration requires a new
+migration that re-creates the documents. Triggers are invisible to Alembic
+autogenerate, so they are documented here and covered by integration tests.
+
+---
+
+## ADR-023: Privacy visibility is capped by role and can only be narrowed
+
+**Status:** Accepted (Phase 8)
+
+**Decision.** VIEWER sees PUBLIC and INTERNAL, ENGINEER adds CONFIDENTIAL,
+ADMIN adds RESTRICTED. A request may lower the ceiling with `max_privacy_scope`
+(for example an external agent limited to PUBLIC) but never raise it. The role is
+the one read inside the retrieval transaction, not the caller's cached context.
+
+**Consequences.** Agent-specific scopes (an OAuth client allowed less than its
+user) are enforced in Phase 13 by passing a narrower `max_privacy_scope`.

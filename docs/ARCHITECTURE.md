@@ -49,7 +49,7 @@ schema, so the UI and the API cannot silently drift apart. See ADR-008.
 relationships for graph traversal; Redis holds disposable state; Kafka carries
 change events. Any of them can be rebuilt from PostgreSQL.
 
-## What exists today (Phases 1–7)
+## What exists today (Phases 1–8)
 
 ```text
 HTTP request
@@ -184,6 +184,16 @@ production. `EmbeddingRepository.nearest` is the tenant-scoped cosine search
 that Phase 8 combines with temporal filters. Details and the HNSW vs IVFFlat
 benchmark: [VECTOR_INDEXING.md](VECTOR_INDEXING.md).
 
+**Hybrid temporal retrieval (Phase 8).** `RetrievalService.search` embeds the
+question outside any transaction, then runs one SQL statement with two branches:
+pgvector cosine search on `fact_embeddings` and PostgreSQL full-text search on
+`fact_search_documents`, which a trigger fills for every new version. Tenant,
+valid-at-T-as-known-at-K, privacy scope (capped by the actor's current role) and
+metadata filters are pre-filters in both branches. The pure ranking module fuses
+the branches with Reciprocal Rank Fusion and a trust factor (authority ×
+confidence), and returns a score breakdown per result. If the provider is down,
+retrieval falls back to full text and says so. Details: [RETRIEVAL.md](RETRIEVAL.md).
+
 Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 
 ## Backend layout
@@ -201,7 +211,7 @@ Still running but not yet used by the API: Redis 7.4, Neo4j 5, Kafka 4 (KRaft).
 | `app/temporal` | Bitemporal value types and reference semantics | Phase 5 |
 | `app/providers` | Embedding providers: deterministic (offline) and OpenAI (mocked in tests) | Phase 7 |
 | `app/workers` | Embedding worker (Postgres job queue) | Phase 7 |
-| `app/retrieval` | Hybrid temporal RAG | Phase 8 |
+| `app/retrieval` | (reserved) retrieval lives in `domain/retrieval.py`, `repositories/retrieval.py`, `services/retrieval.py` | Phase 8 |
 | `app/provenance` | Neo4j provenance graph | Phase 10 |
 | `app/mcp` | MCP server | Phase 11 |
 | `app/events` | Kafka schemas, producers, consumers | Phase 15 |
