@@ -110,6 +110,15 @@ class Settings(BaseSettings):
     # X-ContextLedger-User-Id header. Convenient for local development and tests,
     # and therefore refused in staging and production. "jwt" arrives in Phase 13.
     auth_mode: AuthMode = "development-headers"
+    # ES256 private key (PEM) that signs access tokens. Empty: an ephemeral key is
+    # generated at startup (local/test only; tokens die with the process).
+    jwt_signing_key: SecretStr = SecretStr("")
+    jwt_key_id: str = Field(default="k1", pattern=r"^[A-Za-z0-9._-]{1,64}$")
+    # JSON object {"kid": "public PEM"} of retired keys still accepted (rotation).
+    jwt_previous_public_keys: SecretStr = SecretStr("{}")
+    jwt_issuer: str = Field(default="contextledger", min_length=1)
+    jwt_audience: str = Field(default="contextledger-api", min_length=1)
+    jwt_access_token_ttl_seconds: int = Field(default=900, ge=60, le=86_400)
 
     # --- MCP server (stdio) -----------------------------------------------------
     # The principal the local MCP server acts as. Tools never accept a tenant or
@@ -158,6 +167,8 @@ class Settings(BaseSettings):
         deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
         if deployed and self.auth_mode == "development-headers":
             raise ValueError("development-headers auth is not allowed in staging/production")
+        if deployed and not self.jwt_signing_key.get_secret_value():
+            raise ValueError("CONTEXTLEDGER_JWT_SIGNING_KEY must be set in staging and production")
         return self
 
     @property

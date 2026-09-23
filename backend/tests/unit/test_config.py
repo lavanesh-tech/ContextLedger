@@ -23,6 +23,7 @@ def test_values_are_read_from_prefixed_environment_variables(
     monkeypatch.setenv("CONTEXTLEDGER_OPENAI_API_KEY", "sk-test-not-real")
     monkeypatch.setenv("CONTEXTLEDGER_NEO4J_PASSWORD", "neo4j-from-env")
     monkeypatch.setenv("CONTEXTLEDGER_AUTH_MODE", "jwt")
+    monkeypatch.setenv("CONTEXTLEDGER_JWT_SIGNING_KEY", "-----BEGIN PRIVATE KEY-----test")
     monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "warning")
     monkeypatch.setenv("CONTEXTLEDGER_DOCS_ENABLED", "false")
 

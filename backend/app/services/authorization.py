@@ -26,4 +26,6 @@ async def require_permission(
         raise PermissionDeniedError(NOT_A_MEMBER)
     if not has_permission(membership.role, permission):
         raise PermissionDeniedError(f"role {membership.role} lacks permission {permission}")
+    if ctx.scopes is not None and permission not in ctx.scopes:
+        raise PermissionDeniedError(f"token scope does not include {permission}")
     return membership.role

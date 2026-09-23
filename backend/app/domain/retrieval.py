@@ -62,12 +62,15 @@ def normalize_query(query: str) -> str:
 
 
 def visible_privacy_scopes(
-    role: MembershipRole, requested_max: PrivacyScope | None = None
+    role: MembershipRole, *ceilings: PrivacyScope | None
 ) -> frozenset[PrivacyScope]:
-    """Scopes the actor may see: capped by role, optionally narrowed by the caller."""
+    """Scopes the actor may see: capped by role, and by every given ceiling
+    (a request's ``max_privacy_scope``, an agent token's ceiling...). Ceilings can
+    only narrow what the role allows, never widen it."""
     ceiling = PRIVACY_ORDER.index(ROLE_MAX_PRIVACY[role])
-    if requested_max is not None:
-        ceiling = min(ceiling, PRIVACY_ORDER.index(PrivacyScope(requested_max)))
+    for requested in ceilings:
+        if requested is not None:
+            ceiling = min(ceiling, PRIVACY_ORDER.index(PrivacyScope(requested)))
     return frozenset(PRIVACY_ORDER[: ceiling + 1])
 
 
