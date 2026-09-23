@@ -62,6 +62,9 @@ services:
   postgres:
     # Official PostgreSQL image with the pgvector extension compiled in.
     image: pgvector/pgvector:pg17
+    # Docker's default 64 MB /dev/shm is too small for parallel index builds
+    # (e.g. HNSW over 100K vectors needs ~530 MB of shared memory).
+    shm_size: 1gb
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-contextledger}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}

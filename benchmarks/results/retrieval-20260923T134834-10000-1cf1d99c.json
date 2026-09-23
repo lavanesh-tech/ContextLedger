@@ -1,0 +1,47 @@
+{
+  "benchmark": "hybrid_retrieval_latency",
+  "commit_sha": "1cf1d99c7fa62d9419a5c997770caaa35d3b12a8",
+  "working_tree_dirty": true,
+  "date": "2026-09-23T13:48:34+00:00",
+  "dataset": "synthetic benchmark dataset (seeded random entities, facts, versions)",
+  "dataset_size": 10000,
+  "environment": "local",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "postgres": "17.11 (Debian 17.11-1.pgdg12+2)",
+    "pgvector": "0.8.6"
+  },
+  "configuration": {
+    "row_counts": {
+      "entities": 1389,
+      "facts": 5553,
+      "fact_versions": 10000,
+      "fact_embeddings": 10000,
+      "fact_search_documents": 10000
+    },
+    "embedding_model": "deterministic:hash-v1",
+    "queries": 300,
+    "warmup_queries": 20,
+    "limit": 10,
+    "query_mix": "70% now / 30% historical valid_at (2/3 of those with known_at)",
+    "latency": "end-to-end RetrievalService.search, single client, sequential",
+    "load_seconds": 1.8,
+    "embed_and_index_seconds": 4.4
+  },
+  "results": {
+    "p50_ms": 22.2,
+    "p95_ms": 26.32,
+    "p99_ms": 32.81,
+    "mean_ms": 21.76,
+    "max_ms": 41.11,
+    "mean_vector_candidates": 40.0,
+    "mean_text_candidates": 38.8,
+    "queries_with_results": 300,
+    "sanity_target_in_top_10": {
+      "targeted_queries": 117,
+      "found": 97
+    }
+  }
+}

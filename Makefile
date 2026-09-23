@@ -16,7 +16,7 @@ TEST_DATABASE_URL ?= postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@
 .PHONY: help install lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
-        worker worker-once bench-vector
+        worker worker-once bench-vector bench-retrieval
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -105,6 +105,10 @@ metrics: ## Record foundation metrics (test count, image size) to benchmarks/res
 BENCH_ROWS ?= 20000
 bench-vector: ## HNSW vs IVFFlat vs exact search on a synthetic dataset (needs `make up`)
 	CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/python benchmarks/scripts/vector_index_benchmark.py --rows $(BENCH_ROWS)
+
+BENCH_FACT_VERSIONS ?= 10000
+bench-retrieval: ## Hybrid retrieval latency on a synthetic dataset (needs `make up`)
+	CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/python benchmarks/scripts/retrieval_benchmark.py --fact-versions $(BENCH_FACT_VERSIONS)
 
 clean: ## Remove caches (not the virtualenv)
 	find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +
