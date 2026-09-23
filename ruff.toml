@@ -22,7 +22,9 @@ select = [
 ]
 
 [lint.per-file-ignores]
-"backend/tests/**" = ["S101", "S105", "S106"]  # asserts; fake passwords in test data
+# Tests: asserts; fake passwords; seeded (non-crypto) random data; "x is not None and x.y"
+# assertions that narrow Optional types for mypy.
+"backend/tests/**" = ["S101", "S105", "S106", "S311", "PT018"]
 "benchmarks/scripts/**" = ["T20", "S603", "S607"]  # CLI script: prints and runs git/docker/pytest
 "backend/migrations/versions/**" = ["N999"]        # 0001_*.py file names are intentional
 
