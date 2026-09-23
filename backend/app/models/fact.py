@@ -81,6 +81,8 @@ class FactVersion(UUIDPrimaryKeyMixin, TenantOwnedMixin, Base):
         ),
         UniqueConstraint("fact_id", "version"),
         UniqueConstraint("fact_id", "id"),
+        # Target of tenant-safe composite FKs from evidence links (migration 0004).
+        UniqueConstraint("organization_id", "id"),
         UniqueConstraint("supersedes_id"),
         Index(
             "ix_fact_versions_organization_id_fact_id_valid_from",
