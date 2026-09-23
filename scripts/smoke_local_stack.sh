@@ -38,6 +38,9 @@ check pgvector docker compose exec -T postgres \
   psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -tAc \
   "SELECT 'cosine distance = ' || ('[1,0]'::vector <=> '[0,1]'::vector)"
 
+check worker docker compose exec -T worker python -c \
+  "import os, sys, time; age = time.time() - os.path.getmtime('/tmp/worker.heartbeat'); print(f'embedding worker heartbeat {age:.0f}s ago'); sys.exit(age >= 600)"
+
 check redis docker compose exec -T redis redis-cli ping
 
 check neo4j docker compose exec -T neo4j \

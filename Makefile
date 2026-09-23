@@ -15,7 +15,8 @@ TEST_DATABASE_URL ?= postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@
 
 .PHONY: help install lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
-        require-env up down down-volumes logs ps smoke docker-build metrics clean
+        require-env up down down-volumes logs ps smoke docker-build metrics clean \
+        worker worker-once bench-vector
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -48,6 +49,12 @@ check: lint typecheck test ## Everything CI runs, locally
 run: ## Run the API on your Mac with auto-reload on http://127.0.0.1:8000
 	cd $(BACKEND) && $(BIN)/uvicorn app.main:create_app --factory --reload --no-access-log --port 8000
 
+worker: ## Run the embedding worker on your Mac (loop; Ctrl+C to stop)
+	cd $(BACKEND) && $(BIN)/python -m app.workers.embeddings
+
+worker-once: ## Embed one batch of pending fact versions and exit
+	cd $(BACKEND) && $(BIN)/python -m app.workers.embeddings --once
+
 # --- Database migrations --------------------------------------------------------
 migrate: ## Apply all migrations to the local database (from your Mac)
 	cd $(BACKEND) && $(BIN)/alembic upgrade head
@@ -71,7 +78,7 @@ up: require-env ## Build, start data stores, run migrations, start the API
 	docker compose build api
 	docker compose up -d --wait postgres redis neo4j kafka
 	docker compose run --rm --no-deps api alembic upgrade head
-	docker compose up -d --wait api
+	docker compose up -d --wait api worker
 
 down: ## Stop the stack (keeps data volumes)
 	docker compose down
@@ -94,6 +101,10 @@ docker-build: ## Build the API image on its own
 # --- Benchmarks -----------------------------------------------------------------
 metrics: ## Record foundation metrics (test count, image size) to benchmarks/results/
 	CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/python benchmarks/scripts/collect_foundation_metrics.py
+
+BENCH_ROWS ?= 20000
+bench-vector: ## HNSW vs IVFFlat vs exact search on a synthetic dataset (needs `make up`)
+	CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/python benchmarks/scripts/vector_index_benchmark.py --rows $(BENCH_ROWS)
 
 clean: ## Remove caches (not the virtualenv)
 	find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +

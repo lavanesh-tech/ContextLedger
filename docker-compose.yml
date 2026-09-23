@@ -15,7 +15,8 @@ services:
   api:
     build:
       context: ./backend
-    environment:
+    image: contextledger-api:latest
+    environment: &backend-env
       CONTEXTLEDGER_ENVIRONMENT: ${CONTEXTLEDGER_ENVIRONMENT:-local}
       CONTEXTLEDGER_LOG_LEVEL: ${CONTEXTLEDGER_LOG_LEVEL:-INFO}
       CONTEXTLEDGER_LOG_JSON: ${CONTEXTLEDGER_LOG_JSON:-true}
@@ -26,8 +27,33 @@ services:
       CONTEXTLEDGER_DB_USER: ${POSTGRES_USER:-contextledger}
       CONTEXTLEDGER_DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       CONTEXTLEDGER_DB_NAME: ${POSTGRES_DB:-contextledger}
+      CONTEXTLEDGER_EMBEDDING_PROVIDER: ${CONTEXTLEDGER_EMBEDDING_PROVIDER:-deterministic}
+      CONTEXTLEDGER_EMBEDDING_MODEL: ${CONTEXTLEDGER_EMBEDDING_MODEL:-text-embedding-3-small}
+      CONTEXTLEDGER_OPENAI_API_KEY: ${CONTEXTLEDGER_OPENAI_API_KEY:-}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    # Embedding worker: same image, different command (see app/workers/embeddings.py).
+    # Reuses the image built for "api" (make up builds it once).
+    image: contextledger-api:latest
+    pull_policy: never
+    command: ["python", "-m", "app.workers.embeddings", "--heartbeat-file", "/tmp/worker.heartbeat"]
+    environment:
+      <<: *backend-env
+      CONTEXTLEDGER_DB_APPLICATION_NAME: contextledger-embedding-worker
+    # The image's HEALTHCHECK probes the API port; the worker has none, so it
+    # reports healthy while it keeps touching its heartbeat file.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/tmp/worker.heartbeat') < 600 else 1)"]
+      interval: 15s
+      timeout: 3s
+      start_period: 20s
+      retries: 3
     depends_on:
       postgres:
         condition: service_healthy
