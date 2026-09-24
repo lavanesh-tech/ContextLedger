@@ -694,3 +694,37 @@ already enforced in the services.
 **Consequences.** JWTs are not revocable by themselves. Immediate revocation
 comes from the per-request check, not from token lifetime. Short TTLs limit
 exposure if a check is ever skipped.
+
+---
+
+## ADR-029: Redis for derived and short-lived state, with a failure policy per feature
+
+**Status:** Accepted (Phase 14)
+
+**Context.** Several API processes, workers and MCP servers need shared
+short-lived state: cached search results, rate-limit counters, idempotency
+records, OAuth `state` and MCP session state. PostgreSQL could hold all of it,
+but that would put hot, disposable writes on the system of record.
+
+**Decision.**
+- Redis holds only derived, protective or short-lived state. Every key has a
+  TTL and nothing in it is authoritative.
+- One narrow store interface (`get`, `set` / `set NX`, `GETDEL`, `INCR` with a
+  creation-time TTL) and one contract suite, run against both the Redis and the
+  in-memory implementation.
+- The failure policy is chosen per feature: the cache and rate limits fail
+  open, idempotency keys and OAuth `state` fail closed.
+- The retrieval cache is keyed by organization, generation and the caller's
+  visible privacy scopes, and is consulted only after the PostgreSQL permission
+  check. Writers bump the generation. The TTL bounds staleness for everything
+  else. Decision snapshots bypass the cache.
+- Idempotency is implemented as ASGI middleware scoped to the verified caller.
+  It stores 2xx responses only and never records credential-issuing endpoints.
+- Values are serialized as JSON / Pydantic, never pickle.
+
+**Consequences.** Search results can be up to one TTL stale for writes that
+bypass the invalidation paths, and for "now" queries. Fixed-window limits
+allow bursts of up to twice the limit at window edges. Idempotency is
+at-most-once per key while the reservation lock holds, not exactly-once.
+Without `CONTEXTLEDGER_REDIS_URL` the in-memory store is correct only for a
+single process, which is why staging and production require the URL.

@@ -17,8 +17,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 10 | Neo4j provenance graph and impact traversal | Done |
 | 11 | MCP server and core tools | Done |
 | 12 | Complete REST API, standardized errors, Swagger, Postman | Done |
-| 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | In review |
-| 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | Planned |
+| 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | Done |
+| 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | In review |
 | 15 | Kafka events and idempotent consumers | Planned |
 | 16 | Contradiction detection | Planned |
 | 17 | Revocation impact | Planned |
@@ -56,3 +56,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - Relay the graph outbox through Kafka instead of polling (Phase 15); alert on outbox size / projection lag (Phase 20).
 - MCP over streamable HTTP authenticated with agent access tokens (MCP authorization spec) (Phase 21).
 - Human SSO through an external OIDC provider (JWKS verification) instead of dev tokens.
+- Tune rate limits and the retrieval-cache TTL from load tests; consider a sliding-window limiter (Phase 27).
+- Measure the retrieval-cache hit rate and latency with a real workload (Phases 20, 27).
+- Cache agent-revocation and membership checks in Redis only if load tests show they matter (Phase 27).
+- Authorization-code + PKCE flow for remote MCP clients using the OAuth state store (with the HTTP MCP transport).

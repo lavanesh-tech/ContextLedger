@@ -13,10 +13,14 @@ over the same services the REST API will use, so the rules are identical.
 | `get_entity_facts` | read | Every fact of one entity at a point in time; reports how many were withheld by privacy scope |
 | `get_fact_history` | read | Every version of every fact of an entity, as known at `known_at` |
 | `capture_decision_context` | write | Retrieve **and freeze** the context for a decision (returns `snapshot_id`) |
-| `record_decision` | write | Record the decision, citing `relied_on` fact versions from the snapshot; returns a sealed receipt |
+| `record_decision` | write | Record the decision, citing `relied_on` fact versions from the snapshot (`snapshot_id` defaults to the session's last capture); returns a sealed receipt |
 | `get_decision_receipt` | read | The full receipt, with `integrity_verified` |
 | `analyze_impact` | read | Decisions depending on a fact version, source or evidence (Neo4j) |
 | `get_decision_lineage` | read | What a decision rests on: versions, sources, evidence (Neo4j) |
+| `get_session_context` | read | What this session remembers: last snapshot, its fact versions, recent queries (Redis, expires after inactivity) |
+
+`search_facts` shares the retrieval cache with the REST API and reports
+`cache: hit | miss`. Session state is convenience only; see [REDIS.md](REDIS.md).
 
 Tools carry MCP annotations (`readOnlyHint`, `destructiveHint`) so clients can
 ask for confirmation before writes.

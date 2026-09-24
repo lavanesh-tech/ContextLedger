@@ -47,8 +47,12 @@ Every error is `application/problem+json`:
 | 404 | `not_found` | resource does not exist *in this organization* |
 | 409 | `conflict`, `invariant_violation` | duplicates; would leave the organization without an ADMIN |
 | 422 | `request_invalid` (with `errors[]`), `validation_failed` | malformed request; domain validation |
+| 400 | `idempotency_key_invalid` | malformed `Idempotency-Key` header |
+| 409 | `idempotency_key_in_use` | the first request with this key is still running (`Retry-After: 1`) |
+| 422 | `idempotency_key_reused` | the key was already used for a different request |
+| 429 | `rate_limited` | per-caller request budget exceeded (`Retry-After`, `RateLimit-Limit`) |
 | 500 | `internal_error` | unexpected; details only in server logs, find them with `correlation_id` |
-| 503 | `service_unavailable` | optional dependency (Neo4j) not configured |
+| 503 | `service_unavailable` | optional dependency (Neo4j) not configured; idempotency store unavailable |
 
 ## Authentication
 
@@ -65,6 +69,14 @@ TOKEN=$(curl -s -X POST localhost:8000/api/v1/auth/dev-token -H 'content-type: a
 curl -s -X POST localhost:8000/api/v1/organizations -H "Authorization: Bearer $TOKEN" \
   -H 'content-type: application/json' -d '{"name":"Acme","slug":"acme"}'
 ```
+
+## Safe retries and limits
+
+Send `Idempotency-Key: <unique value>` on a POST to make retries safe: a retry
+with the same key and body returns the first response (`Idempotent-Replayed:
+true`) without doing the work again. Each user and each agent has a request
+budget per minute; over it, the API answers 429 with `Retry-After`. Searches
+may be served from a cache (`"cache": "hit"`). Details: [REDIS.md](REDIS.md).
 
 ## Privacy on read
 

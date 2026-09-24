@@ -235,7 +235,14 @@ role, agent privacy ceilings narrow reads, and revocation and membership are
 re-checked on every request. A sweep test calls every tenant route as three
 kinds of outsider and requires 403. Details: [AUTH.md](AUTH.md).
 
-Still running but not yet used: Redis 7.4, Kafka 4 (KRaft).
+**Redis (Phase 14).** Shared, short-lived state only: a retrieval cache
+(checked after authorization, keyed by the caller's visible privacy scopes,
+invalidated by per-organization generations), per-principal rate limits,
+`Idempotency-Key` replay for POSTs, single-use OAuth `state`, and MCP session
+state. The cache and limiter fail open; idempotency and OAuth state fail
+closed. Details: [REDIS.md](REDIS.md).
+
+Still running but not yet used: Kafka 4 (KRaft).
 
 ## Backend layout
 
@@ -255,6 +262,7 @@ Still running but not yet used: Redis 7.4, Kafka 4 (KRaft).
 | `app/retrieval` | (reserved) retrieval lives in `domain/retrieval.py`, `repositories/retrieval.py`, `services/retrieval.py` | Phase 8 |
 | `app/provenance` | Neo4j provenance graph | Phase 10 |
 | `app/mcp` | MCP server | Phase 11 |
+| `app/cache` | Redis store, retrieval cache, rate limiter, idempotency middleware, OAuth state | Phase 14 |
 | `app/events` | Kafka schemas, producers, consumers | Phase 15 |
 | `app/telemetry` | OpenTelemetry, Prometheus | Phase 20 |
 

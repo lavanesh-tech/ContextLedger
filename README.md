@@ -30,9 +30,10 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Hybrid temporal retrieval: pgvector similarity + PostgreSQL full-text search in one statement, pre-filtered by tenant, "valid at T as known at K", role-capped privacy scope and metadata; Reciprocal Rank Fusion with an authority × confidence trust factor and a per-result score breakdown; full-text fallback when the embedding provider is down. See [docs/RETRIEVAL.md](docs/RETRIEVAL.md)
 - Decision receipts: the retrieved context is frozen at decision time; the decision records which of those facts it relied on (enforced by a foreign key); a canonical SHA-256 receipt hash is re-verified on every read; facts and evidence are shown exactly as known when the decision was made. See [docs/DECISION_RECEIPTS.md](docs/DECISION_RECEIPTS.md)
 - Neo4j provenance graph fed by a trigger-written transactional outbox (idempotent, order-independent, rebuildable projection); impact analysis ("which decisions depend on this source / version / evidence?") and decision lineage, tenant-scoped and privacy-aware. See [docs/PROVENANCE_GRAPH.md](docs/PROVENANCE_GRAPH.md)
-- MCP server (FastMCP, stdio) with eight tools for agents: search, point-in-time facts, history, capture context, record decision, receipts, impact and lineage. The tenant and user are fixed by configuration, never by the model, with an agent-level privacy ceiling. See [docs/MCP.md](docs/MCP.md)
+- MCP server (FastMCP, stdio) with nine tools for agents: search, point-in-time facts, history, capture context, record decision, receipts, impact, lineage and session context. The tenant and user are fixed by configuration, never by the model, with an agent-level privacy ceiling. See [docs/MCP.md](docs/MCP.md)
 - REST API for every capability, with RFC 9457 problem details (stable codes and correlation ids), Swagger UI, a committed OpenAPI document and a generated Postman collection. See [docs/API.md](docs/API.md)
 - Authentication and authorization: ES256 JWTs; AI agents as OAuth2 clients (client credentials) with scoped tokens, privacy ceilings, and revocation that takes effect before expiry; RBAC re-checked per request; an automatic sweep verifies every tenant route rejects other tenants. See [docs/AUTH.md](docs/AUTH.md)
+- Redis for shared short-lived state: a tenant- and privacy-aware retrieval cache invalidated by generation, distributed per-caller rate limiting, `Idempotency-Key` replay for POSTs, single-use OAuth state, and MCP session state, each with an explicit fail-open or fail-closed policy. See [docs/REDIS.md](docs/REDIS.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API and embedding worker
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -85,6 +86,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [MCP server](docs/MCP.md)
 - [REST API](docs/API.md)
 - [Authentication and authorization](docs/AUTH.md)
+- [Redis: cache, rate limits, idempotency, short-lived state](docs/REDIS.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 
 ## Measured results
