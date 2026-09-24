@@ -8,7 +8,8 @@ Pipeline:
 2. No authorized facts: the answer is ``insufficient_evidence`` and NO model is
    called (cheaper, and nothing to hallucinate from).
 3. The authorized facts are labelled F1..Fn and rendered into a versioned prompt.
-4. The generation provider is called with a strict JSON schema.
+4. A LangChain chain (ChatPromptTemplate | ContextLedgerChatModel) calls the
+   generation provider with a strict JSON schema.
 5. The structured output is validated, and its citations are checked against
    the facts that were actually supplied (``app/ai/grounding.py``).
 6. The result separates the answer, the citations (resolved to fact versions and
@@ -19,12 +20,16 @@ A provider failure raises ``AnswerGenerationError``: no answer is fabricated.
 The model never decides tenant, permission, time, version or provenance.
 """
 
+import json
 import logging
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 from uuid import UUID
+
+from langchain_core.messages import BaseMessage
 
 from app.ai.grounding import (
     AnswerStatus,
@@ -34,14 +39,10 @@ from app.ai.grounding import (
     parse_model_answer,
     render_facts,
 )
+from app.ai.orchestration.chains import grounded_answer_chain
+from app.ai.orchestration.chat_model import ContextLedgerChatModel
 from app.ai.prompts import get_prompt
-from app.ai.providers import (
-    ChatMessage,
-    GenerationError,
-    GenerationProvider,
-    GenerationRequest,
-    OutputSchema,
-)
+from app.ai.providers import GenerationError, GenerationProvider, MalformedGenerationError
 from app.domain.errors import ValidationFailedError
 from app.domain.facts import PrivacyScope
 from app.domain.tenancy import TenantContext
@@ -136,10 +137,13 @@ class GroundedAnswerService:
         temperature: float | None = 0.0,
     ) -> None:
         self._retrieve = retrieve
-        self._generator = generator
         self._prompt = get_prompt(prompt_version)
-        self._max_output_tokens = max_output_tokens
-        self._temperature = temperature
+        self._chain = grounded_answer_chain(
+            self._prompt,
+            ContextLedgerChatModel(
+                provider=generator, max_output_tokens=max_output_tokens, temperature=temperature
+            ),
+        )
 
     async def answer(self, ctx: TenantContext, query: AnswerQuery) -> GroundedAnswer:
         question = " ".join(query.question.split())
@@ -188,35 +192,21 @@ class GroundedAnswerService:
             )
 
         # 3-4. Versioned prompt over the authorized facts only.
-        request = GenerationRequest(
-            messages=[
-                ChatMessage("system", self._prompt.system),
-                ChatMessage(
-                    "user",
-                    self._prompt.render_user(
-                        question=question,
-                        valid_at=retrieval.valid_at.isoformat(),
-                        known_at=(
-                            retrieval.known_at.isoformat()
-                            if retrieval.known_at
-                            else "everything recorded so far"
-                        ),
-                        facts=render_facts(facts),
-                    ),
-                ),
-            ],
-            max_output_tokens=self._max_output_tokens,
-            temperature=self._temperature,
-            output_schema=(
-                OutputSchema("grounded_answer", self._prompt.output_schema)
-                if self._prompt.output_schema
-                else None
+        # LangChain chain: ChatPromptTemplate | ContextLedgerChatModel (-> GenerationProvider).
+        inputs = {
+            "question": question,
+            "valid_at": retrieval.valid_at.isoformat(),
+            "known_at": (
+                retrieval.known_at.isoformat()
+                if retrieval.known_at
+                else "everything recorded so far"
             ),
-        )
+            "facts": render_facts(facts),
+        }
         started = time.perf_counter()
         try:
-            result = await self._generator.generate(request)
-            model_answer = parse_model_answer(result.parsed_json())
+            message = await self._chain.ainvoke(inputs)
+            model_answer = parse_model_answer(_json_content(message))
         except GenerationError as exc:
             logger.warning(
                 "answers.generation_failed",
@@ -229,19 +219,21 @@ class GroundedAnswerService:
             raise AnswerGenerationError(
                 "the language model could not produce an answer", cause=type(exc).__name__
             ) from exc
+        meta = message.response_metadata
+        usage = getattr(message, "usage_metadata", None) or {}
 
         # 5. Deterministic citation check against the supplied facts.
         check = check_answer(model_answer, facts)
         generation = GenerationInfo(
-            provider=result.provider,
-            model=result.model,
+            provider=str(meta.get("provider", "unknown")),
+            model=str(meta.get("model", "unknown")),
             prompt_version=self._prompt.version,
             prompt_fingerprint=self._prompt.fingerprint,
-            input_tokens=result.usage.input_tokens,
-            output_tokens=result.usage.output_tokens,
+            input_tokens=int(usage.get("input_tokens", 0)),
+            output_tokens=int(usage.get("output_tokens", 0)),
             latency_ms=round((time.perf_counter() - started) * 1000, 2),
-            attempts=result.attempts,
-            finish_reason=result.finish_reason,
+            attempts=int(meta.get("attempts", 1)),
+            finish_reason=str(meta.get("finish_reason", "unknown")),
         )
         logger.info(
             "answers.generated",
@@ -252,9 +244,9 @@ class GroundedAnswerService:
                 "citations": len(check.cited),
                 "rejected_citations": len(check.rejected_labels),
                 "prompt_version": self._prompt.version,
-                "model": result.model,
-                "input_tokens": result.usage.input_tokens,
-                "output_tokens": result.usage.output_tokens,
+                "model": generation.model,
+                "input_tokens": generation.input_tokens,
+                "output_tokens": generation.output_tokens,
             },
         )
         answered = check.status is AnswerStatus.ANSWERED
@@ -271,6 +263,15 @@ class GroundedAnswerService:
             generation=generation,
             supplied_fact_version_ids=[f.fact_version_id for f in facts],
         )
+
+
+def _json_content(message: BaseMessage) -> Any:
+    if not isinstance(message.content, str):
+        raise MalformedGenerationError("the model returned non-text content")
+    try:
+        return json.loads(message.content)
+    except json.JSONDecodeError as exc:
+        raise MalformedGenerationError("the model did not return valid JSON") from exc
 
 
 def _citation(fact: PackedFact) -> Citation:
