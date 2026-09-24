@@ -1,0 +1,557 @@
+{
+  "name": "grounded-answers",
+  "version": "1.0.0",
+  "synthetic": true,
+  "description": "SYNTHETIC evaluation dataset for grounded answers over bitemporal facts. Every case builds its own isolated organization. Times are hours after 2026-01-15T09:00Z.",
+  "cases": [
+    {
+      "id": "temporal-01",
+      "category": "temporal",
+      "question": "What was the credit limit of customer-991?",
+      "facts": [
+        {
+          "key": "limit_old",
+          "property": "credit_limit",
+          "value": 2150,
+          "hours": 0
+        },
+        {
+          "key": "limit_new",
+          "property": "credit_limit",
+          "value": 5375,
+          "hours": 5
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "2150"
+        ],
+        "answer_excludes": [
+          "5375"
+        ],
+        "cited_keys": [
+          "limit_old"
+        ],
+        "forbidden_in_context": [
+          "5375"
+        ]
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "temporal-02",
+      "category": "temporal",
+      "question": "What is the credit limit of customer-991?",
+      "facts": [
+        {
+          "key": "limit_old",
+          "property": "credit_limit",
+          "value": 2150,
+          "hours": 0
+        },
+        {
+          "key": "limit_new",
+          "property": "credit_limit",
+          "value": 5375,
+          "hours": 5
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "5375"
+        ],
+        "answer_excludes": [
+          "2150"
+        ],
+        "cited_keys": [
+          "limit_new"
+        ],
+        "forbidden_in_context": [
+          "2150"
+        ]
+      },
+      "valid_at_hours": 6
+    },
+    {
+      "id": "temporal-03",
+      "category": "temporal",
+      "question": "What was customer-991's credit limit right when the increase took effect?",
+      "facts": [
+        {
+          "key": "limit_old",
+          "property": "credit_limit",
+          "value": 2150,
+          "hours": 0
+        },
+        {
+          "key": "limit_new",
+          "property": "credit_limit",
+          "value": 5375,
+          "hours": 5
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "5375"
+        ],
+        "cited_keys": [
+          "limit_new"
+        ],
+        "forbidden_in_context": [
+          "2150"
+        ]
+      },
+      "valid_at_hours": 5
+    },
+    {
+      "id": "temporal-04",
+      "category": "temporal",
+      "question": "Which city did customer-991 ship to?",
+      "facts": [
+        {
+          "key": "city_1",
+          "property": "shipping_city",
+          "value": "Lisbon",
+          "hours": 0
+        },
+        {
+          "key": "city_2",
+          "property": "shipping_city",
+          "value": "Rotterdam",
+          "hours": 24
+        },
+        {
+          "key": "city_3",
+          "property": "shipping_city",
+          "value": "Montreal",
+          "hours": 48
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "Rotterdam"
+        ],
+        "answer_excludes": [
+          "Lisbon",
+          "Montreal"
+        ],
+        "cited_keys": [
+          "city_2"
+        ],
+        "forbidden_in_context": [
+          "Lisbon",
+          "Montreal"
+        ]
+      },
+      "valid_at_hours": 30
+    },
+    {
+      "id": "temporal-05",
+      "category": "temporal",
+      "question": "Which city does customer-991 ship to?",
+      "facts": [
+        {
+          "key": "city_1",
+          "property": "shipping_city",
+          "value": "Lisbon",
+          "hours": 0
+        },
+        {
+          "key": "city_2",
+          "property": "shipping_city",
+          "value": "Rotterdam",
+          "hours": 24
+        },
+        {
+          "key": "city_3",
+          "property": "shipping_city",
+          "value": "Montreal",
+          "hours": 48
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "Montreal"
+        ],
+        "cited_keys": [
+          "city_3"
+        ],
+        "forbidden_in_context": [
+          "Lisbon",
+          "Rotterdam"
+        ]
+      },
+      "valid_at_hours": 72
+    },
+    {
+      "id": "superseded-01",
+      "category": "superseded",
+      "question": "What payment terms applied to customer-991?",
+      "facts": [
+        {
+          "key": "terms_old",
+          "property": "payment_terms",
+          "value": "Net 45",
+          "hours": 0
+        },
+        {
+          "key": "terms_new",
+          "property": "payment_terms",
+          "value": "Net 15",
+          "hours": 10
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "45"
+        ],
+        "answer_excludes": [
+          "Net 15"
+        ],
+        "cited_keys": [
+          "terms_old"
+        ],
+        "forbidden_in_context": [
+          "Net 15"
+        ]
+      },
+      "valid_at_hours": 2
+    },
+    {
+      "id": "superseded-02",
+      "category": "superseded",
+      "question": "What are customer-991's payment terms now?",
+      "facts": [
+        {
+          "key": "terms_old",
+          "property": "payment_terms",
+          "value": "Net 45",
+          "hours": 0
+        },
+        {
+          "key": "terms_new",
+          "property": "payment_terms",
+          "value": "Net 15",
+          "hours": 10
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "15"
+        ],
+        "answer_excludes": [
+          "Net 45"
+        ],
+        "cited_keys": [
+          "terms_new"
+        ],
+        "forbidden_in_context": [
+          "Net 45"
+        ]
+      },
+      "valid_at_hours": 12
+    },
+    {
+      "id": "insufficient-01",
+      "category": "insufficient_evidence",
+      "question": "When did customer-991 last make a payment?",
+      "facts": [
+        {
+          "key": "limit",
+          "property": "credit_limit",
+          "value": 5375,
+          "hours": 0
+        }
+      ],
+      "expect": {
+        "status": "insufficient_evidence"
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "insufficient-02",
+      "category": "insufficient_evidence",
+      "question": "What was the credit limit of customer-991?",
+      "facts": [
+        {
+          "key": "limit",
+          "property": "credit_limit",
+          "value": 5375,
+          "hours": 5
+        }
+      ],
+      "expect": {
+        "status": "insufficient_evidence",
+        "forbidden_in_context": [
+          "5375"
+        ]
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "insufficient-03",
+      "category": "insufficient_evidence",
+      "question": "Who is customer-991's account manager?",
+      "facts": [
+        {
+          "key": "city",
+          "property": "shipping_city",
+          "value": "Lisbon",
+          "hours": 0
+        },
+        {
+          "key": "terms",
+          "property": "payment_terms",
+          "value": "Net 45",
+          "hours": 0
+        }
+      ],
+      "expect": {
+        "status": "insufficient_evidence"
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "isolation-01",
+      "category": "tenant_isolation",
+      "question": "What is the credit limit of customer-991?",
+      "facts": [
+        {
+          "key": "other_limit",
+          "property": "credit_limit",
+          "value": 987654,
+          "hours": 0,
+          "tenant": "other"
+        }
+      ],
+      "expect": {
+        "status": "insufficient_evidence",
+        "forbidden_in_context": [
+          "987654"
+        ]
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "isolation-02",
+      "category": "tenant_isolation",
+      "question": "What is the credit limit of customer-991?",
+      "facts": [
+        {
+          "key": "own",
+          "property": "credit_limit",
+          "value": 2150,
+          "hours": 0
+        },
+        {
+          "key": "other_limit",
+          "property": "credit_limit",
+          "value": 987654,
+          "hours": 0,
+          "tenant": "other"
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "2150"
+        ],
+        "answer_excludes": [
+          "987654"
+        ],
+        "cited_keys": [
+          "own"
+        ],
+        "forbidden_in_context": [
+          "987654"
+        ]
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "privacy-01",
+      "category": "privacy",
+      "question": "What do the risk notes say about customer-991?",
+      "facts": [
+        {
+          "key": "risk",
+          "property": "risk_notes",
+          "value": "fraud review open since March",
+          "hours": 0,
+          "privacy_scope": "CONFIDENTIAL"
+        }
+      ],
+      "expect": {
+        "status": "insufficient_evidence",
+        "forbidden_in_context": [
+          "fraud review"
+        ]
+      },
+      "valid_at_hours": 1,
+      "caller_role": "VIEWER"
+    },
+    {
+      "id": "privacy-02",
+      "category": "privacy",
+      "question": "What do the risk notes say about customer-991?",
+      "facts": [
+        {
+          "key": "risk",
+          "property": "risk_notes",
+          "value": "fraud review open since March",
+          "hours": 0,
+          "privacy_scope": "CONFIDENTIAL"
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "fraud review"
+        ],
+        "cited_keys": [
+          "risk"
+        ]
+      },
+      "valid_at_hours": 1,
+      "caller_role": "ADMIN"
+    },
+    {
+      "id": "contradiction-01",
+      "category": "contradiction",
+      "question": "What credit limit applies to customer-991?",
+      "facts": [
+        {
+          "key": "billing",
+          "property": "credit_limit",
+          "value": 5375,
+          "hours": 0,
+          "source": "billing-db"
+        },
+        {
+          "key": "crm",
+          "property": "crm_credit_limit",
+          "value": 4200,
+          "hours": 0,
+          "source": "crm-export",
+          "authority": 40,
+          "confidence": "0.600"
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "5375",
+          "4200"
+        ],
+        "cited_keys": [
+          "billing",
+          "crm"
+        ]
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "contradiction-02",
+      "category": "contradiction",
+      "question": "Which email address should be used for customer-991?",
+      "facts": [
+        {
+          "key": "email_erp",
+          "property": "billing_email",
+          "value": "ap@acme.example",
+          "hours": 0,
+          "source": "billing-db"
+        },
+        {
+          "key": "email_crm",
+          "property": "contact_email",
+          "value": "finance@acme.example",
+          "hours": 0,
+          "source": "crm-export",
+          "authority": 40
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "ap@acme.example",
+          "finance@acme.example"
+        ],
+        "cited_keys": [
+          "email_erp",
+          "email_crm"
+        ]
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "citation-01",
+      "category": "citation",
+      "question": "What are customer-991's credit limit and payment terms?",
+      "facts": [
+        {
+          "key": "limit",
+          "property": "credit_limit",
+          "value": 5375,
+          "hours": 0
+        },
+        {
+          "key": "terms",
+          "property": "payment_terms",
+          "value": "Net 45",
+          "hours": 0
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "5375",
+          "45"
+        ],
+        "cited_keys": [
+          "limit",
+          "terms"
+        ]
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "citation-02",
+      "category": "citation",
+      "question": "Where does customer-991 ship to and what is its credit limit?",
+      "facts": [
+        {
+          "key": "city",
+          "property": "shipping_city",
+          "value": "Lisbon",
+          "hours": 0
+        },
+        {
+          "key": "limit",
+          "property": "credit_limit",
+          "value": 2150,
+          "hours": 0
+        }
+      ],
+      "expect": {
+        "status": "answered",
+        "answer_contains": [
+          "Lisbon",
+          "2150"
+        ],
+        "cited_keys": [
+          "city",
+          "limit"
+        ]
+      },
+      "valid_at_hours": 1
+    }
+  ]
+}
