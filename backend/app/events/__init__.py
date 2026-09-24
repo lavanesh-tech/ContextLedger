@@ -1,1 +1,1 @@
-"""Kafka event schemas, producers and idempotent consumers. Populated in Phase 15."""
+"""Domain events: envelope and schemas, Kafka adapters, idempotent consumers (Phase 15)."""

@@ -41,6 +41,29 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
+      kafka:
+        image: apache/kafka:4.0.0
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+          KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+          KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+        ports:
+          - 9092:9092
+        options: >-
+          --health-cmd "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 20
+          --health-start-period 20s
       neo4j:
         image: neo4j:5.26-community
         env:
@@ -66,6 +89,7 @@ jobs:
       CONTEXTLEDGER_TEST_NEO4J_URI: bolt://127.0.0.1:7687
       CONTEXTLEDGER_TEST_NEO4J_PASSWORD: ci-only-password
       CONTEXTLEDGER_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+      CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS: 127.0.0.1:9092
       # In CI a missing database is a failure, never a skip.
       CONTEXTLEDGER_REQUIRE_DB_TESTS: "1"
 

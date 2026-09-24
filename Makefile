@@ -19,11 +19,13 @@ REDIS_PASSWORD ?=
 REDIS_PORT ?= 6379
 # Database 15: tests never touch the database the local stack uses (0).
 TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.0.1:$(REDIS_PORT)/15'
+KAFKA_PORT ?= 9092
+TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)'
 
 .PHONY: help install lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
-        worker worker-once graph-projector graph-once mcp api-docs jwt-key bench-vector bench-retrieval
+        worker worker-once graph-projector graph-once event-relay event-consumers kafka-topics mcp api-docs jwt-key bench-vector bench-retrieval
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -46,7 +48,7 @@ typecheck: ## mypy --strict
 	cd $(BACKEND) && $(BIN)/mypy
 
 test: ## All tests with coverage (database tests need `make up` running)
-	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(TEST_NEO4J_ENV) $(TEST_REDIS_ENV) $(BIN)/pytest --cov --cov-report=term-missing
+	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(TEST_NEO4J_ENV) $(TEST_REDIS_ENV) $(TEST_KAFKA_ENV) $(BIN)/pytest --cov --cov-report=term-missing
 
 test-unit: ## Only tests that need no database
 	cd $(BACKEND) && $(BIN)/pytest -m "not integration"
@@ -67,6 +69,15 @@ graph-projector: ## Run the Neo4j graph projector on your Mac (loop; Ctrl+C to s
 
 graph-once: ## Project everything pending into Neo4j and exit
 	cd $(BACKEND) && CONTEXTLEDGER_NEO4J_PASSWORD='$(NEO4J_PASSWORD)' $(BIN)/python -m app.workers.graph --once
+
+event-relay: ## Publish the event outbox to Kafka on your Mac (loop; Ctrl+C to stop)
+	cd $(BACKEND) && CONTEXTLEDGER_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)' $(BIN)/python -m app.workers.event_relay
+
+event-consumers: ## Run the Kafka event consumers on your Mac (loop; Ctrl+C to stop)
+	cd $(BACKEND) && CONTEXTLEDGER_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)' $(BIN)/python -m app.workers.event_consumers
+
+kafka-topics: ## Create the event topics and their dead-letter topics (idempotent)
+	docker compose run --rm --no-deps event-relay python -c "import asyncio; from app.core.config import get_settings; from app.events.kafka import ensure_topics; print(asyncio.run(ensure_topics(get_settings())))"
 
 mcp: ## Run the MCP server over stdio (needs CONTEXTLEDGER_MCP_ORGANIZATION_ID / _USER_ID)
 	cd $(BACKEND) && CONTEXTLEDGER_NEO4J_PASSWORD='$(NEO4J_PASSWORD)' $(BIN)/python -m app.mcp.server
@@ -100,7 +111,7 @@ up: require-env ## Build, start data stores, run migrations, start the API
 	docker compose build api
 	docker compose up -d --wait postgres redis neo4j kafka
 	docker compose run --rm --no-deps api alembic upgrade head
-	docker compose up -d --wait api worker graph-projector
+	docker compose up -d --wait api worker graph-projector event-relay event-consumers
 
 down: ## Stop the stack (keeps data volumes)
 	docker compose down
