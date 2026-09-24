@@ -97,6 +97,19 @@ class Settings(BaseSettings):
     openai_timeout_seconds: float = Field(default=30.0, gt=0)
     openai_max_retries: int = Field(default=3, ge=0, le=10)
 
+    # --- LLM generation (grounded answers, agent workflows) --------------------------
+    # "disabled" (default): answer and agent endpoints report 503; nothing calls a
+    # model. "openai": Chat Completions with CONTEXTLEDGER_OPENAI_API_KEY.
+    llm_provider: Literal["disabled", "openai"] = "disabled"
+    openai_chat_model: str = Field(default="gpt-4o-mini", min_length=1, max_length=100)
+    # Deadline for one generation call, retries included.
+    llm_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    llm_max_retries: int = Field(default=2, ge=0, le=5)
+    # Cost control: hard cap on output tokens per call.
+    llm_max_output_tokens: int = Field(default=800, ge=16, le=8000)
+    # None: the provider's default (some models accept only their default).
+    llm_temperature: float | None = Field(default=0.0, ge=0, le=2)
+
     # --- Neo4j (provenance graph, a projection of PostgreSQL) -------------------
     neo4j_uri: str = Field(default="bolt://localhost:7687", pattern=r"^(bolt|neo4j)(\+s|\+ssc)?://")
     neo4j_user: str = Field(default="neo4j", min_length=1)
@@ -183,6 +196,12 @@ class Settings(BaseSettings):
         deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
         if deployed and self.embedding_provider != "openai":
             raise ValueError("staging and production must use the openai embedding provider")
+        return self
+
+    @model_validator(mode="after")
+    def _require_key_for_generation(self) -> Self:
+        if self.llm_provider == "openai" and not self.openai_api_key.get_secret_value():
+            raise ValueError("CONTEXTLEDGER_OPENAI_API_KEY is required when llm_provider is openai")
         return self
 
     @model_validator(mode="after")
