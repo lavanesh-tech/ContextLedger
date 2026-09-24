@@ -109,6 +109,9 @@ class Settings(BaseSettings):
     llm_max_output_tokens: int = Field(default=800, ge=16, le=8000)
     # None: the provider's default (some models accept only their default).
     llm_temperature: float | None = Field(default=0.0, ge=0, le=2)
+    # Prompt used by POST /answers (see app/ai/prompts). Compare versions with the
+    # evaluation suite before changing the default.
+    llm_answer_prompt_version: str = Field(default="grounded-answer-v2", min_length=1)
 
     # --- Neo4j (provenance graph, a projection of PostgreSQL) -------------------
     neo4j_uri: str = Field(default="bolt://localhost:7687", pattern=r"^(bolt|neo4j)(\+s|\+ssc)?://")
@@ -202,6 +205,14 @@ class Settings(BaseSettings):
     def _require_key_for_generation(self) -> Self:
         if self.llm_provider == "openai" and not self.openai_api_key.get_secret_value():
             raise ValueError("CONTEXTLEDGER_OPENAI_API_KEY is required when llm_provider is openai")
+        return self
+
+    @model_validator(mode="after")
+    def _prompt_version_must_exist(self) -> Self:
+        from app.ai.prompts import prompt_versions  # local: prompts import nothing from config
+
+        if self.llm_answer_prompt_version not in prompt_versions("grounded-answer"):
+            raise ValueError(f"unknown answer prompt {self.llm_answer_prompt_version!r}")
         return self
 
     @model_validator(mode="after")

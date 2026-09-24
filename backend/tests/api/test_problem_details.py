@@ -128,6 +128,7 @@ async def test_openapi_documents_every_area_and_the_problem_schema(client: Async
     assert tags == {
         "health",
         "activity",
+        "answers",
         "auth",
         "users",
         "organizations",

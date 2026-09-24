@@ -177,3 +177,9 @@ def test_redis_url_scheme_is_validated() -> None:
 def test_redis_url_is_secret() -> None:
     settings = Settings(_env_file=None, redis_url=SecretStr("redis://:hunter2@cache:6379/0"))
     assert "hunter2" not in repr(settings)
+
+
+def test_the_answer_prompt_version_must_exist() -> None:
+    assert Settings(_env_file=None).llm_answer_prompt_version == "grounded-answer-v2"
+    with pytest.raises(ValidationError, match="unknown answer prompt"):
+        Settings(_env_file=None, llm_answer_prompt_version="grounded-answer-v9")

@@ -29,6 +29,7 @@ from app.domain.errors import (
     PermissionDeniedError,
     ValidationFailedError,
 )
+from app.services.answers import AnswerGenerationError
 
 PROBLEM_JSON = "application/problem+json"
 
@@ -158,6 +159,19 @@ async def _rate_limited(request: Request, exc: Exception) -> JSONResponse:
     )
 
 
+async def _generation_failed(request: Request, exc: Exception) -> JSONResponse:
+    failure = cast(AnswerGenerationError, exc)
+    # Never an invented answer: the client learns that generation failed, and why
+    # in general terms (the provider error class), with nothing sensitive.
+    return problem_response(
+        request,
+        503,
+        "generation_unavailable",
+        f"the language model could not produce an answer ({failure.cause})",
+        headers={"Retry-After": "5"},
+    )
+
+
 async def _unavailable(request: Request, exc: Exception) -> JSONResponse:
     return problem_response(request, 503, "service_unavailable", str(exc))
 
@@ -169,6 +183,7 @@ def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(AuthenticationRequiredError, _unauthenticated)
     app.add_exception_handler(RateLimitedError, _rate_limited)
     app.add_exception_handler(ServiceUnavailableError, _unavailable)
+    app.add_exception_handler(AnswerGenerationError, _generation_failed)
 
 
 # Documented on every endpoint that can fail with these statuses.

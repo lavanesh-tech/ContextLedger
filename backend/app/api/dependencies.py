@@ -13,6 +13,7 @@ from uuid import UUID
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from app.ai.providers import GenerationProvider
 from app.api.errors import (
     AuthenticationRequiredError,
     RateLimitedError,
@@ -196,5 +197,15 @@ def get_graph_reader(request: Request) -> GraphReader:
     return reader
 
 
+def get_generation_provider(request: Request) -> GenerationProvider:
+    provider = cast(GenerationProvider | None, request.app.state.generation_provider)
+    if provider is None:
+        raise ServiceUnavailableError(
+            "LLM generation is disabled (set CONTEXTLEDGER_LLM_PROVIDER=openai)"
+        )
+    return provider
+
+
 ProviderDep = Annotated[EmbeddingProvider, Depends(get_embedding_provider)]
+GeneratorDep = Annotated[GenerationProvider, Depends(get_generation_provider)]
 GraphDep = Annotated[GraphReader, Depends(get_graph_reader)]

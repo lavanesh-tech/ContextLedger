@@ -1287,6 +1287,50 @@
           }
         }
       ]
+    },
+    {
+      "name": "answers",
+      "item": [
+        {
+          "name": "Answer a question from authorized facts, with citations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/answers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "answers"
+              ]
+            },
+            "description": "Retrieves the facts you may see (tenant, role, privacy ceiling, `valid_at`, `known_at`),\nasks the configured LLM to answer from them only, and verifies every citation against\nthe facts it was given. `status` is `answered`, `insufficient_evidence` (no model call\nwhen nothing is retrievable) or `ungrounded` (the answer is withheld). A model failure\nis a 503, never an invented answer.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"What was customer-991's credit limit at 11:00 on 15 January?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

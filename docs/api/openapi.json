@@ -2902,6 +2902,100 @@
           }
         }
       }
+    },
+    "/api/v1/organizations/{organization_id}/answers": {
+      "post": {
+        "tags": [
+          "answers"
+        ],
+        "summary": "Answer a question from authorized facts, with citations",
+        "description": "Retrieves the facts you may see (tenant, role, privacy ceiling, `valid_at`, `known_at`),\nasks the configured LLM to answer from them only, and verifies every citation against\nthe facts it was given. `status` is `answered`, `insufficient_evidence` (no model call\nwhen nothing is retrievable) or `ungrounded` (the answer is withheld). A model failure\nis a 503, never an invented answer.",
+        "operationId": "answer_api_v1_organizations__organization_id__answers_post",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroundedAnswer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3182,6 +3276,106 @@
         ],
         "title": "AgentClientOut"
       },
+      "AnswerRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Question",
+            "examples": [
+              "What was customer-991's credit limit at 11:00 on 15 January?"
+            ]
+          },
+          "valid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid At",
+            "description": "Answer as of this time (default: now)."
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Known At",
+            "description": "Use only what had been recorded by then (default: all)."
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "description": "Maximum facts given to the model.",
+            "default": 8
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "external_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "External Ids"
+          },
+          "properties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Properties"
+          },
+          "max_privacy_scope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrivacyScope"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Can only narrow what your role may see."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "AnswerRequest"
+      },
+      "AnswerStatus": {
+        "type": "string",
+        "enum": [
+          "answered",
+          "insufficient_evidence",
+          "ungrounded"
+        ],
+        "title": "AnswerStatus"
+      },
       "AttachResult": {
         "properties": {
           "linked": {
@@ -3277,6 +3471,76 @@
           "created"
         ],
         "title": "CapturedEvidenceOut"
+      },
+      "Citation": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "fact_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Fact Version Id"
+          },
+          "fact_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Fact Id"
+          },
+          "source_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Id"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "property": {
+            "type": "string",
+            "title": "Property"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "fact_version_id",
+          "fact_id",
+          "source_id",
+          "source_name",
+          "entity_type",
+          "external_id",
+          "property",
+          "valid_from",
+          "valid_until"
+        ],
+        "title": "Citation"
       },
       "DatabaseReadiness": {
         "properties": {
@@ -4030,6 +4294,145 @@
           "message"
         ],
         "title": "FieldError"
+      },
+      "GenerationInfo": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "prompt_fingerprint": {
+            "type": "string",
+            "title": "Prompt Fingerprint"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          },
+          "finish_reason": {
+            "type": "string",
+            "title": "Finish Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "model",
+          "prompt_version",
+          "prompt_fingerprint",
+          "input_tokens",
+          "output_tokens",
+          "latency_ms",
+          "attempts",
+          "finish_reason"
+        ],
+        "title": "GenerationInfo"
+      },
+      "GroundedAnswer": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnswerStatus"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "grounded": {
+            "type": "boolean",
+            "title": "Grounded"
+          },
+          "insufficient_evidence": {
+            "type": "boolean",
+            "title": "Insufficient Evidence"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "inferences": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Inferences"
+          },
+          "rejected_citations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rejected Citations"
+          },
+          "retrieval": {
+            "$ref": "#/components/schemas/RetrievalInfo"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GenerationInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "supplied_fact_version_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Supplied Fact Version Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "status",
+          "answer",
+          "grounded",
+          "insufficient_evidence",
+          "citations",
+          "inferences",
+          "rejected_citations",
+          "retrieval",
+          "generation"
+        ],
+        "title": "GroundedAnswer"
       },
       "HTTPValidationError": {
         "properties": {
@@ -4978,6 +5381,56 @@
         "title": "ResolvedFact",
         "description": "The version of one fact that answers a temporal question, with its identity."
       },
+      "RetrievalInfo": {
+        "properties": {
+          "valid_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid At"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Known At"
+          },
+          "vector_search": {
+            "type": "string",
+            "title": "Vector Search"
+          },
+          "privacy_scopes": {
+            "items": {
+              "$ref": "#/components/schemas/PrivacyScope"
+            },
+            "type": "array",
+            "title": "Privacy Scopes"
+          },
+          "facts_supplied": {
+            "type": "integer",
+            "title": "Facts Supplied"
+          },
+          "cache": {
+            "type": "string",
+            "title": "Cache"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_at",
+          "known_at",
+          "vector_search",
+          "privacy_scopes",
+          "facts_supplied",
+          "cache"
+        ],
+        "title": "RetrievalInfo"
+      },
       "RetrievalResult": {
         "properties": {
           "query": {
@@ -5622,6 +6075,10 @@
     {
       "name": "search",
       "description": "Hybrid temporal retrieval (vector + full text)."
+    },
+    {
+      "name": "answers",
+      "description": "Grounded LLM answers over authorized facts, with verified citations."
     },
     {
       "name": "decisions",

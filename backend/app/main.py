@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app import __version__
+from app.ai.providers import build_generation_provider
 from app.api.errors import install_error_handlers
 from app.api.v1.router import api_router
 from app.auth.tokens import TokenService
@@ -42,6 +43,10 @@ OPENAPI_TAGS = [
     {"name": "facts", "description": "Bitemporal facts: record versions, ask about any time."},
     {"name": "evidence", "description": "Immutable, content-addressed supporting material."},
     {"name": "search", "description": "Hybrid temporal retrieval (vector + full text)."},
+    {
+        "name": "answers",
+        "description": "Grounded LLM answers over authorized facts, with verified citations.",
+    },
     {"name": "decisions", "description": "Frozen context snapshots and sealed decision receipts."},
     {"name": "provenance", "description": "Impact analysis and lineage (Neo4j graph)."},
     {"name": "activity", "description": "Tenant activity counted from Kafka events."},
@@ -97,10 +102,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.expected_schema_revision = expected_schema_revision(settings.alembic_ini_path)
 
     # Created lazily too: no network I/O happens until a request needs it.
-    app.state.http_client = (
-        build_openai_http_client(settings) if settings.embedding_provider == "openai" else None
-    )
+    uses_openai = settings.embedding_provider == "openai" or settings.llm_provider == "openai"
+    app.state.http_client = build_openai_http_client(settings) if uses_openai else None
     app.state.embedding_provider = build_embedding_provider(settings, app.state.http_client)
+    # None when llm_provider is "disabled": answer endpoints then report 503.
+    app.state.generation_provider = build_generation_provider(settings, app.state.http_client)
     app.state.graph_driver = (
         build_driver(settings) if settings.neo4j_password.get_secret_value() else None
     )
