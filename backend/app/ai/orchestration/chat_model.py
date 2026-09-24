@@ -7,17 +7,27 @@ chain or an agent can never bypass the cost and failure controls, and CI never
 needs a network or an API key.
 
 Bound call options (``model.bind(...)``): ``output_schema`` (OutputSchema),
-``max_output_tokens`` and ``temperature``. Errors from the provider propagate
-unchanged (``GenerationError`` subclasses).
+``max_output_tokens``, ``temperature`` and ``tools`` (ToolSpec list, set by
+``bind_tools``). Tool calls come back as ``AIMessage.tool_calls``.
+Errors from the provider propagate unchanged (``GenerationError`` subclasses).
 """
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
-from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.language_models import BaseChatModel, LanguageModelInput
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import ConfigDict
 
 from app.ai.providers import (
@@ -27,6 +37,8 @@ from app.ai.providers import (
     GenerationRequestError,
     OutputSchema,
     Role,
+    ToolCall,
+    ToolSpec,
 )
 
 
@@ -40,12 +52,32 @@ def to_chat_messages(messages: Sequence[BaseMessage]) -> list[ChatMessage]:
             role = "user"
         elif isinstance(message, AIMessage):
             role = "assistant"
+        elif isinstance(message, ToolMessage):
+            role = "tool"
         else:
             raise GenerationRequestError(f"unsupported message type {type(message).__name__}")
         if not isinstance(message.content, str):
             raise GenerationRequestError("only text message content is supported")
-        converted.append(ChatMessage(role, message.content))
+        if isinstance(message, AIMessage) and message.tool_calls:
+            calls = tuple(
+                ToolCall(id=str(c["id"]), name=c["name"], arguments=dict(c["args"]))
+                for c in message.tool_calls
+            )
+            converted.append(ChatMessage(role, message.content, tool_calls=calls))
+        elif isinstance(message, ToolMessage):
+            converted.append(ChatMessage(role, message.content, tool_call_id=message.tool_call_id))
+        else:
+            converted.append(ChatMessage(role, message.content))
     return converted
+
+
+def tool_spec(tool: BaseTool) -> ToolSpec:
+    function = convert_to_openai_tool(tool)["function"]
+    return ToolSpec(
+        name=function["name"],
+        description=function.get("description", ""),
+        parameters=function.get("parameters", {"type": "object", "properties": {}}),
+    )
 
 
 class ContextLedgerChatModel(BaseChatModel):
@@ -69,6 +101,22 @@ class ContextLedgerChatModel(BaseChatModel):
     def _provider(self) -> GenerationProvider:
         provider: GenerationProvider = self.provider
         return provider
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        if tool_choice is not None:
+            raise GenerationRequestError("tool_choice is not supported")
+        specs: list[ToolSpec] = []
+        for tool in tools:
+            if not isinstance(tool, BaseTool):
+                raise GenerationRequestError("only LangChain BaseTool instances can be bound")
+            specs.append(tool_spec(tool))
+        return self.bind(tools=specs, **kwargs)
 
     def _generate(
         self,
@@ -96,10 +144,15 @@ class ContextLedgerChatModel(BaseChatModel):
             max_output_tokens=int(kwargs.get("max_output_tokens", self.max_output_tokens)),
             temperature=kwargs.get("temperature", self.temperature),
             output_schema=schema,
+            tools=tuple(kwargs.get("tools") or ()),
         )
         result = await self._provider.generate(request)
         message = AIMessage(
             content=result.text,
+            tool_calls=[
+                {"id": c.id, "name": c.name, "args": c.arguments, "type": "tool_call"}
+                for c in result.tool_calls
+            ],
             usage_metadata={
                 "input_tokens": result.usage.input_tokens,
                 "output_tokens": result.usage.output_tokens,

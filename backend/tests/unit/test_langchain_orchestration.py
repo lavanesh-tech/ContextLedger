@@ -6,7 +6,13 @@ from uuid import UUID
 
 import pytest
 from langchain_core.callbacks import AsyncCallbackHandler
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 from app.ai.orchestration.chains import chat_prompt, grounded_answer_chain
 from app.ai.orchestration.chat_model import ContextLedgerChatModel, to_chat_messages
@@ -67,7 +73,7 @@ def test_the_adapter_is_async_only() -> None:
 
 async def test_unsupported_inputs_are_rejected() -> None:
     with pytest.raises(GenerationRequestError):
-        to_chat_messages([ToolMessage("x", tool_call_id="1")])
+        to_chat_messages([FunctionMessage(content="x", name="f")])
     with pytest.raises(GenerationRequestError, match="stop"):
         await ContextLedgerChatModel(provider=FakeGenerationProvider()).ainvoke(
             [HumanMessage("q")], stop=["\n"]

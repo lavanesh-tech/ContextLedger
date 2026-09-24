@@ -30,7 +30,7 @@ from pydantic import SecretStr
 
 from app.core.config import Settings
 
-Role = Literal["system", "user", "assistant"]
+Role = Literal["system", "user", "assistant", "tool"]
 _RETRYABLE_STATUS: Final = frozenset({408, 409, 429, 500, 502, 503, 504})
 
 
@@ -77,9 +77,28 @@ class MalformedGenerationError(GenerationError):
 
 
 @dataclass(frozen=True, slots=True)
+class ToolCall:
+    """A model's request to call a tool. ``arguments`` are UNTRUSTED model output:
+    the tool validates them before doing anything."""
+
+    id: str
+    name: str
+    arguments: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class ToolSpec:
+    name: str
+    description: str
+    parameters: dict[str, Any]  # JSON Schema of the arguments
+
+
+@dataclass(frozen=True, slots=True)
 class ChatMessage:
     role: Role
     content: str
+    tool_calls: tuple[ToolCall, ...] = ()  # assistant messages that called tools
+    tool_call_id: str | None = None  # tool messages: which call this answers
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +115,7 @@ class GenerationRequest:
     max_output_tokens: int = 800
     temperature: float | None = 0.0  # None: provider default (some models reject it)
     output_schema: OutputSchema | None = None
+    tools: Sequence[ToolSpec] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,6 +138,7 @@ class GenerationResult:
     latency_ms: float
     attempts: int = 1
     response_id: str | None = None
+    tool_calls: tuple[ToolCall, ...] = ()
 
     def parsed_json(self) -> Any:
         """The text as JSON (for structured output). Raises MalformedGenerationError."""
@@ -138,7 +159,7 @@ class GenerationProvider(Protocol):
 
 # --- fake -------------------------------------------------------------------------------
 
-Responder = Callable[[GenerationRequest], str]
+Responder = Callable[[GenerationRequest], "str | list[ToolCall]"]
 
 
 @dataclass
@@ -150,7 +171,7 @@ class FakeGenerationProvider:
     request instead. Every request is recorded in ``requests``.
     """
 
-    responses: list[str | GenerationError] = field(default_factory=list)
+    responses: list["str | GenerationError | list[ToolCall]"] = field(default_factory=list)
     responder: Responder | None = None
     model: str = "scripted"
     input_tokens_per_message: int = 10
@@ -162,20 +183,23 @@ class FakeGenerationProvider:
 
     async def generate(self, request: GenerationRequest) -> GenerationResult:
         self.requests.append(request)
+        reply: str | list[ToolCall]
         if self.responder is not None:
-            text = self.responder(request)
+            reply = self.responder(request)
         elif self.responses:
             item = self.responses.pop(0)
             if isinstance(item, GenerationError):
                 raise item
-            text = item
+            reply = item
         else:
             raise GenerationUnavailableError("fake provider has no scripted response left")
+        text, calls = (reply, ()) if isinstance(reply, str) else ("", tuple(reply))
         return GenerationResult(
             text=text,
+            tool_calls=calls,
             provider="fake",
             model=self.model,
-            finish_reason="stop",
+            finish_reason="tool_calls" if calls else "stop",
             usage=GenerationUsage(
                 input_tokens=self.input_tokens_per_message * len(request.messages),
                 output_tokens=len(text.split()),
@@ -256,9 +280,21 @@ class OpenAIChatProvider:
     def _payload(self, request: GenerationRequest) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "model": self._model,
-            "messages": [{"role": m.role, "content": m.content} for m in request.messages],
+            "messages": [_message_payload(m) for m in request.messages],
             "max_completion_tokens": request.max_output_tokens,
         }
+        if request.tools:
+            payload["tools"] = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": t.name,
+                        "description": t.description,
+                        "parameters": t.parameters,
+                    },
+                }
+                for t in request.tools
+            ]
         if request.temperature is not None:
             payload["temperature"] = request.temperature
         if request.output_schema is not None:
@@ -294,11 +330,21 @@ class OpenAIChatProvider:
             )
             model = str(body.get("model") or self._model)
             response_id = body.get("id")
+            tool_calls = tuple(
+                ToolCall(
+                    id=str(call["id"]),
+                    name=str(call["function"]["name"]),
+                    arguments=_arguments(call["function"].get("arguments")),
+                )
+                for call in message.get("tool_calls") or ()
+            )
         except (ValueError, KeyError, IndexError, TypeError) as exc:
             raise MalformedGenerationError("OpenAI returned a malformed chat response") from exc
         if refusal:
             raise GenerationRefusedError("the model refused to answer")
-        if not isinstance(content, str) or not content.strip():
+        if tool_calls:
+            content = content if isinstance(content, str) else ""
+        elif not isinstance(content, str) or not content.strip():
             raise MalformedGenerationError("OpenAI returned an empty message")
         if finish_reason == "length" and request.output_schema is not None:
             # Truncated JSON is not valid output; the token limit is too small.
@@ -312,6 +358,7 @@ class OpenAIChatProvider:
             latency_ms=round((time.perf_counter() - started) * 1000, 2),
             attempts=attempts,
             response_id=None if response_id is None else str(response_id),
+            tool_calls=tool_calls,
         )
 
     def _delay(self, attempt: int, retry_after: float | None) -> float:
@@ -319,6 +366,31 @@ class OpenAIChatProvider:
             return min(retry_after, self._max_delay)
         backoff = self._base_delay * 2**attempt
         return float(min(self._max_delay, backoff * random.uniform(0.5, 1.0)))  # noqa: S311
+
+
+def _message_payload(message: ChatMessage) -> dict[str, Any]:
+    payload: dict[str, Any] = {"role": message.role, "content": message.content}
+    if message.tool_calls:
+        payload["content"] = message.content or None
+        payload["tool_calls"] = [
+            {
+                "id": call.id,
+                "type": "function",
+                "function": {"name": call.name, "arguments": json.dumps(call.arguments)},
+            }
+            for call in message.tool_calls
+        ]
+    if message.tool_call_id is not None:
+        payload["tool_call_id"] = message.tool_call_id
+    return payload
+
+
+def _arguments(raw: Any) -> dict[str, Any]:
+    """Tool arguments arrive as a JSON string; anything but a JSON object is malformed."""
+    parsed = json.loads(raw) if isinstance(raw, str) else raw
+    if not isinstance(parsed, dict):
+        raise ValueError("tool arguments must be a JSON object")
+    return parsed
 
 
 def _error_for(response: httpx.Response) -> GenerationError:

@@ -66,6 +66,9 @@ _LOADED: Final[list[bool]] = [False]
 
 def _load() -> None:
     if not _LOADED[0]:
-        from app.ai.prompts import grounded_answer  # noqa: F401  (registers on import)
+        from app.ai.prompts import (  # noqa: F401  (register on import)
+            grounded_answer,
+            investigator,
+        )
 
         _LOADED[0] = True
