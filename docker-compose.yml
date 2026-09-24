@@ -5,8 +5,9 @@
 #   make smoke               # verify every service actually answers
 #
 # All ports bind to 127.0.0.1 so the stack is not reachable from your network.
-# The API uses PostgreSQL (Phase 2+). Redis is wired in Phase 14, Kafka in
-# Phase 15, Neo4j in Phase 10. Migrations run as a separate one-off step
+# The API uses PostgreSQL (Phase 2+), Neo4j (Phase 10) and Redis (Phase 14:
+# retrieval cache, rate limits, idempotency keys, OAuth state, MCP session
+# state). Kafka is wired in Phase 15. Migrations run as a separate one-off step
 # (`make up` / `make migrate-docker`), never automatically at API startup.
 
 name: contextledger
@@ -32,10 +33,14 @@ services:
       CONTEXTLEDGER_OPENAI_API_KEY: ${CONTEXTLEDGER_OPENAI_API_KEY:-}
       CONTEXTLEDGER_NEO4J_URI: bolt://neo4j:7687
       CONTEXTLEDGER_NEO4J_PASSWORD: ${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env (min 8 chars)}
+      # Keep REDIS_PASSWORD URL-safe (letters, digits, - _ .): it is embedded in this URL.
+      CONTEXTLEDGER_REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379/0
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
@@ -58,6 +63,8 @@ services:
       retries: 3
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 

@@ -105,6 +105,23 @@ class Settings(BaseSettings):
     graph_batch_size: int = Field(default=200, ge=1, le=5000)
     graph_poll_interval_seconds: float = Field(default=2.0, gt=0)
 
+    # --- Redis (cache, rate limits, idempotency, short-lived state) ---------------
+    # redis://[:password@]host:port/db (rediss:// for TLS). Empty: a per-process
+    # in-memory store, fine for one local process and tests; required in
+    # staging and production, where several processes must share one view.
+    redis_url: SecretStr = SecretStr("")
+    redis_timeout_seconds: float = Field(default=0.5, gt=0, le=10)
+    retrieval_cache_ttl_seconds: int = Field(default=60, ge=1, le=3600)
+    # Per authenticated user or agent client, per minute, across all processes. 0 disables.
+    rate_limit_requests_per_minute: int = Field(default=600, ge=0)
+    # Per client_id on /oauth/token (caps client-secret guessing). 0 disables.
+    rate_limit_token_requests_per_minute: int = Field(default=30, ge=0)
+    idempotency_ttl_seconds: int = Field(default=86_400, ge=60, le=7 * 86_400)
+    # How long a first request holds its Idempotency-Key while it runs.
+    idempotency_lock_seconds: int = Field(default=60, ge=1, le=3600)
+    oauth_state_ttl_seconds: int = Field(default=600, ge=60, le=3600)
+    mcp_session_ttl_seconds: int = Field(default=3600, ge=60, le=86_400)
+
     # --- API authentication --------------------------------------------------------
     # "development-headers": the caller's user id is taken from the
     # X-ContextLedger-User-Id header. Convenient for local development and tests,
@@ -169,6 +186,16 @@ class Settings(BaseSettings):
             raise ValueError("development-headers auth is not allowed in staging/production")
         if deployed and not self.jwt_signing_key.get_secret_value():
             raise ValueError("CONTEXTLEDGER_JWT_SIGNING_KEY must be set in staging and production")
+        return self
+
+    @model_validator(mode="after")
+    def _require_redis_outside_local(self) -> Self:
+        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        if deployed and not self.redis_url.get_secret_value():
+            raise ValueError("CONTEXTLEDGER_REDIS_URL must be set in staging and production")
+        url = self.redis_url.get_secret_value()
+        if url and not url.startswith(("redis://", "rediss://")):
+            raise ValueError("CONTEXTLEDGER_REDIS_URL must start with redis:// or rediss://")
         return self
 
     @property

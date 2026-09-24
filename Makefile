@@ -15,6 +15,10 @@ TEST_DATABASE_URL ?= postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@
 NEO4J_PASSWORD ?=
 NEO4J_BOLT_PORT ?= 7687
 TEST_NEO4J_ENV = CONTEXTLEDGER_TEST_NEO4J_URI='bolt://127.0.0.1:$(NEO4J_BOLT_PORT)' CONTEXTLEDGER_TEST_NEO4J_PASSWORD='$(NEO4J_PASSWORD)'
+REDIS_PASSWORD ?=
+REDIS_PORT ?= 6379
+# Database 15: tests never touch the database the local stack uses (0).
+TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.0.1:$(REDIS_PORT)/15'
 
 .PHONY: help install lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
@@ -42,7 +46,7 @@ typecheck: ## mypy --strict
 	cd $(BACKEND) && $(BIN)/mypy
 
 test: ## All tests with coverage (database tests need `make up` running)
-	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(TEST_NEO4J_ENV) $(BIN)/pytest --cov --cov-report=term-missing
+	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(TEST_NEO4J_ENV) $(TEST_REDIS_ENV) $(BIN)/pytest --cov --cov-report=term-missing
 
 test-unit: ## Only tests that need no database
 	cd $(BACKEND) && $(BIN)/pytest -m "not integration"

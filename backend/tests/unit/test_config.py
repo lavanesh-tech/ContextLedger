@@ -24,6 +24,7 @@ def test_values_are_read_from_prefixed_environment_variables(
     monkeypatch.setenv("CONTEXTLEDGER_NEO4J_PASSWORD", "neo4j-from-env")
     monkeypatch.setenv("CONTEXTLEDGER_AUTH_MODE", "jwt")
     monkeypatch.setenv("CONTEXTLEDGER_JWT_SIGNING_KEY", "-----BEGIN PRIVATE KEY-----test")
+    monkeypatch.setenv("CONTEXTLEDGER_REDIS_URL", "rediss://:secret@cache.internal:6379/0")
     monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "warning")
     monkeypatch.setenv("CONTEXTLEDGER_DOCS_ENABLED", "false")
 
@@ -150,3 +151,29 @@ def test_header_authentication_is_refused_in_deployed_environments() -> None:
             openai_api_key=SecretStr("sk-test-not-real"),
             neo4j_password=SecretStr("y"),
         )
+
+
+DEPLOYED = {
+    "db_password": SecretStr("x"),
+    "embedding_provider": "openai",
+    "openai_api_key": SecretStr("sk-test-not-real"),
+    "neo4j_password": SecretStr("y"),
+    "auth_mode": "jwt",
+    "jwt_signing_key": SecretStr("-----BEGIN PRIVATE KEY-----test"),
+}
+
+
+@pytest.mark.parametrize("environment", [Environment.STAGING, Environment.PRODUCTION])
+def test_deployed_environments_require_redis(environment: Environment) -> None:
+    with pytest.raises(ValidationError, match="REDIS_URL"):
+        Settings(_env_file=None, environment=environment, **DEPLOYED)  # type: ignore[arg-type]
+
+
+def test_redis_url_scheme_is_validated() -> None:
+    with pytest.raises(ValidationError, match="redis://"):
+        Settings(_env_file=None, redis_url=SecretStr("http://cache:6379"))
+
+
+def test_redis_url_is_secret() -> None:
+    settings = Settings(_env_file=None, redis_url=SecretStr("redis://:hunter2@cache:6379/0"))
+    assert "hunter2" not in repr(settings)

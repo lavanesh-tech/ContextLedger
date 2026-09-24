@@ -20,6 +20,7 @@ dependencies = [
     "mcp>=1.10,<2",
     "pyjwt[crypto]>=2.10",
     "python-multipart>=0.0.9",
+    "redis>=5.2,<9",
 ]
 
 [project.optional-dependencies]
@@ -46,6 +47,7 @@ filterwarnings = ["error::DeprecationWarning:app.*"]
 markers = [
     "integration: needs a running PostgreSQL (make up); skipped locally without it, required in CI",
     "graph: also needs a running Neo4j (make up); skipped locally without it, required in CI",
+    "redis: needs a running Redis (make up); skipped locally without it, required in CI",
 ]
 
 # ---------------------------------------------------------------------------
