@@ -1,6 +1,7 @@
 """Export the OpenAPI document and a Postman collection generated from it.
 
-    make api-docs   # writes docs/api/openapi.json and a Postman collection next to it
+    make api-docs   # writes docs/api/openapi.json, a Postman collection next to it,
+                    # and the Kafka event JSON Schemas (docs/events/schemas.json)
 
 Both files are committed. A unit test regenerates them in memory and fails if
 the committed copies are stale, so the published contract always matches the code.
@@ -12,11 +13,13 @@ from pathlib import Path
 from typing import Any, Final
 
 from app.core.config import Environment, Settings
+from app.events.schemas import json_schemas
 
 REPO_ROOT: Final = Path(__file__).resolve().parents[3]
 DOCS_DIR: Final = REPO_ROOT / "docs" / "api"
 OPENAPI_FILE: Final = DOCS_DIR / "openapi.json"
 POSTMAN_FILE: Final = DOCS_DIR / "ContextLedger.postman_collection.json"
+EVENT_SCHEMAS_FILE: Final = REPO_ROOT / "docs" / "events" / "schemas.json"
 POSTMAN_SCHEMA: Final = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 USER_HEADER: Final = "X-ContextLedger-User-Id"
 _PATH_PARAM: Final = re.compile(r"\{([^}]+)\}")
@@ -128,7 +131,10 @@ def main() -> None:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     OPENAPI_FILE.write_text(render(spec), encoding="utf-8")
     POSTMAN_FILE.write_text(render(postman_collection(spec)), encoding="utf-8")
-    print(f"wrote {OPENAPI_FILE.relative_to(REPO_ROOT)} and {POSTMAN_FILE.relative_to(REPO_ROOT)}")  # noqa: T201
+    EVENT_SCHEMAS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    EVENT_SCHEMAS_FILE.write_text(render(json_schemas()), encoding="utf-8")
+    for path in (OPENAPI_FILE, POSTMAN_FILE, EVENT_SCHEMAS_FILE):
+        print(f"wrote {path.relative_to(REPO_ROOT)}")  # noqa: T201
 
 
 if __name__ == "__main__":

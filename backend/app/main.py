@@ -44,6 +44,7 @@ OPENAPI_TAGS = [
     {"name": "search", "description": "Hybrid temporal retrieval (vector + full text)."},
     {"name": "decisions", "description": "Frozen context snapshots and sealed decision receipts."},
     {"name": "provenance", "description": "Impact analysis and lineage (Neo4j graph)."},
+    {"name": "activity", "description": "Tenant activity counted from Kafka events."},
 ]
 
 

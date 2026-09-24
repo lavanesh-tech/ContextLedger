@@ -127,6 +127,7 @@ async def test_openapi_documents_every_area_and_the_problem_schema(client: Async
     tags = {tag for path in spec["paths"].values() for op in path.values() for tag in op["tags"]}
     assert tags == {
         "health",
+        "activity",
         "auth",
         "users",
         "organizations",

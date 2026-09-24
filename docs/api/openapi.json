@@ -2826,10 +2826,142 @@
           }
         }
       }
+    },
+    "/api/v1/organizations/{organization_id}/activity": {
+      "get": {
+        "tags": [
+          "activity"
+        ],
+        "summary": "Daily activity (eventually consistent)",
+        "description": "Facts recorded, evidence captured and decisions recorded per UTC day, counted by\nthe `activity-projector` Kafka consumer. `pending_events` are not counted yet.",
+        "operationId": "activity_api_v1_organizations__organization_id__activity_get",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 366,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActivityDay": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "facts_recorded": {
+            "type": "integer",
+            "title": "Facts Recorded"
+          },
+          "evidence_captured": {
+            "type": "integer",
+            "title": "Evidence Captured"
+          },
+          "decisions_recorded": {
+            "type": "integer",
+            "title": "Decisions Recorded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "facts_recorded",
+          "evidence_captured",
+          "decisions_recorded"
+        ],
+        "title": "ActivityDay"
+      },
+      "ActivityReport": {
+        "properties": {
+          "since": {
+            "type": "string",
+            "format": "date",
+            "title": "Since"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityDay"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "pending_events": {
+            "type": "integer",
+            "title": "Pending Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "since",
+          "days",
+          "pending_events"
+        ],
+        "title": "ActivityReport"
+      },
       "AffectedDecision": {
         "properties": {
           "decision_id": {
@@ -5498,6 +5630,10 @@
     {
       "name": "provenance",
       "description": "Impact analysis and lineage (Neo4j graph)."
+    },
+    {
+      "name": "activity",
+      "description": "Tenant activity counted from Kafka events."
     }
   ]
 }

@@ -1,0 +1,386 @@
+{
+  "envelope": {
+    "additionalProperties": false,
+    "properties": {
+      "specversion": {
+        "const": "1.0",
+        "default": "1.0",
+        "title": "Specversion",
+        "type": "string"
+      },
+      "id": {
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "type": {
+        "title": "Type",
+        "type": "string"
+      },
+      "source": {
+        "const": "contextledger",
+        "default": "contextledger",
+        "title": "Source",
+        "type": "string"
+      },
+      "schema_version": {
+        "default": 1,
+        "title": "Schema Version",
+        "type": "integer"
+      },
+      "organization_id": {
+        "format": "uuid",
+        "title": "Organization Id",
+        "type": "string"
+      },
+      "subject": {
+        "format": "uuid",
+        "title": "Subject",
+        "type": "string"
+      },
+      "time": {
+        "format": "date-time",
+        "title": "Time",
+        "type": "string"
+      },
+      "data": {
+        "additionalProperties": true,
+        "title": "Data",
+        "type": "object"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "organization_id",
+      "subject",
+      "time",
+      "data"
+    ],
+    "title": "EventEnvelope",
+    "type": "object"
+  },
+  "events": {
+    "context.captured": {
+      "topic": "contextledger.decisions.v1",
+      "data": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "captured_by_user_id": {
+            "format": "uuid",
+            "title": "Captured By User Id",
+            "type": "string"
+          },
+          "valid_at": {
+            "format": "date-time",
+            "title": "Valid At",
+            "type": "string"
+          },
+          "known_at": {
+            "format": "date-time",
+            "title": "Known At",
+            "type": "string"
+          },
+          "embedding_model": {
+            "title": "Embedding Model",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "captured_by_user_id",
+          "valid_at",
+          "known_at",
+          "embedding_model",
+          "created_at"
+        ],
+        "title": "ContextCaptured",
+        "type": "object"
+      }
+    },
+    "decision.recorded": {
+      "topic": "contextledger.decisions.v1",
+      "data": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "format": "uuid",
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "decided_by_user_id": {
+            "format": "uuid",
+            "title": "Decided By User Id",
+            "type": "string"
+          },
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent"
+          },
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "receipt_sha256": {
+            "title": "Receipt Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "snapshot_id",
+          "decided_by_user_id",
+          "agent",
+          "action",
+          "decided_at",
+          "receipt_sha256"
+        ],
+        "title": "DecisionRecorded",
+        "type": "object"
+      }
+    },
+    "evidence.captured": {
+      "topic": "contextledger.evidence.v1",
+      "data": {
+        "$defs": {
+          "PrivacyScope": {
+            "description": "Who may see a fact version. Enforced in retrieval (Phases 8 and 13).",
+            "enum": [
+              "PUBLIC",
+              "INTERNAL",
+              "CONFIDENTIAL",
+              "RESTRICTED"
+            ],
+            "title": "PrivacyScope",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "evidence_type": {
+            "title": "Evidence Type",
+            "type": "string"
+          },
+          "content_sha256": {
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "privacy_scope": {
+            "$ref": "#/$defs/PrivacyScope"
+          },
+          "captured_at": {
+            "format": "date-time",
+            "title": "Captured At",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "evidence_type",
+          "content_sha256",
+          "privacy_scope",
+          "captured_at",
+          "recorded_at"
+        ],
+        "title": "EvidenceCaptured",
+        "type": "object"
+      }
+    },
+    "evidence.linked": {
+      "topic": "contextledger.evidence.v1",
+      "data": {
+        "properties": {
+          "fact_version_id": {
+            "format": "uuid",
+            "title": "Fact Version Id",
+            "type": "string"
+          },
+          "evidence_id": {
+            "format": "uuid",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          },
+          "linked_at": {
+            "format": "date-time",
+            "title": "Linked At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fact_version_id",
+          "evidence_id",
+          "relation",
+          "linked_at"
+        ],
+        "title": "EvidenceLinked",
+        "type": "object"
+      }
+    },
+    "fact.embedding_stored": {
+      "topic": "contextledger.facts.v1",
+      "data": {
+        "properties": {
+          "fact_version_id": {
+            "format": "uuid",
+            "title": "Fact Version Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fact_version_id",
+          "model",
+          "created_at"
+        ],
+        "title": "FactEmbeddingStored",
+        "type": "object"
+      }
+    },
+    "fact.version_recorded": {
+      "topic": "contextledger.facts.v1",
+      "data": {
+        "$defs": {
+          "PrivacyScope": {
+            "description": "Who may see a fact version. Enforced in retrieval (Phases 8 and 13).",
+            "enum": [
+              "PUBLIC",
+              "INTERNAL",
+              "CONFIDENTIAL",
+              "RESTRICTED"
+            ],
+            "title": "PrivacyScope",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "fact_id": {
+            "format": "uuid",
+            "title": "Fact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Id"
+          },
+          "valid_from": {
+            "format": "date-time",
+            "title": "Valid From",
+            "type": "string"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "authority": {
+            "title": "Authority",
+            "type": "integer"
+          },
+          "privacy_scope": {
+            "$ref": "#/$defs/PrivacyScope"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fact_id",
+          "version",
+          "source_id",
+          "supersedes_id",
+          "valid_from",
+          "valid_until",
+          "authority",
+          "privacy_scope",
+          "recorded_at"
+        ],
+        "title": "FactVersionRecorded",
+        "type": "object"
+      }
+    }
+  }
+}

@@ -1249,6 +1249,44 @@
           }
         }
       ]
+    },
+    {
+      "name": "activity",
+      "item": [
+        {
+          "name": "Daily activity (eventually consistent)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/activity?days=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "activity"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Facts recorded, evidence captured and decisions recorded per UTC day, counted by\nthe `activity-projector` Kafka consumer. `pending_events` are not counted yet."
+          }
+        }
+      ]
     }
   ]
 }
