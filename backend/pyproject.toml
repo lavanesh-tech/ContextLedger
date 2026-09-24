@@ -21,6 +21,7 @@ dependencies = [
     "pyjwt[crypto]>=2.10",
     "python-multipart>=0.0.9",
     "redis>=5.2,<9",
+    "aiokafka>=0.11,<0.15",
 ]
 
 [project.optional-dependencies]
@@ -48,6 +49,7 @@ markers = [
     "integration: needs a running PostgreSQL (make up); skipped locally without it, required in CI",
     "graph: also needs a running Neo4j (make up); skipped locally without it, required in CI",
     "redis: needs a running Redis (make up); skipped locally without it, required in CI",
+    "kafka: needs a running Kafka broker (make up); skipped locally without it, required in CI",
 ]
 
 # ---------------------------------------------------------------------------
@@ -71,6 +73,11 @@ strict = true
 warn_unreachable = true
 files = ["app", "tests"]
 plugins = ["pydantic.mypy"]
+
+# aiokafka ships no type information; it is wrapped in app/events/kafka.py.
+[[tool.mypy.overrides]]
+module = ["aiokafka", "aiokafka.*"]
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

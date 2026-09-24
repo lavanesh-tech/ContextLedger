@@ -122,6 +122,19 @@ class Settings(BaseSettings):
     oauth_state_ttl_seconds: int = Field(default=600, ge=60, le=3600)
     mcp_session_ttl_seconds: int = Field(default=3600, ge=60, le=86_400)
 
+    # --- Kafka (domain events) ------------------------------------------------------
+    kafka_bootstrap_servers: str = Field(default="localhost:9092", min_length=1)
+    kafka_client_id: str = Field(default="contextledger", pattern=r"^[A-Za-z0-9._-]{1,64}$")
+    # Partitions per event topic (the key is the tenant id: max consumer parallelism).
+    kafka_topic_partitions: int = Field(default=6, ge=1, le=1000)
+    # 1 for the single local broker; 3 on a real cluster (e.g. Amazon MSK).
+    kafka_replication_factor: int = Field(default=1, ge=1, le=5)
+    kafka_request_timeout_seconds: float = Field(default=30.0, gt=0)
+    event_relay_batch_size: int = Field(default=200, ge=1, le=5000)
+    event_relay_poll_interval_seconds: float = Field(default=1.0, gt=0)
+    event_consumer_max_attempts: int = Field(default=3, ge=1, le=20)
+    event_consumer_retry_base_seconds: float = Field(default=0.5, ge=0)
+
     # --- API authentication --------------------------------------------------------
     # "development-headers": the caller's user id is taken from the
     # X-ContextLedger-User-Id header. Convenient for local development and tests,

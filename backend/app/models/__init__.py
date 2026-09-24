@@ -14,6 +14,7 @@ from app.models.decision import (
 )
 from app.models.embedding import EmbeddingJob, FactEmbedding
 from app.models.entity import Entity
+from app.models.events import OrganizationActivityDaily, OutboxEvent, ProcessedEvent
 from app.models.evidence import Evidence, FactVersionEvidence
 from app.models.fact import Fact, FactVersion
 from app.models.membership import OrganizationMembership
@@ -41,6 +42,9 @@ __all__ = [
     "FactVersionEvidence",
     "GraphOutboxEvent",
     "Organization",
+    "OrganizationActivityDaily",
     "OrganizationMembership",
+    "OutboxEvent",
+    "ProcessedEvent",
     "User",
 ]
