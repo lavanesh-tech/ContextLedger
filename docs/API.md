@@ -78,6 +78,13 @@ true`) without doing the work again. Each user and each agent has a request
 budget per minute; over it, the API answers 429 with `Retry-After`. Searches
 may be served from a cache (`"cache": "hit"`). Details: [REDIS.md](REDIS.md).
 
+## Activity (eventually consistent)
+
+`GET /organizations/{id}/activity?days=30` returns facts recorded, evidence
+captured and decisions recorded per UTC day. The counts come from a Kafka
+consumer, and `pending_events` says how many changes are not counted yet.
+Details: [EVENTS.md](EVENTS.md).
+
 ## Privacy on read
 
 Read endpoints apply the caller's role ceiling (VIEWER: PUBLIC and INTERNAL;

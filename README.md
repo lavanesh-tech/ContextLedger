@@ -34,7 +34,8 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - REST API for every capability, with RFC 9457 problem details (stable codes and correlation ids), Swagger UI, a committed OpenAPI document and a generated Postman collection. See [docs/API.md](docs/API.md)
 - Authentication and authorization: ES256 JWTs; AI agents as OAuth2 clients (client credentials) with scoped tokens, privacy ceilings, and revocation that takes effect before expiry; RBAC re-checked per request; an automatic sweep verifies every tenant route rejects other tenants. See [docs/AUTH.md](docs/AUTH.md)
 - Redis for shared short-lived state: a tenant- and privacy-aware retrieval cache invalidated by generation, distributed per-caller rate limiting, `Idempotency-Key` replay for POSTs, single-use OAuth state, and MCP session state, each with an explicit fail-open or fail-closed policy. See [docs/REDIS.md](docs/REDIS.md)
-- Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API and embedding worker
+- Kafka domain events from a trigger-written transactional outbox: tenant-keyed topics, a CloudEvents-style envelope with drift-tested JSON Schemas, idempotent consumers (dedup in the same transaction as the effect), bounded retries and dead-letter topics. Consumers maintain a daily activity read model and invalidate the retrieval cache. See [docs/EVENTS.md](docs/EVENTS.md)
+- Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API, embedding worker, graph projector, event relay and event consumers
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
 ## Quick start
@@ -87,6 +88,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [REST API](docs/API.md)
 - [Authentication and authorization](docs/AUTH.md)
 - [Redis: cache, rate limits, idempotency, short-lived state](docs/REDIS.md)
+- [Domain events (Kafka)](docs/EVENTS.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 
 ## Measured results

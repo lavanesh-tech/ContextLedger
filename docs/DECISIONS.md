@@ -728,3 +728,37 @@ allow bursts of up to twice the limit at window edges. Idempotency is
 at-most-once per key while the reservation lock holds, not exactly-once.
 Without `CONTEXTLEDGER_REDIS_URL` the in-memory store is correct only for a
 single process, which is why staging and production require the URL.
+
+---
+
+## ADR-030: Domain events through a trigger-written outbox, keyed by tenant, consumed idempotently
+
+**Status:** Accepted (Phase 15)
+
+**Context.** Several reactions to changes (activity counters, cache
+invalidation, later the embedding and graph pipelines) should run
+asynchronously and independently of the request. Publishing to Kafka from the
+request path can lose events, or publish events for rolled-back transactions.
+
+**Decision.**
+- PostgreSQL triggers write events into `event_outbox` in the same transaction
+  as the change. A relay publishes them with `acks=all` from an idempotent
+  producer, then deletes them.
+- Three topics grouped by aggregate, keyed by organization id: per-tenant
+  ordering and cross-tenant parallelism. Each has a dead-letter topic.
+- A CloudEvents-style JSON envelope with Pydantic payload schemas, exported as
+  JSON Schema and drift-tested. Payloads carry identifiers and metadata only,
+  never content, because consumers do not enforce privacy scopes.
+- Consumers are separate consumer groups. Dedup rows in `processed_events` are
+  written in the same transaction as the effect, and offsets are committed
+  after it. Transient errors get bounded exponential retries, then the DLQ.
+  Permanent errors go straight to the DLQ.
+- JSON rather than Avro/Protobuf with a schema registry: one producer and a few
+  consumers in one repository, with schemas versioned in code. Revisit if
+  independent teams consume the topics.
+
+**Consequences.** Delivery is at-least-once, and the effect is applied once
+only for PostgreSQL effects. Effects elsewhere must be idempotent. The activity
+read model is eventually consistent. A hot tenant is bounded by one
+partition. Several relays can interleave one tenant's events, so ordering
+guarantees assume one relay.

@@ -242,7 +242,13 @@ invalidated by per-organization generations), per-principal rate limits,
 state. The cache and limiter fail open; idempotency and OAuth state fail
 closed. Details: [REDIS.md](REDIS.md).
 
-Still running but not yet used: Kafka 4 (KRaft).
+**Kafka (Phase 15).** Database triggers write domain events into an outbox in
+the same transaction as each change. A relay publishes them to three topics
+keyed by tenant (`acks=all`, idempotent producer). Consumers apply their
+effects once in PostgreSQL by writing a dedup row in the same transaction, and
+failed messages go through bounded retries to dead-letter topics. Consumers
+today: a daily activity read model and retrieval-cache invalidation. Details:
+[EVENTS.md](EVENTS.md).
 
 ## Backend layout
 
@@ -258,12 +264,12 @@ Still running but not yet used: Kafka 4 (KRaft).
 | `app/domain` | Framework-free rules: roles/permissions, tenant context, validation, errors | Phase 3+ |
 | `app/temporal` | Bitemporal value types and reference semantics | Phase 5 |
 | `app/providers` | Embedding providers: deterministic (offline) and OpenAI (mocked in tests) | Phase 7 |
-| `app/workers` | Embedding worker (Postgres job queue) | Phase 7 |
+| `app/workers` | Embedding worker, graph projector, event relay, event consumers | Phase 7+ |
 | `app/retrieval` | (reserved) retrieval lives in `domain/retrieval.py`, `repositories/retrieval.py`, `services/retrieval.py` | Phase 8 |
 | `app/provenance` | Neo4j provenance graph | Phase 10 |
 | `app/mcp` | MCP server | Phase 11 |
 | `app/cache` | Redis store, retrieval cache, rate limiter, idempotency middleware, OAuth state | Phase 14 |
-| `app/events` | Kafka schemas, producers, consumers | Phase 15 |
+| `app/events` | Event envelope and schemas, Kafka adapters, idempotent consumer framework, handlers | Phase 15 |
 | `app/telemetry` | OpenTelemetry, Prometheus | Phase 20 |
 
 Dependency direction: `api`/`mcp` → `services` → `domain`, `temporal`,

@@ -18,8 +18,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 11 | MCP server and core tools | Done |
 | 12 | Complete REST API, standardized errors, Swagger, Postman | Done |
 | 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | Done |
-| 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | In review |
-| 15 | Kafka events and idempotent consumers | Planned |
+| 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | Done |
+| 15 | Kafka events and idempotent consumers | In review |
 | 16 | Contradiction detection | Planned |
 | 17 | Revocation impact | Planned |
 | 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Planned |
@@ -47,13 +47,14 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - PostgreSQL Row-Level Security as a second tenant-isolation layer (evaluate in Phase 13 / 28).
 - Time-ordered UUIDv7 primary keys once the runtime supports them natively (index locality).
 - Audited redaction process for evidence that must be removed (legal takedown) (Phase 28).
-- Trigger the embedding worker from Kafka fact events instead of polling only (Phase 15).
+- Trigger the embedding worker from `fact.version_recorded` events instead of polling only.
 - Tune `hnsw.ef_search` from retrieval-quality and load-test measurements (Phases 18, 27).
 - Benchmark IVFFlat vs HNSW on a growing table (index built on a small prefix, then inserts) to confirm or revisit ADR-020.
 - Evaluate a reranker (cross-encoder or LLM) against RRF-only retrieval with Phase 18 metrics.
 - Expose retrieval over REST (Phase 12) and MCP (Phase 11); agent-specific privacy ceilings (Phase 13).
 - Sign decision receipts with a key held outside the database (e.g. AWS KMS), optionally chain receipt hashes (Phase 28).
-- Relay the graph outbox through Kafka instead of polling (Phase 15); alert on outbox size / projection lag (Phase 20).
+- Feed the graph projector from Kafka events instead of its own outbox; alert on outbox size, projection lag and consumer lag (Phase 20).
+- A DLQ replay command, and a retention job for `processed_events` (older than Kafka retention).
 - MCP over streamable HTTP authenticated with agent access tokens (MCP authorization spec) (Phase 21).
 - Human SSO through an external OIDC provider (JWKS verification) instead of dev tokens.
 - Tune rate limits and the retrieval-cache TTL from load tests; consider a sliding-window limiter (Phase 27).
