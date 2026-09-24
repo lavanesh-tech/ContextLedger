@@ -19,6 +19,10 @@ from app import __version__
 from app.api.errors import install_error_handlers
 from app.api.v1.router import api_router
 from app.auth.tokens import TokenService
+from app.cache.idempotency import IdempotencyMiddleware
+from app.cache.rate_limit import RateLimiter
+from app.cache.retrieval import RetrievalCache
+from app.cache.store import build_store
 from app.core.config import API_V1_PREFIX, Settings, get_settings
 from app.core.correlation import CorrelationIdMiddleware
 from app.core.logging import configure_logging
@@ -59,6 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        await app.state.store.close()
         if app.state.graph_driver is not None:
             await app.state.graph_driver.close()
         if app.state.http_client is not None:
@@ -106,7 +111,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.state.token_service = TokenService.from_settings(settings)
 
+    # Redis (or, without CONTEXTLEDGER_REDIS_URL, a per-process in-memory store).
+    app.state.store = build_store(settings)
+    app.state.rate_limiter = RateLimiter(app.state.store)
+    app.state.retrieval_cache = RetrievalCache(
+        app.state.store, ttl_seconds=settings.retrieval_cache_ttl_seconds
+    )
+
     install_error_handlers(app)
+    # Added first = innermost: correlation ids and access logs wrap idempotent replays too.
+    app.add_middleware(
+        IdempotencyMiddleware,
+        store=app.state.store,
+        tokens=app.state.token_service,
+        allow_header_auth=settings.auth_mode == "development-headers",
+        ttl_seconds=settings.idempotency_ttl_seconds,
+        lock_seconds=settings.idempotency_lock_seconds,
+    )
     app.add_middleware(CorrelationIdMiddleware, header_name=settings.correlation_id_header)
     app.include_router(api_router, prefix=API_V1_PREFIX)
     return app

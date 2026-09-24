@@ -13,8 +13,14 @@ from uuid import UUID
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from app.api.errors import AuthenticationRequiredError, ServiceUnavailableError
+from app.api.errors import (
+    AuthenticationRequiredError,
+    RateLimitedError,
+    ServiceUnavailableError,
+)
 from app.auth.tokens import InvalidTokenError, TokenService
+from app.cache.rate_limit import RateLimiter
+from app.cache.retrieval import RetrievalCache
 from app.core.config import Settings
 from app.domain.errors import PermissionDeniedError
 from app.domain.facts import PrivacyScope
@@ -75,15 +81,47 @@ def get_token_service(request: Request) -> TokenService:
 TokenServiceDep = Annotated[TokenService, Depends(get_token_service)]
 
 
+def get_rate_limiter(request: Request) -> RateLimiter:
+    return cast(RateLimiter, request.app.state.rate_limiter)
+
+
+def get_retrieval_cache(request: Request) -> RetrievalCache:
+    return cast(RetrievalCache, request.app.state.retrieval_cache)
+
+
+RateLimiterDep = Annotated[RateLimiter, Depends(get_rate_limiter)]
+RetrievalCacheDep = Annotated[RetrievalCache, Depends(get_retrieval_cache)]
+
+
+async def enforce_rate_limit(limiter: RateLimiter, subject: str, limit: int) -> None:
+    if limit <= 0:  # 0 disables the limit
+        return
+    decision = await limiter.hit(subject, limit=limit)
+    if not decision.allowed:
+        raise RateLimitedError(limit=limit, retry_after_seconds=decision.retry_after_seconds)
+
+
 async def get_principal(
-    request: Request, settings: SettingsDep, tokens: TokenServiceDep
+    request: Request, settings: SettingsDep, tokens: TokenServiceDep, limiter: RateLimiterDep
 ) -> Principal:
-    """Authenticate the caller.
+    """Authenticate the caller, then count the request against its rate limit
+    (per agent client, or per user; shared by every API process through Redis).
 
     * ``Authorization: Bearer <jwt>``: always accepted (users and agents).
     * ``X-ContextLedger-User-Id``: only with ``auth_mode=development-headers``
       (refused in staging/production by settings validation).
     """
+    principal = _authenticate(request, settings, tokens)
+    subject = (
+        f"agent:{principal.agent_client_id}"
+        if principal.agent_client_id is not None
+        else f"user:{principal.user_id}"
+    )
+    await enforce_rate_limit(limiter, subject, settings.rate_limit_requests_per_minute)
+    return principal
+
+
+def _authenticate(request: Request, settings: Settings, tokens: TokenService) -> Principal:
     authorization = request.headers.get("Authorization")
     if authorization:
         scheme, _, token = authorization.partition(" ")

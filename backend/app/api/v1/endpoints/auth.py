@@ -6,7 +6,13 @@ from uuid import UUID
 from fastapi import APIRouter, Form, status
 from fastapi.responses import JSONResponse
 
-from app.api.dependencies import SessionDep, SettingsDep, TenantDep, TokenServiceDep
+from app.api.dependencies import (
+    RateLimiterDep,
+    SessionDep,
+    SettingsDep,
+    TenantDep,
+    TokenServiceDep,
+)
 from app.api.errors import problem_responses
 from app.core.config import Environment
 from app.domain.errors import NotFoundError
@@ -23,9 +29,13 @@ from app.services.agent_clients import AgentClientService, InvalidClientError, I
 router = APIRouter(tags=["auth"])
 
 
-def _oauth_error(status_code: int, error: str, description: str) -> JSONResponse:
+def _oauth_error(
+    status_code: int, error: str, description: str, *, retry_after: int | None = None
+) -> JSONResponse:
     """RFC 6749 section 5.2 error body (OAuth clients expect this format, not problem+json)."""
     headers = {"Cache-Control": "no-store", "Pragma": "no-cache"}
+    if retry_after is not None:
+        headers["Retry-After"] = str(retry_after)
     if status_code == 401:
         headers["WWW-Authenticate"] = 'Basic realm="contextledger"'
     return JSONResponse(
@@ -42,6 +52,7 @@ def _oauth_error(status_code: int, error: str, description: str) -> JSONResponse
     responses={
         400: {"description": "invalid_request / invalid_scope"},
         401: {"description": "invalid_client"},
+        429: {"description": "too many token requests for this client_id"},
     },
 )
 async def token(
@@ -50,9 +61,23 @@ async def token(
     client_secret: Annotated[str, Form()],
     session: SessionDep,
     tokens: TokenServiceDep,
+    settings: SettingsDep,
+    limiter: RateLimiterDep,
     scope: Annotated[str | None, Form()] = None,
 ) -> JSONResponse:
-    """Exchange an agent's client credentials for a short-lived, scoped access token."""
+    """Exchange an agent's client credentials for a short-lived, scoped access token.
+
+    Limited per client_id (whether or not it exists), which caps secret guessing."""
+    limit = settings.rate_limit_token_requests_per_minute
+    if limit > 0:
+        decision = await limiter.hit(f"oauth-client:{client_id[:128]}", limit=limit)
+        if not decision.allowed:
+            return _oauth_error(
+                429,
+                "too_many_requests",
+                "too many token requests; retry later",
+                retry_after=decision.retry_after_seconds,
+            )
     if grant_type != "client_credentials":
         return _oauth_error(400, "unsupported_grant_type", "only client_credentials is supported")
     try:

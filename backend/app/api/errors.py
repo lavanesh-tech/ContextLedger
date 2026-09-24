@@ -65,6 +65,15 @@ class AuthenticationRequiredError(Exception):
     """No (valid) credentials were presented. Maps to 401."""
 
 
+class RateLimitedError(Exception):
+    """The caller exceeded its request budget. Maps to 429 with Retry-After."""
+
+    def __init__(self, *, limit: int, retry_after_seconds: int) -> None:
+        super().__init__(f"rate limit of {limit} requests per minute exceeded")
+        self.limit = limit
+        self.retry_after_seconds = retry_after_seconds
+
+
 class ServiceUnavailableError(Exception):
     """An optional dependency (e.g. Neo4j) is not configured or reachable. Maps to 503."""
 
@@ -134,6 +143,21 @@ async def _unauthenticated(request: Request, exc: Exception) -> JSONResponse:
     )
 
 
+async def _rate_limited(request: Request, exc: Exception) -> JSONResponse:
+    limited = cast(RateLimitedError, exc)
+    return problem_response(
+        request,
+        429,
+        "rate_limited",
+        str(limited),
+        headers={
+            "Retry-After": str(limited.retry_after_seconds),
+            "RateLimit-Limit": str(limited.limit),
+            "RateLimit-Remaining": "0",
+        },
+    )
+
+
 async def _unavailable(request: Request, exc: Exception) -> JSONResponse:
     return problem_response(request, 503, "service_unavailable", str(exc))
 
@@ -143,6 +167,7 @@ def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(RequestValidationError, _validation)
     app.add_exception_handler(StarletteHTTPException, _http)
     app.add_exception_handler(AuthenticationRequiredError, _unauthenticated)
+    app.add_exception_handler(RateLimitedError, _rate_limited)
     app.add_exception_handler(ServiceUnavailableError, _unavailable)
 
 

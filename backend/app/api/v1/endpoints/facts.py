@@ -9,7 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Response, status
 from pydantic import AwareDatetime
 
-from app.api.dependencies import SessionDep, TenantDep
+from app.api.dependencies import RetrievalCacheDep, SessionDep, TenantDep
 from app.api.errors import problem_responses
 from app.domain.errors import NotFoundError
 from app.domain.facts import PrivacyScope
@@ -86,7 +86,7 @@ async def get_source(source_id: UUID, ctx: TenantDep, session: SessionDep) -> So
     responses=WRITE,
 )
 async def record_fact_version(
-    body: FactVersionCreate, ctx: TenantDep, session: SessionDep
+    body: FactVersionCreate, ctx: TenantDep, session: SessionDep, cache: RetrievalCacheDep
 ) -> FactVersionOut:
     """Source S says: entity E's property P has value V from `valid_from`.
 
@@ -96,6 +96,8 @@ async def record_fact_version(
     data = body.model_dump()
     data["evidence_ids"] = tuple(data["evidence_ids"])
     version = await FactService(session).record_version(ctx, RecordFactVersion(**data))
+    # Committed: cached search results of this organization are now stale.
+    await cache.invalidate(ctx.organization_id)
     return FactVersionOut.model_validate(version)
 
 

@@ -32,6 +32,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.cache.retrieval import RetrievalCache
+from app.cache.store import build_store
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.db.session import create_engine, create_session_factory
@@ -76,8 +78,10 @@ class EmbeddingWorker:
         retry_base_seconds: float = 10.0,
         retry_cap_seconds: float = 900.0,
         organization_id: UUID | None = None,
+        retrieval_cache: RetrievalCache | None = None,
     ) -> None:
         self._sessions = sessions
+        self._retrieval_cache = retrieval_cache  # new vectors change search results
         self._provider = provider
         self._batch_size = batch_size
         self._max_attempts = max_attempts
@@ -169,6 +173,9 @@ class EmbeddingWorker:
                     succeeded += 1
                 else:
                     lost += 1
+        if self._retrieval_cache is not None:
+            for org_id in sorted({job.organization_id for job in jobs}):
+                await self._retrieval_cache.invalidate(org_id)
         logger.debug(
             "embedding.provider", extra={"provider_ms": provider_ms, "texts": len(to_embed)}
         )
@@ -237,6 +244,7 @@ async def _main(settings: Settings, *, once: bool, heartbeat: Path | None = None
     http_client = (
         build_openai_http_client(settings) if settings.embedding_provider == "openai" else None
     )
+    store = build_store(settings)
     try:
         worker = EmbeddingWorker(
             create_session_factory(engine),
@@ -246,6 +254,7 @@ async def _main(settings: Settings, *, once: bool, heartbeat: Path | None = None
             lease=timedelta(seconds=settings.embedding_lease_seconds),
             retry_base_seconds=settings.embedding_retry_base_seconds,
             retry_cap_seconds=settings.embedding_retry_cap_seconds,
+            retrieval_cache=RetrievalCache(store, ttl_seconds=settings.retrieval_cache_ttl_seconds),
         )
         logger.info("embedding.worker_started", extra={"model": worker.model, "once": once})
         if once:
@@ -262,6 +271,7 @@ async def _main(settings: Settings, *, once: bool, heartbeat: Path | None = None
         )
         logger.info("embedding.worker_stopped")
     finally:
+        await store.close()
         if http_client is not None:
             await http_client.aclose()
         await engine.dispose()

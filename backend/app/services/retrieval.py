@@ -20,10 +20,10 @@ No model decides any of them.
 
 import logging
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Literal, Protocol
 from uuid import UUID
 
 from sqlalchemy import text
@@ -55,6 +55,7 @@ from app.temporal.model import VersionSnapshot
 logger = logging.getLogger("contextledger.retrieval")
 
 VectorSearchStatus = Literal["used", "unavailable"]
+CacheStatus = Literal["hit", "miss", "off"]
 MAX_FILTER_VALUES = 100
 
 
@@ -96,6 +97,7 @@ class RetrievalResult:
     vector_candidates: int
     text_candidates: int
     results: list[RetrievedFact] = field(default_factory=list)
+    cache: CacheStatus = "off"  # "hit": served from the shared retrieval cache
 
 
 def _utc_now() -> datetime:
@@ -129,6 +131,31 @@ def _normalize_filters(request: RetrievalQuery) -> RetrievalFilters:
     )
 
 
+class ResultCache(Protocol):
+    """What the service needs from a result cache (app/cache/retrieval.py)."""
+
+    async def generation(self, organization_id: UUID) -> int | None: ...
+
+    @staticmethod
+    def key(
+        *,
+        organization_id: UUID,
+        generation: int,
+        scopes: frozenset[PrivacyScope],
+        model: str,
+        query: str,
+        limit: int,
+        trust_weight: float,
+        filters: RetrievalFilters,
+        valid_at: datetime | None,
+        known_at: datetime | None,
+    ) -> str: ...
+
+    async def get(self, key: str) -> "RetrievalResult | None": ...
+
+    async def put(self, key: str, result: "RetrievalResult") -> None: ...
+
+
 class RetrievalService:
     def __init__(
         self,
@@ -136,10 +163,12 @@ class RetrievalService:
         provider: EmbeddingProvider,
         *,
         clock: Callable[[], datetime] = _utc_now,
+        cache: ResultCache | None = None,
     ) -> None:
         self._session = session
         self._provider = provider
         self._clock = clock
+        self._cache = cache  # None: always read PostgreSQL (e.g. decision snapshots)
 
     async def search(self, ctx: TenantContext, request: RetrievalQuery) -> RetrievalResult:
         query = normalize_query(request.query)
@@ -153,9 +182,39 @@ class RetrievalService:
             else None
         )
 
-        # Fail fast before paying for an embedding.
+        # Fail fast before paying for an embedding (or serving a cached result).
         async with self._session.begin():
-            await require_permission(self._session, ctx, Permission.READ_FACTS)
+            role = await require_permission(self._session, ctx, Permission.READ_FACTS)
+
+        cache_key = None
+        if self._cache is not None:
+            generation = await self._cache.generation(ctx.organization_id)
+            if generation is not None:
+                cache_key = self._cache.key(
+                    organization_id=ctx.organization_id,
+                    generation=generation,
+                    scopes=visible_privacy_scopes(
+                        role, request.max_privacy_scope, ctx.max_privacy_scope
+                    ),
+                    model=self._provider.model_id,
+                    query=query,
+                    limit=limit,
+                    trust_weight=trust_weight,
+                    filters=filters,
+                    valid_at=request.valid_at,
+                    known_at=known_at,
+                )
+                cached = await self._cache.get(cache_key)
+                if cached is not None:
+                    logger.info(
+                        "retrieval.search",
+                        extra={
+                            "organization_id": str(ctx.organization_id),
+                            "returned": len(cached.results),
+                            "cache": "hit",
+                        },
+                    )
+                    return replace(cached, cache="hit")
 
         query_vector = await self._embed(query)
         pool = candidate_pool_size(limit)
@@ -213,9 +272,10 @@ class RetrievalService:
                 "text_candidates": len(text_hits),
                 "returned": len(results),
                 "vector_search": "used" if query_vector is not None else "unavailable",
+                "cache": "miss" if cache_key is not None else "off",
             },
         )
-        return RetrievalResult(
+        result = RetrievalResult(
             query=query,
             valid_at=valid_at,
             known_at=known_at,
@@ -225,7 +285,12 @@ class RetrievalService:
             vector_candidates=len(vector_hits),
             text_candidates=len(text_hits),
             results=results,
+            cache="miss" if cache_key is not None else "off",
         )
+        # A degraded (full-text only) answer is not cached: the next call may do better.
+        if cache_key is not None and self._cache is not None and query_vector is not None:
+            await self._cache.put(cache_key, result)
+        return result
 
     async def _embed(self, query: str) -> list[float] | None:
         try:
