@@ -134,7 +134,7 @@
                 "token"
               ]
             },
-            "description": "Exchange an agent's client credentials for a short-lived, scoped access token."
+            "description": "Exchange an agent's client credentials for a short-lived, scoped access token.\n\nLimited per client_id (whether or not it exists), which caps secret guessing."
           }
         },
         {
@@ -980,7 +980,7 @@
                 "search"
               ]
             },
-            "description": "Vector + full-text search over facts valid at `valid_at` as known at `known_at`,\npre-filtered by tenant, privacy scope and metadata; each result explains its score.",
+            "description": "Vector + full-text search over facts valid at `valid_at` as known at `known_at`,\npre-filtered by tenant, privacy scope and metadata; each result explains its score.\nResults may come from the shared retrieval cache (`cache: \"hit\"`).",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"query\": \"What is the credit limit of customer-991?\"\n}",

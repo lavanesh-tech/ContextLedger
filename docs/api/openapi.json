@@ -64,7 +64,7 @@
           "auth"
         ],
         "summary": "OAuth2 token endpoint (client credentials)",
-        "description": "Exchange an agent's client credentials for a short-lived, scoped access token.",
+        "description": "Exchange an agent's client credentials for a short-lived, scoped access token.\n\nLimited per client_id (whether or not it exists), which caps secret guessing.",
         "operationId": "token_api_v1_oauth_token_post",
         "requestBody": {
           "content": {
@@ -92,6 +92,9 @@
           },
           "401": {
             "description": "invalid_client"
+          },
+          "429": {
+            "description": "too many token requests for this client_id"
           },
           "422": {
             "description": "Validation Error",
@@ -2071,7 +2074,7 @@
           "search"
         ],
         "summary": "Hybrid temporal search",
-        "description": "Vector + full-text search over facts valid at `valid_at` as known at `known_at`,\npre-filtered by tenant, privacy scope and metadata; each result explains its score.",
+        "description": "Vector + full-text search over facts valid at `valid_at` as known at `known_at`,\npre-filtered by tenant, privacy scope and metadata; each result explains its score.\nResults may come from the shared retrieval cache (`cache: \"hit\"`).",
         "operationId": "search_api_v1_organizations__organization_id__search_post",
         "parameters": [
           {
@@ -4899,6 +4902,16 @@
             },
             "type": "array",
             "title": "Results"
+          },
+          "cache": {
+            "type": "string",
+            "enum": [
+              "hit",
+              "miss",
+              "off"
+            ],
+            "title": "Cache",
+            "default": "off"
           }
         },
         "type": "object",

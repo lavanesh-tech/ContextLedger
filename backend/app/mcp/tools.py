@@ -25,11 +25,14 @@ from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.cache.retrieval import RetrievalCache
+from app.cache.store import StoreUnavailableError
 from app.domain.errors import DomainError
 from app.domain.facts import PrivacyScope
 from app.domain.retrieval import MAX_LIMIT, visible_privacy_scopes
 from app.domain.tenancy import TenantContext
 from app.mcp.serialization import to_jsonable
+from app.mcp.state import McpSessionState
 from app.provenance.graph import GraphReader
 from app.providers.embeddings import EmbeddingProvider
 from app.services.decisions import DecisionService, RecordDecision
@@ -61,6 +64,8 @@ class McpRuntime:
     provider: EmbeddingProvider
     identity: McpIdentity
     graph: GraphReader | None = None  # None: impact tools report the graph as unavailable
+    cache: RetrievalCache | None = None  # shared retrieval cache (Redis)
+    state: McpSessionState | None = None  # temporary per-session state (Redis)
 
 
 @asynccontextmanager
@@ -111,7 +116,9 @@ class ToolHandlers:
         async with tool_errors("search_facts"):
             ctx = await self._tenant()
             async with self._rt.sessions() as session:
-                result = await RetrievalService(session, self._rt.provider).search(
+                result = await RetrievalService(
+                    session, self._rt.provider, cache=self._rt.cache
+                ).search(
                     ctx,
                     RetrievalQuery(
                         query=query,
@@ -124,10 +131,13 @@ class ToolHandlers:
                         max_privacy_scope=self._rt.identity.max_privacy_scope,
                     ),
                 )
+            if self._rt.state is not None:
+                await self._rt.state.remember_query(result.query)
             return {
                 "valid_at": to_jsonable(result.valid_at),
                 "known_at": to_jsonable(result.known_at),
                 "vector_search": result.vector_search,
+                "cache": result.cache,
                 "results": [
                     {
                         "fact_version_id": str(r.version.id),
@@ -238,6 +248,10 @@ class ToolHandlers:
                         max_privacy_scope=self._rt.identity.max_privacy_scope,
                     ),
                 )
+            if self._rt.state is not None:
+                await self._rt.state.remember_snapshot(
+                    captured.snapshot_id, [r.version.id for r in captured.retrieval.results]
+                )
             return {
                 "snapshot_id": str(captured.snapshot_id),
                 "valid_at": to_jsonable(captured.valid_at),
@@ -257,16 +271,21 @@ class ToolHandlers:
 
     async def record_decision(
         self,
-        snapshot_id: UUID,
         action: Annotated[str, Field(description="Identifier, e.g. credit.approve_increase")],
         outcome: Annotated[Any, Field(description="JSON describing what was decided")],
         relied_on: Annotated[
             list[UUID], Field(description="fact_version_ids from the snapshot you relied on")
         ],
         rationale: str | None = None,
+        snapshot_id: Annotated[
+            UUID | None,
+            Field(description="Defaults to the snapshot this session captured last"),
+        ] = None,
     ) -> Json:
         """Record a decision made from a captured snapshot. Returns a verifiable receipt."""
         async with tool_errors("record_decision"):
+            if snapshot_id is None:
+                snapshot_id = await self._last_snapshot()
             ctx = await self._tenant()
             async with self._rt.sessions() as session:
                 receipt = await DecisionService(session, self._rt.provider).record_decision(
@@ -312,6 +331,32 @@ class ToolHandlers:
                         evidence=[],
                     )
             return document
+
+    async def get_session_context(self) -> Json:
+        """What this MCP session remembers: the last captured snapshot (and its
+        fact_version_ids) and recent search queries. Expires after inactivity."""
+        async with tool_errors("get_session_context"):
+            if self._rt.state is None:
+                raise ToolError("session state is not configured for this server")
+            try:
+                context = await self._rt.state.current()
+            except StoreUnavailableError:
+                raise ToolError("session state is temporarily unavailable") from None
+            result: Json = to_jsonable(context)
+            return result
+
+    async def _last_snapshot(self) -> UUID:
+        if self._rt.state is not None:
+            try:
+                context = await self._rt.state.current()
+            except StoreUnavailableError:
+                context = None
+            if context is not None and context.last_snapshot_id is not None:
+                return context.last_snapshot_id
+        raise ToolError(
+            "no snapshot_id given and none captured in this session; "
+            "call capture_decision_context first or pass snapshot_id"
+        )
 
     # --- provenance graph ---------------------------------------------------------------
 

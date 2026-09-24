@@ -23,6 +23,7 @@ EXPECTED_TOOLS = {
     "capture_decision_context",
     "record_decision",
     "get_decision_receipt",
+    "get_session_context",
     "analyze_impact",
     "get_decision_lineage",
 }

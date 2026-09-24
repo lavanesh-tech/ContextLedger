@@ -13,14 +13,18 @@ stdout, so they cannot corrupt the protocol stream.
 import asyncio
 import logging
 import sys
+import uuid
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
+from app.cache.retrieval import RetrievalCache
+from app.cache.store import build_store
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.db.session import create_engine, create_session_factory
 from app.domain.facts import PrivacyScope
+from app.mcp.state import McpSessionState
 from app.mcp.tools import McpIdentity, McpRuntime, ToolHandlers
 from app.provenance.graph import GraphReader, build_driver
 from app.providers.embeddings import build_embedding_provider, build_openai_http_client
@@ -32,7 +36,9 @@ ContextLedger is the system of record for facts your decisions depend on.
 - Use search_facts / get_entity_facts to look facts up. Every fact is valid for a time
   range and was recorded at a known time; pass valid_at / known_at to ask about the past.
 - Before acting on facts, call capture_decision_context, then record_decision citing the
-  fact_version_ids you relied on. The returned receipt proves what you knew and when.
+  fact_version_ids you relied on (snapshot_id defaults to the one you captured last).
+  The returned receipt proves what you knew and when.
+- get_session_context shows what this session remembers (it expires after inactivity).
 - Use analyze_impact to see which decisions depend on a fact, source or evidence.
 You cannot choose the organization or user: they are fixed by the server's configuration.
 """
@@ -51,6 +57,7 @@ def build_server(runtime: McpRuntime) -> FastMCP:
         (tools.capture_decision_context, WRITES),
         (tools.record_decision, WRITES),
         (tools.get_decision_receipt, READ_ONLY),
+        (tools.get_session_context, READ_ONLY),
         (tools.analyze_impact, READ_ONLY),
         (tools.get_decision_lineage, READ_ONLY),
     ):
@@ -79,12 +86,24 @@ async def _main(settings: Settings) -> None:
         build_openai_http_client(settings) if settings.embedding_provider == "openai" else None
     )
     driver = build_driver(settings) if settings.neo4j_password.get_secret_value() else None
+    store = build_store(settings)
+    # One stdio process serves one client session.
+    session_id = uuid.uuid4().hex
     try:
         runtime = McpRuntime(
             sessions=create_session_factory(engine),
             provider=build_embedding_provider(settings, http_client),
             identity=identity,
             graph=None if driver is None else GraphReader(driver, settings.neo4j_database),
+            cache=RetrievalCache(store, ttl_seconds=settings.retrieval_cache_ttl_seconds),
+            state=McpSessionState(
+                store,
+                organization_id=identity.organization_id,
+                user_id=identity.user_id,
+                agent_name=identity.agent_name,
+                session_id=session_id,
+                ttl_seconds=settings.mcp_session_ttl_seconds,
+            ),
         )
         logger.info(
             "mcp.server_started",
@@ -92,6 +111,7 @@ async def _main(settings: Settings) -> None:
         )
         await build_server(runtime).run_stdio_async()
     finally:
+        await store.close()
         if driver is not None:
             await driver.close()
         if http_client is not None:
