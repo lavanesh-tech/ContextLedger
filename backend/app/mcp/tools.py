@@ -34,6 +34,7 @@ from app.ai.prompts.grounded_answer import DEFAULT_GROUNDED_ANSWER_PROMPT
 from app.ai.providers import GenerationProvider
 from app.cache.retrieval import RetrievalCache
 from app.cache.store import StoreUnavailableError
+from app.domain.contradictions import ContradictionStatus
 from app.domain.errors import DomainError
 from app.domain.facts import PrivacyScope
 from app.domain.retrieval import MAX_LIMIT, PRIVACY_ORDER, visible_privacy_scopes
@@ -43,6 +44,7 @@ from app.mcp.state import McpSessionState
 from app.provenance.graph import GraphReader
 from app.providers.embeddings import EmbeddingProvider
 from app.services.answers import AnswerGenerationError, AnswerQuery, GroundedAnswerService
+from app.services.contradictions import ContradictionService
 from app.services.decisions import DecisionService, RecordDecision
 from app.services.investigations import InvestigationService
 from app.services.provenance import ProvenanceService
@@ -387,6 +389,30 @@ class ToolHandlers:
             "no snapshot_id given and none captured in this session; "
             "call capture_decision_context first or pass snapshot_id"
         )
+
+    # --- contradictions -------------------------------------------------------------------
+
+    async def get_contradictions(
+        self,
+        status: Literal["open", "resolved", "dismissed"] | None = "open",
+        entity_type: str | None = None,
+        external_id: str | None = None,
+        limit: Annotated[int, Field(ge=1, le=50)] = 20,
+    ) -> Json:
+        """Conflicting fact versions (e.g. two sources disagreeing about a value), with both
+        versions, which one the rules prefer, and whether a person has resolved it. Check
+        this before relying on a fact that may be disputed."""
+        async with tool_errors("get_contradictions"):
+            ctx = await self._agent_tenant()
+            async with self._rt.sessions() as session:
+                views = await ContradictionService(session).list_contradictions(
+                    ctx,
+                    status=None if status is None else ContradictionStatus(status),
+                    entity_type=entity_type,
+                    external_id=external_id,
+                    limit=limit,
+                )
+            return {"contradictions": to_jsonable(views)}
 
     # --- AI: grounded answers and the decision investigator ------------------------------
 

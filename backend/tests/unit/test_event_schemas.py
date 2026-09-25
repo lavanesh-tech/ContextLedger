@@ -38,6 +38,16 @@ SAMPLES: dict[str, dict[str, Any]] = {
         "recorded_at": "2026-01-15T09:00:00.123456+00:00",
     },
     "fact.embedding_stored": {"fact_version_id": ID, "model": "m", "created_at": AT},
+    "contradiction.detected": {
+        "id": ID,
+        "entity_id": ID,
+        "left_version_id": ID,
+        "right_version_id": ID,
+        "kind": "value_conflict",
+        "detector": "observed-value-conflict-v1",
+        "privacy_scope": "INTERNAL",
+        "detected_at": AT,
+    },
     "evidence.captured": {
         "id": ID,
         "source_id": ID,

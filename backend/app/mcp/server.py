@@ -40,6 +40,8 @@ ContextLedger is the system of record for facts your decisions depend on.
   fact_version_ids you relied on (snapshot_id defaults to the one you captured last).
   The returned receipt proves what you knew and when.
 - get_session_context shows what this session remembers (it expires after inactivity).
+- get_contradictions lists facts that sources disagree about; check it before relying
+  on a disputed fact.
 - Use analyze_impact to see which decisions depend on a fact, source or evidence.
 - answer_question answers from facts with verified citations; investigate_decision
   explains a past decision. Both call an LLM and are only as good as the facts: a
@@ -68,6 +70,7 @@ def build_server(runtime: McpRuntime) -> FastMCP:
         (tools.get_session_context, READ_ONLY),
         (tools.analyze_impact, READ_ONLY),
         (tools.get_decision_lineage, READ_ONLY),
+        (tools.get_contradictions, READ_ONLY),
         (tools.answer_question, GENERATES),
         (tools.investigate_decision, INVESTIGATES),
     ):

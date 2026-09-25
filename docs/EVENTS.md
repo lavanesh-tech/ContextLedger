@@ -31,7 +31,7 @@ backfills) emit events too.
 
 | Topic | Events | Partitions (local) |
 |---|---|---|
-| `contextledger.facts.v1` | `fact.version_recorded`, `fact.embedding_stored` | 6 |
+| `contextledger.facts.v1` | `fact.version_recorded`, `fact.embedding_stored`, `contradiction.detected` | 6 |
 | `contextledger.evidence.v1` | `evidence.captured`, `evidence.linked` | 6 |
 | `contextledger.decisions.v1` | `context.captured`, `decision.recorded` | 6 |
 | `<topic>.dlq` | messages a consumer gave up on | 1 |

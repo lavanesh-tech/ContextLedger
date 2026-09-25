@@ -44,6 +44,10 @@ OPENAPI_TAGS = [
     {"name": "evidence", "description": "Immutable, content-addressed supporting material."},
     {"name": "search", "description": "Hybrid temporal retrieval (vector + full text)."},
     {
+        "name": "contradictions",
+        "description": "Conflicting fact versions: rule-detected, optionally LLM-suggested.",
+    },
+    {
         "name": "answers",
         "description": "Grounded LLM answers over authorized facts, with verified citations.",
     },

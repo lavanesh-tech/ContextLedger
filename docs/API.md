@@ -19,6 +19,7 @@ All tenant data lives under `/api/v1/organizations/{organization_id}/…`.
 | Evidence | `POST …/evidence` (201 new, 200 same content already captured); `POST …/fact-versions/{id}/evidence`; `GET …/fact-versions/{id}/provenance` |
 | Search | `POST …/search` |
 | Decisions | `POST …/context-snapshots`; `POST …/decisions`; `GET …/decisions/{id}/receipt`; `GET …/fact-versions/{id}/decisions` |
+| Contradictions | `GET …/contradictions?status&entity_type&external_id&limit`; `GET/PATCH …/contradictions/{id}` (resolve or dismiss; `facts:write`); `POST …/entities/{type}/{external_id}/contradiction-review` (optional LLM suggestions; 503 when generation is disabled) |
 | Answers | `POST …/answers` (grounded LLM answer with verified citations; 503 when generation is disabled or fails) |
 | Investigations | `POST …/investigations` (decision-investigator agent; needs `facts:read` and `decisions:read`); `GET …/investigations/{run_id}` (only the requester) |
 | Provenance | `GET …/impact/fact-versions/{id}`, `…/impact/sources/{id}`, `…/impact/evidence/{id}`, `GET …/decisions/{id}/lineage` (503 if Neo4j is not configured) |

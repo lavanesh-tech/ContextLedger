@@ -20,7 +20,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | Done |
 | 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | Done |
 | 15 | Kafka events and idempotent consumers | Done |
-| 16 | Contradiction detection | Planned |
+| 16 | Contradiction detection | Done |
 | 17 | Revocation impact | Planned |
 | 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Planned |
 | 19 | Frontend: Next.js + React + TypeScript in `frontend/`, consuming the FastAPI `/api/v1` REST API (ADR-008) | Planned |
@@ -39,8 +39,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 
 ## Additive AI capability (outside the numbered phases)
 
-Built after Phase 15 without renumbering or replacing any phase. Phase 16
-(contradiction detection) and Phase 18 (RAG evaluation of retrieval: Recall@K,
+Built after Phase 15 without renumbering or replacing any phase. Phase 18 (RAG evaluation of retrieval: Recall@K,
 Precision@K, MRR) are still planned as defined above. Details: [AI.md](AI.md),
 ADR-031.
 
@@ -76,6 +75,7 @@ ADR-031.
 - Record a live grounded-answer evaluation (`make eval-live`) and compare prompt versions on answer metrics before changing the default prompt.
 - An investigator evaluation dataset (tool-use correctness, grounded rate) alongside the answer evaluation.
 - Per-tenant token budgets and rate limits for the LLM endpoints (Phase 27/28).
+- More contradiction rules (numeric tolerance, cross-entity), and measuring the LLM review's precision on a labelled set before relying on it.
 - Tune rate limits and the retrieval-cache TTL from load tests; consider a sliding-window limiter (Phase 27).
 - Measure the retrieval-cache hit rate and latency with a real workload (Phases 20, 27).
 - Cache agent-revocation and membership checks in Redis only if load tests show they matter (Phase 27).

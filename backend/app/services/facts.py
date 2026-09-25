@@ -16,6 +16,14 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.contradictions import (
+    RULE_OBSERVED_VALUE_CONFLICT,
+    ContradictionKind,
+    ContradictionStatus,
+    VersionFacts,
+    preferred,
+    value_conflict,
+)
 from app.domain.errors import ConflictError, NotFoundError
 from app.domain.evidence import EvidenceRelation
 from app.domain.facts import (
@@ -26,6 +34,7 @@ from app.domain.facts import (
     plan_new_version,
     require_aware,
 )
+from app.domain.retrieval import PRIVACY_ORDER
 from app.domain.roles import Permission
 from app.domain.tenancy import TenantContext
 from app.domain.validation import (
@@ -37,6 +46,7 @@ from app.domain.validation import (
     validate_authority,
     validate_fact_value,
 )
+from app.models.contradiction import Contradiction
 from app.models.fact import Fact, FactVersion
 from app.models.source import FactSource
 from app.repositories.facts import FactRepository
@@ -150,6 +160,8 @@ class FactService:
             # Transaction time is taken *after* the lock and is strictly increasing
             # per fact, so "what was known at K" always sees a prefix of the chain.
             recorded_at = await repository.next_transaction_time(latest)
+            # The previous version as it was claimed, before this write closes it.
+            previous_claim = None if latest is None else _rule_view(latest)
             if latest is not None and plan.close_previous_at is not None:
                 await repository.close_version(
                     latest, plan.close_previous_at, recorded_at=recorded_at
@@ -170,6 +182,8 @@ class FactService:
                 recorded_at=recorded_at,
             )
             await self._session.flush()
+            if latest is not None and previous_claim is not None:
+                self._detect_value_conflict(ctx, entity.id, latest, previous_claim, fact_version)
             # Same transaction: if any evidence id is unknown or foreign, the
             # version itself is rolled back too.
             await link_evidence(
@@ -180,6 +194,39 @@ class FactService:
                 relation=EvidenceRelation.SUPPORTS,
             )
         return fact_version
+
+    def _detect_value_conflict(
+        self,
+        ctx: TenantContext,
+        entity_id: UUID,
+        previous: FactVersion,
+        left: VersionFacts,
+        new: FactVersion,
+    ) -> None:
+        """Record a contradiction in the same transaction as the version that caused it
+        (rule in app/domain/contradictions.py). Both versions are kept either way."""
+        right = _rule_view(new)
+        reason = value_conflict(left, right)
+        if reason is None:
+            return
+        self._session.add(
+            Contradiction(
+                organization_id=ctx.organization_id,
+                entity_id=entity_id,
+                left_version_id=previous.id,
+                right_version_id=new.id,
+                kind=ContradictionKind.VALUE_CONFLICT,
+                detector=RULE_OBSERVED_VALUE_CONFLICT,
+                explanation=reason,
+                preferred_version_id=preferred(left, right),
+                privacy_scope=max(
+                    PrivacyScope(previous.privacy_scope),
+                    PrivacyScope(new.privacy_scope),
+                    key=PRIVACY_ORDER.index,
+                ),
+                status=ContradictionStatus.OPEN,
+            )
+        )
 
     async def get_version(self, ctx: TenantContext, version_id: UUID) -> FactVersion:
         async with self._session.begin():
@@ -207,3 +254,16 @@ class FactService:
             if await repository.get_fact(fact_id) is None:
                 raise NotFoundError("fact not found")
             return await repository.list_versions(fact_id)
+
+
+def _rule_view(version: FactVersion) -> VersionFacts:
+    return VersionFacts(
+        id=version.id,
+        source_id=version.source_id,
+        value=version.value,
+        valid_from=version.valid_from,
+        valid_until=version.valid_until,
+        observed_at=version.observed_at,
+        authority=version.authority,
+        confidence=version.confidence,
+    )

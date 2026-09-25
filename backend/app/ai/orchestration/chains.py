@@ -1,4 +1,4 @@
-"""LangChain runnables for grounded answers.
+"""LangChain runnables for grounded answers (and other structured prompts).
 
 ``grounded_answer_chain``:  ChatPromptTemplate (from a versioned prompt)
                               | ContextLedgerChatModel bound to the strict JSON schema
@@ -28,16 +28,22 @@ def chat_prompt(template: PromptTemplate) -> ChatPromptTemplate:
 def grounded_answer_chain(
     template: PromptTemplate, model: ContextLedgerChatModel
 ) -> Runnable[dict[str, str], BaseMessage]:
+    return structured_chain(template, model, schema_name="grounded_answer")
+
+
+def structured_chain(
+    template: PromptTemplate, model: ContextLedgerChatModel, *, schema_name: str
+) -> Runnable[dict[str, str], BaseMessage]:
+    """prompt template | model bound to the template's JSON schema, traced by prompt version."""
     bound = model.bind(
         output_schema=(
-            OutputSchema("grounded_answer", template.output_schema)
-            if template.output_schema
-            else None
+            OutputSchema(schema_name, template.output_schema) if template.output_schema else None
         )
     )
     chain: Runnable[dict[str, str], BaseMessage] = chat_prompt(template) | bound
+    run_name = "grounded-answer" if schema_name == "grounded_answer" else schema_name
     return chain.with_config(
-        run_name=f"grounded-answer[{template.version}]",
+        run_name=f"{run_name}[{template.version}]",
         tags=["contextledger", template.version],
         metadata={"prompt_version": template.version, "prompt_fingerprint": template.fingerprint},
     )

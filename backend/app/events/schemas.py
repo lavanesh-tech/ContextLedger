@@ -97,11 +97,23 @@ class DecisionRecorded(EventData):
     receipt_sha256: str
 
 
+class ContradictionDetected(EventData):
+    id: UUID
+    entity_id: UUID
+    left_version_id: UUID
+    right_version_id: UUID
+    kind: str
+    detector: str
+    privacy_scope: str
+    detected_at: AwareDatetime
+
+
 # event type -> (topic, payload schema). The database triggers (migration 0010)
-# emit exactly these types.
+# emit exactly these types (contradiction.detected: migration 0012).
 EVENT_TYPES: Final[dict[str, tuple[str, type[EventData]]]] = {
     "fact.version_recorded": (FACTS_TOPIC, FactVersionRecorded),
     "fact.embedding_stored": (FACTS_TOPIC, FactEmbeddingStored),
+    "contradiction.detected": (FACTS_TOPIC, ContradictionDetected),
     "evidence.captured": (EVIDENCE_TOPIC, EvidenceCaptured),
     "evidence.linked": (EVIDENCE_TOPIC, EvidenceLinked),
     "context.captured": (DECISIONS_TOPIC, ContextCaptured),

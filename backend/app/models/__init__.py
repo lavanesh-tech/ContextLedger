@@ -7,6 +7,7 @@ when Alembic autogenerates or checks migrations.
 from app.db.base import Base
 from app.models.agent_client import AgentClient
 from app.models.agent_run import AgentRun
+from app.models.contradiction import Contradiction
 from app.models.decision import (
     ContextSnapshot,
     ContextSnapshotFact,
@@ -31,6 +32,7 @@ __all__ = [
     "Base",
     "ContextSnapshot",
     "ContextSnapshotFact",
+    "Contradiction",
     "Decision",
     "DecisionFact",
     "EmbeddingJob",

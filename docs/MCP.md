@@ -18,6 +18,7 @@ over the same services the REST API will use, so the rules are identical.
 | `analyze_impact` | read | Decisions depending on a fact version, source or evidence (Neo4j) |
 | `get_decision_lineage` | read | What a decision rests on: versions, sources, evidence (Neo4j) |
 | `get_session_context` | read | What this session remembers: last snapshot, its fact versions, recent queries (Redis, expires after inactivity) |
+| `get_contradictions` | read | Conflicting fact versions, both sides, the preferred one and the status, under the agent's privacy ceiling |
 | `answer_question` | read, calls an LLM | A grounded answer from facts this agent may see, with verified citations ([AI.md](AI.md)) |
 | `investigate_decision` | stores a trace, calls an LLM | The decision-investigator agent; the run is stored in `agent_runs` ([AI.md](AI.md)) |
 

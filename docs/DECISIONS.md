@@ -800,3 +800,37 @@ checkpointing or parallel tool execution; runs are short and bounded, so this
 is acceptable now. The agent's trace stores tool arguments and outcomes but not
 tool outputs, which may contain values readers of the trace are not allowed to
 see; the answer text is stored and readable only by the requester.
+
+## ADR-032: Contradictions are detected by a deterministic rule on write, never resolved automatically
+
+**Status:** Accepted (Phase 16)
+
+**Context.** Sources disagree (the CRM says ACTIVE, billing says SUSPENDED).
+Each fact has one version chain, so a disagreeing source simply supersedes the
+previous version; without a record of the conflict, the disagreement is lost
+in an ordinary-looking update. Most updates, though, are real changes, and
+flagging all of them would be noise.
+
+**Decision.**
+- One rule, `observed-value-conflict-v1`: a new version from a different source
+  with a different value, valid from an instant at or before the time the
+  previous source *observed* its value. It runs in `record_version`, in the
+  same transaction as the write, so a committed conflicting version always has
+  its contradiction row (and, through the outbox trigger, its
+  `contradiction.detected` event).
+- Nothing is discarded or changed: both versions stay in the history. The row
+  records the preferred version (authority, then confidence, then later
+  observation), but only a person closes it (resolved or dismissed), and that
+  is recorded with who and why.
+- A contradiction's privacy scope is the more sensitive of its two versions,
+  and it is shown only to readers who may see both.
+- LLM help is optional and limited to what rules cannot see: conflicts between
+  different properties of one entity. The model gets only the facts the caller
+  may see; each finding must name two supplied facts, and is stored as an open
+  `semantic` suggestion with the prompt version as its detector.
+
+**Consequences.** The rule depends on sources reporting `observed_at`; a
+source that omits it (observed = valid_from) never triggers it, so a late,
+conflicting report without observation times is treated as an update.
+Numeric tolerance and cross-entity conflicts are not covered yet. The LLM
+review's precision is unmeasured.

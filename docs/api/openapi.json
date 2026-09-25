@@ -2068,6 +2068,431 @@
         }
       }
     },
+    "/api/v1/organizations/{organization_id}/contradictions": {
+      "get": {
+        "tags": [
+          "contradictions"
+        ],
+        "summary": "Contradictions you may see",
+        "description": "Newest first. Hidden when either version is above your privacy ceiling.",
+        "operationId": "list_contradictions_api_v1_organizations__organization_id__contradictions_get",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ContradictionStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          },
+          {
+            "name": "external_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "External Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContradictionView"
+                  },
+                  "title": "Response List Contradictions Api V1 Organizations  Organization Id  Contradictions Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization_id}/contradictions/{contradiction_id}": {
+      "get": {
+        "tags": [
+          "contradictions"
+        ],
+        "summary": "One contradiction, with both versions",
+        "operationId": "get_contradiction_api_v1_organizations__organization_id__contradictions__contradiction_id__get",
+        "parameters": [
+          {
+            "name": "contradiction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contradiction Id"
+            }
+          },
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContradictionView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "contradictions"
+        ],
+        "summary": "Resolve or dismiss a contradiction",
+        "description": "Records who closed it and why. Fact versions are never changed or deleted.",
+        "operationId": "update_contradiction_api_v1_organizations__organization_id__contradictions__contradiction_id__patch",
+        "parameters": [
+          {
+            "name": "contradiction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contradiction Id"
+            }
+          },
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContradictionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContradictionView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization_id}/entities/{entity_type}/{external_id}/contradiction-review": {
+      "post": {
+        "tags": [
+          "contradictions"
+        ],
+        "summary": "Ask the LLM to suggest semantic contradictions between an entity's facts",
+        "description": "Optional assistance for conflicts between different properties (e.g. an ACTIVE\nstatus and a closed account). Only facts you may see are sent; every suggestion must\nname two of them, and is stored as an open `semantic` contradiction for a person to\nconfirm or dismiss. Needs `facts:read` and `facts:write`.",
+        "operationId": "review_entity_api_v1_organizations__organization_id__entities__entity_type___external_id__contradiction_review_post",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Type"
+            }
+          },
+          {
+            "name": "external_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "External Id"
+            }
+          },
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{organization_id}/search": {
       "post": {
         "tags": [
@@ -3719,6 +4144,198 @@
           "valid_until"
         ],
         "title": "Citation"
+      },
+      "ContradictionKind": {
+        "type": "string",
+        "enum": [
+          "value_conflict",
+          "semantic"
+        ],
+        "title": "ContradictionKind"
+      },
+      "ContradictionSide": {
+        "properties": {
+          "fact_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Fact Id"
+          },
+          "property": {
+            "type": "string",
+            "title": "Property"
+          },
+          "source_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Id"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "version": {
+            "$ref": "#/components/schemas/VersionSnapshot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fact_id",
+          "property",
+          "source_id",
+          "source_name",
+          "version"
+        ],
+        "title": "ContradictionSide"
+      },
+      "ContradictionStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "resolved",
+          "dismissed"
+        ],
+        "title": "ContradictionStatus"
+      },
+      "ContradictionUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "resolved",
+              "dismissed"
+            ],
+            "title": "Status"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ContradictionUpdate"
+      },
+      "ContradictionView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ContradictionKind"
+          },
+          "detector": {
+            "type": "string",
+            "title": "Detector"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContradictionStatus"
+          },
+          "preferred_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Version Id"
+          },
+          "privacy_scope": {
+            "$ref": "#/components/schemas/PrivacyScope"
+          },
+          "left": {
+            "$ref": "#/components/schemas/ContradictionSide"
+          },
+          "right": {
+            "$ref": "#/components/schemas/ContradictionSide"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "resolved_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By User Id"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "entity_type",
+          "external_id",
+          "kind",
+          "detector",
+          "explanation",
+          "status",
+          "preferred_version_id",
+          "privacy_scope",
+          "left",
+          "right",
+          "detected_at",
+          "resolved_at",
+          "resolved_by_user_id",
+          "resolution_note"
+        ],
+        "title": "ContradictionView"
       },
       "DatabaseReadiness": {
         "properties": {
@@ -5859,6 +6476,64 @@
         ],
         "title": "RetrievedFact"
       },
+      "ReviewResult": {
+        "properties": {
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "facts_reviewed": {
+            "type": "integer",
+            "title": "Facts Reviewed"
+          },
+          "created": {
+            "items": {
+              "$ref": "#/components/schemas/ContradictionView"
+            },
+            "type": "array",
+            "title": "Created"
+          },
+          "already_known": {
+            "type": "integer",
+            "title": "Already Known"
+          },
+          "rejected_findings": {
+            "type": "integer",
+            "title": "Rejected Findings"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_type",
+          "external_id",
+          "facts_reviewed",
+          "created",
+          "already_known",
+          "rejected_findings",
+          "prompt_version",
+          "model"
+        ],
+        "title": "ReviewResult"
+      },
       "SearchRequest": {
         "properties": {
           "query": {
@@ -6423,6 +7098,10 @@
     {
       "name": "search",
       "description": "Hybrid temporal retrieval (vector + full text)."
+    },
+    {
+      "name": "contradictions",
+      "description": "Conflicting fact versions: rule-detected, optionally LLM-suggested."
     },
     {
       "name": "answers",

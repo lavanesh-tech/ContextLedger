@@ -46,6 +46,10 @@
       "value": ""
     },
     {
+      "key": "contradiction_id",
+      "value": ""
+    },
+    {
       "key": "decision_id",
       "value": ""
     },
@@ -950,6 +954,155 @@
               ]
             },
             "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "contradictions",
+      "item": [
+        {
+          "name": "Contradictions you may see",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/contradictions?status=&entity_type=&external_id=&limit=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "contradictions"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "entity_type",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "external_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Newest first. Hidden when either version is above your privacy ceiling."
+          }
+        },
+        {
+          "name": "One contradiction, with both versions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/contradictions/{{contradiction_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "contradictions",
+                "{{contradiction_id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Resolve or dismiss a contradiction",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/contradictions/{{contradiction_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "contradictions",
+                "{{contradiction_id}}"
+              ]
+            },
+            "description": "Records who closed it and why. Fact versions are never changed or deleted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ask the LLM to suggest semantic contradictions between an entity's facts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/entities/{{entity_type}}/{{external_id}}/contradiction-review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "entities",
+                "{{entity_type}}",
+                "{{external_id}}",
+                "contradiction-review"
+              ]
+            },
+            "description": "Optional assistance for conflicts between different properties (e.g. an ACTIVE\nstatus and a closed account). Only facts you may see are sent; every suggestion must\nname two of them, and is stored as an open `semantic` contradiction for a person to\nconfirm or dismiss. Needs `facts:read` and `facts:write`."
           }
         }
       ]

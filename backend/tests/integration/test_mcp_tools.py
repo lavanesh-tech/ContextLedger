@@ -22,7 +22,13 @@ from app.providers.embeddings import DeterministicHashEmbeddingProvider
 from app.services.facts import RecordFactVersion
 from app.services.memberships import MembershipService
 from tests.integration.conftest import GraphHarness
-from tests.integration.factories import add_member, admin_workspace, make_user, record
+from tests.integration.factories import (
+    add_member,
+    admin_workspace,
+    make_source,
+    make_user,
+    record,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -309,3 +315,43 @@ async def test_a_model_failure_is_a_tool_error_not_an_answer(sessions: Sessions)
     tools = with_model(base, FakeGenerationProvider(responses=[GenerationUnavailableError("down")]))
     with pytest.raises(ToolError, match="GenerationUnavailableError"):
         await tools.answer_question("credit limit customer-991")
+
+
+async def test_get_contradictions_applies_the_agents_ceiling(sessions: Sessions) -> None:
+    tools, admin_ctx, source, _ = await agent(sessions)
+    wider, wide_ctx, wide_source, _ = await agent(sessions, ceiling=PrivacyScope.CONFIDENTIAL)
+    for ctx, first in ((admin_ctx, source), (wide_ctx, wide_source)):
+        other = await make_source(sessions, ctx)
+        await record(
+            sessions,
+            ctx,
+            RecordFactVersion(
+                entity_type="customer",
+                external_id="customer-991",
+                property="customer_status",
+                value="ACTIVE",
+                source_id=first.id,
+                valid_from=T0,
+                observed_at=T0 + timedelta(hours=4),
+                privacy_scope=PrivacyScope.CONFIDENTIAL,
+            ),
+        )
+        await record(
+            sessions,
+            ctx,
+            RecordFactVersion(
+                entity_type="customer",
+                external_id="customer-991",
+                property="customer_status",
+                value="SUSPENDED",
+                source_id=other.id,
+                valid_from=T0 + timedelta(hours=2),
+            ),
+        )
+
+    narrow = await tools.get_contradictions()
+    wide = await wider.get_contradictions()
+
+    assert narrow["contradictions"] == []  # CONFIDENTIAL is above this agent's ceiling
+    [found] = wide["contradictions"]
+    assert found["kind"] == "value_conflict" and found["status"] == "open"

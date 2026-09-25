@@ -107,6 +107,62 @@
         "type": "object"
       }
     },
+    "contradiction.detected": {
+      "topic": "contextledger.facts.v1",
+      "data": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "entity_id": {
+            "format": "uuid",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "left_version_id": {
+            "format": "uuid",
+            "title": "Left Version Id",
+            "type": "string"
+          },
+          "right_version_id": {
+            "format": "uuid",
+            "title": "Right Version Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "detector": {
+            "title": "Detector",
+            "type": "string"
+          },
+          "privacy_scope": {
+            "title": "Privacy Scope",
+            "type": "string"
+          },
+          "detected_at": {
+            "format": "date-time",
+            "title": "Detected At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "entity_id",
+          "left_version_id",
+          "right_version_id",
+          "kind",
+          "detector",
+          "privacy_scope",
+          "detected_at"
+        ],
+        "title": "ContradictionDetected",
+        "type": "object"
+      }
+    },
     "decision.recorded": {
       "topic": "contextledger.decisions.v1",
       "data": {
