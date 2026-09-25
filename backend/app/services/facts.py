@@ -49,6 +49,7 @@ from app.domain.validation import (
 from app.models.contradiction import Contradiction
 from app.models.fact import Fact, FactVersion
 from app.models.source import FactSource
+from app.observability.metrics import CONTRADICTIONS
 from app.repositories.facts import FactRepository
 from app.services.authorization import require_permission
 from app.services.evidence import link_evidence
@@ -209,6 +210,7 @@ class FactService:
         reason = value_conflict(left, right)
         if reason is None:
             return
+        CONTRADICTIONS.labels(ContradictionKind.VALUE_CONFLICT.value).inc()
         self._session.add(
             Contradiction(
                 organization_id=ctx.organization_id,

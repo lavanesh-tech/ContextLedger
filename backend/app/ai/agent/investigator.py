@@ -31,6 +31,7 @@ from app.ai.prompts.investigator import DEFAULT_INVESTIGATOR_PROMPT
 from app.ai.providers import GenerationError, GenerationProvider, OutputSchema
 from app.domain.errors import ValidationFailedError
 from app.domain.tenancy import TenantContext
+from app.observability.tracing import tracer
 
 MAX_QUESTION_CHARS = 1000
 
@@ -87,6 +88,15 @@ class DecisionInvestigator:
         self._max_output_tokens = max_output_tokens
 
     async def investigate(self, ctx: TenantContext, question: str) -> Investigation:
+        with tracer.start_as_current_span("agent.investigate") as span:
+            span.set_attribute("contextledger.prompt_version", self._prompt.version)
+            result = await self._investigate(ctx, question)
+            span.set_attribute("contextledger.agent_status", result.status.value)
+            span.set_attribute("contextledger.agent_steps", result.steps)
+            span.set_attribute("contextledger.tool_calls", len(result.tool_calls))
+            return result
+
+    async def _investigate(self, ctx: TenantContext, question: str) -> Investigation:
         question = question.strip()
         if not question or len(question) > MAX_QUESTION_CHARS:
             raise ValidationFailedError(f"question must be 1-{MAX_QUESTION_CHARS} characters")

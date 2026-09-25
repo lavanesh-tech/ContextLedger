@@ -14,6 +14,7 @@ from typing import Final, TextIO
 
 from app.core.config import Settings
 from app.core.correlation import get_correlation_id
+from app.observability.tracing import current_trace_ids
 
 HANDLER_NAME: Final = "contextledger"
 
@@ -34,6 +35,8 @@ class CorrelationIdFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if not hasattr(record, "correlation_id"):
             record.correlation_id = get_correlation_id()
+        if not hasattr(record, "trace_id"):
+            record.trace_id, record.span_id = current_trace_ids()
         return True
 
 

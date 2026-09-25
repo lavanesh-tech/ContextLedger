@@ -46,6 +46,8 @@ from app.ai.providers import GenerationError, GenerationProvider, MalformedGener
 from app.domain.errors import ValidationFailedError
 from app.domain.facts import PrivacyScope
 from app.domain.tenancy import TenantContext
+from app.observability.metrics import ANSWERS
+from app.observability.tracing import tracer
 from app.services.retrieval import RetrievalQuery, RetrievalResult
 
 logger = logging.getLogger("contextledger.answers")
@@ -146,6 +148,14 @@ class GroundedAnswerService:
         )
 
     async def answer(self, ctx: TenantContext, query: AnswerQuery) -> GroundedAnswer:
+        with tracer.start_as_current_span("answers.answer") as span:
+            result = await self._answer(ctx, query)
+            span.set_attribute("contextledger.answer_status", result.status.value)
+            span.set_attribute("contextledger.facts_supplied", result.retrieval.facts_supplied)
+        ANSWERS.labels(result.status.value).inc()
+        return result
+
+    async def _answer(self, ctx: TenantContext, query: AnswerQuery) -> GroundedAnswer:
         question = " ".join(query.question.split())
         if not question:
             raise ValidationFailedError("question must not be empty")

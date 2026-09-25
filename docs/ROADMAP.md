@@ -24,7 +24,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 17 | Revocation impact | Done |
 | 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Done |
 | 19 | Frontend: Next.js + React + TypeScript in `frontend/`, consuming the FastAPI `/api/v1` REST API (ADR-008) | Done |
-| 20 | Observability: OpenTelemetry, Prometheus, Grafana | Planned |
+| 20 | Observability: OpenTelemetry, Prometheus, Grafana | Done |
 | 21 | Production Docker hardening + full CI/CD | Planned |
 | 22 | Terraform + core AWS (VPC, RDS, S3, ECR, Secrets Manager, IAM, CloudWatch) | Planned |
 | 23 | EKS deployment + teardown docs | Planned |
@@ -77,6 +77,7 @@ and 18 were then built as defined above. Details: [AI.md](AI.md), ADR-031.
 - Project revocations into the Neo4j graph (a revoked-version node flag) so graph impact queries can filter on it; and transitive impact (decisions whose outcomes fed later facts).
 - Correcting a revoked version in place requires a new version starting later than it; consider an explicit "replacement" version type.
 - More contradiction rules (numeric tolerance, cross-entity), and measuring the LLM review's precision on a labelled set before relying on it.
+- Worker metrics (embedding, graph projector, event relay/consumers): queue and outbox size, projection and consumer lag; alerting rules from load-test baselines (Phase 27).
 - Tune rate limits and the retrieval-cache TTL from load tests; consider a sliding-window limiter (Phase 27).
 - Measure the retrieval-cache hit rate and latency with a real workload (Phases 20, 27).
 - Cache agent-revocation and membership checks in Redis only if load tests show they matter (Phase 27).

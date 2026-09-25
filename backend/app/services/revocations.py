@@ -35,6 +35,7 @@ from app.models.decision import ContextSnapshotFact, Decision, DecisionFact
 from app.models.entity import Entity
 from app.models.fact import Fact, FactVersion
 from app.models.revocation import FactRevocation, RevocationImpact
+from app.observability.metrics import REVOCATIONS
 from app.repositories.facts import FactRepository
 from app.services.authorization import require_permission
 from app.services.temporal import to_snapshot
@@ -136,7 +137,9 @@ class RevocationService:
                     )
                 )
             await self._session.flush()
-            return await self._report(ctx.organization_id, revocation)
+            report = await self._report(ctx.organization_id, revocation)
+        REVOCATIONS.inc()
+        return report
 
     async def impact_of_fact(self, ctx: TenantContext, fact_id: UUID) -> list[RevocationReport]:
         """A report for every revoked version of the fact that the caller may see."""

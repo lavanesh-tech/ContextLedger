@@ -19,6 +19,7 @@ No model decides any of them.
 """
 
 import logging
+import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
@@ -45,6 +46,8 @@ from app.domain.retrieval import (
 from app.domain.roles import Permission
 from app.domain.tenancy import TenantContext
 from app.domain.validation import normalize_external_id, normalize_identifier
+from app.observability.metrics import RETRIEVAL_LATENCY, RETRIEVAL_RESULTS, RETRIEVALS
+from app.observability.tracing import tracer
 from app.providers.embeddings import EmbeddingProvider, EmbeddingProviderError
 from app.repositories.retrieval import RetrievalFilters, RetrievalRepository
 from app.services.authorization import require_permission
@@ -171,6 +174,19 @@ class RetrievalService:
         self._cache = cache  # None: always read PostgreSQL (e.g. decision snapshots)
 
     async def search(self, ctx: TenantContext, request: RetrievalQuery) -> RetrievalResult:
+        started = time.perf_counter()
+        with tracer.start_as_current_span("retrieval.search") as span:
+            span.set_attribute("contextledger.organization_id", str(ctx.organization_id))
+            result = await self._search(ctx, request)
+            span.set_attribute("contextledger.vector_search", result.vector_search)
+            span.set_attribute("contextledger.cache", result.cache)
+            span.set_attribute("contextledger.results", len(result.results))
+        RETRIEVALS.labels(result.vector_search, result.cache).inc()
+        RETRIEVAL_LATENCY.observe(time.perf_counter() - started)
+        RETRIEVAL_RESULTS.observe(len(result.results))
+        return result
+
+    async def _search(self, ctx: TenantContext, request: RetrievalQuery) -> RetrievalResult:
         query = normalize_query(request.query)
         limit = validate_limit(request.limit)
         trust_weight = validate_trust_weight(request.trust_weight)

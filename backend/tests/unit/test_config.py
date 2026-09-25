@@ -27,6 +27,7 @@ def test_values_are_read_from_prefixed_environment_variables(
     monkeypatch.setenv("CONTEXTLEDGER_REDIS_URL", "rediss://:secret@cache.internal:6379/0")
     monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "warning")
     monkeypatch.setenv("CONTEXTLEDGER_DOCS_ENABLED", "false")
+    monkeypatch.setenv("CONTEXTLEDGER_METRICS_TOKEN", "scrape-token")
 
     settings = Settings(_env_file=None)
 

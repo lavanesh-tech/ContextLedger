@@ -31,6 +31,7 @@ from app.domain.errors import NotFoundError
 from app.domain.roles import Permission
 from app.domain.tenancy import TenantContext
 from app.models.agent_run import AgentRun
+from app.observability.metrics import AGENT_RUNS
 from app.services.authorization import require_permission
 
 AGENT_NAME = "decision-investigator"
@@ -73,6 +74,7 @@ class InvestigationService:
             return _from_row(row)
 
     async def _save(self, ctx: TenantContext, result: Investigation) -> None:
+        AGENT_RUNS.labels(result.status.value).inc()
         async with self._session.begin():
             self._session.add(
                 AgentRun(

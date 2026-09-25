@@ -52,6 +52,16 @@ class Settings(BaseSettings):
     environment: Environment = Environment.LOCAL
     log_level: LogLevel = "INFO"
     log_json: bool = True
+
+    # --- Observability -------------------------------------------------------------
+    # GET /metrics (Prometheus). With a token, scrapers must send it as a bearer token;
+    # required in staging/production unless metrics are disabled.
+    metrics_enabled: bool = True
+    metrics_token: SecretStr = SecretStr("")
+    # OpenTelemetry traces over OTLP/HTTP, e.g. http://localhost:4318. Empty: off.
+    otel_exporter_otlp_endpoint: str = ""
+    otel_service_name: str = Field(default="contextledger-api", min_length=1)
+    otel_sample_ratio: float = Field(default=1.0, ge=0.0, le=1.0)
     docs_enabled: bool = True
     correlation_id_header: str = Field(
         default="X-Correlation-ID",
@@ -259,6 +269,16 @@ class Settings(BaseSettings):
             port=self.db_port,
             database=self.db_name,
         )
+
+    @model_validator(mode="after")
+    def _require_metrics_token_outside_local(self) -> Self:
+        # Checked last, after the more fundamental deployment settings.
+        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        if deployed and self.metrics_enabled and not self.metrics_token.get_secret_value():
+            raise ValueError(
+                "set CONTEXTLEDGER_METRICS_TOKEN (or disable metrics) in staging and production"
+            )
+        return self
 
 
 @lru_cache(maxsize=1)

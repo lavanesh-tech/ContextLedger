@@ -29,6 +29,8 @@ from app.core.correlation import CorrelationIdMiddleware
 from app.core.logging import configure_logging
 from app.db.migrations import expected_schema_revision
 from app.db.session import create_engine, create_session_factory
+from app.observability.metrics import MetricsMiddleware, metrics_endpoint
+from app.observability.tracing import configure_tracing
 from app.provenance.graph import GraphReader, build_driver
 from app.providers.embeddings import build_embedding_provider, build_openai_http_client
 
@@ -148,5 +150,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lock_seconds=settings.idempotency_lock_seconds,
     )
     app.add_middleware(CorrelationIdMiddleware, header_name=settings.correlation_id_header)
+    if settings.metrics_enabled:
+        # Outermost: times everything, including correlation and idempotency handling.
+        app.add_middleware(MetricsMiddleware)
+        app.add_route(
+            "/metrics",
+            metrics_endpoint(settings.metrics_token.get_secret_value() or None),
+            include_in_schema=False,
+        )
     app.include_router(api_router, prefix=API_V1_PREFIX)
+    app.state.tracing_enabled = configure_tracing(settings, app, engine)
     return app

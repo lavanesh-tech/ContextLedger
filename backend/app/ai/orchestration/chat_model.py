@@ -12,6 +12,7 @@ Bound call options (``model.bind(...)``): ``output_schema`` (OutputSchema),
 Errors from the provider propagate unchanged (``GenerationError`` subclasses).
 """
 
+import time
 from collections.abc import Callable, Sequence
 from typing import Any
 
@@ -40,6 +41,8 @@ from app.ai.providers import (
     ToolCall,
     ToolSpec,
 )
+from app.observability.metrics import LLM_CALLS, LLM_LATENCY, LLM_TOKENS
+from app.observability.tracing import tracer
 
 
 def to_chat_messages(messages: Sequence[BaseMessage]) -> list[ChatMessage]:
@@ -146,7 +149,26 @@ class ContextLedgerChatModel(BaseChatModel):
             output_schema=schema,
             tools=tuple(kwargs.get("tools") or ()),
         )
-        result = await self._provider.generate(request)
+        provider = self._provider
+        labels = (type(provider).__name__, provider.model_id)
+        started = time.perf_counter()
+        with tracer.start_as_current_span("llm.generate") as span:
+            span.set_attribute("gen_ai.request.model", provider.model_id)
+            span.set_attribute("gen_ai.request.max_tokens", request.max_output_tokens)
+            span.set_attribute("contextledger.tools", len(request.tools))
+            try:
+                result = await provider.generate(request)
+            except Exception as exc:
+                LLM_CALLS.labels(*labels, type(exc).__name__).inc()
+                LLM_LATENCY.labels(*labels).observe(time.perf_counter() - started)
+                raise
+            span.set_attribute("gen_ai.usage.input_tokens", result.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", result.usage.output_tokens)
+            span.set_attribute("contextledger.attempts", result.attempts)
+        LLM_CALLS.labels(*labels, "ok").inc()
+        LLM_LATENCY.labels(*labels).observe(time.perf_counter() - started)
+        LLM_TOKENS.labels(*labels, "input").inc(result.usage.input_tokens)
+        LLM_TOKENS.labels(*labels, "output").inc(result.usage.output_tokens)
         message = AIMessage(
             content=result.text,
             tool_calls=[

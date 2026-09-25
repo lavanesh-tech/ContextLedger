@@ -38,6 +38,7 @@ from app.models.contradiction import Contradiction
 from app.models.entity import Entity
 from app.models.fact import Fact, FactVersion
 from app.models.source import FactSource
+from app.observability.metrics import CONTRADICTIONS
 from app.services.answers import AnswerGenerationError
 from app.services.authorization import require_permission
 from app.services.temporal import TemporalService, to_snapshot
@@ -245,6 +246,7 @@ class ContradictionService:
                 )
                 self._session.add(row)
                 await self._session.flush()
+                CONTRADICTIONS.labels(ContradictionKind.SEMANTIC.value).inc()
                 created.append(await self._view(row))
         return ReviewResult(
             entity_type,

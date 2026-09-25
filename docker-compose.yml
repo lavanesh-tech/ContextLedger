@@ -37,6 +37,9 @@ services:
       # Keep REDIS_PASSWORD URL-safe (letters, digits, - _ .): it is embedded in this URL.
       CONTEXTLEDGER_REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379/0
       CONTEXTLEDGER_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      # Traces go to Jaeger when the observability profile runs (make obs-up); empty: off.
+      CONTEXTLEDGER_OTEL_EXPORTER_OTLP_ENDPOINT: ${CONTEXTLEDGER_OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      CONTEXTLEDGER_METRICS_TOKEN: ${CONTEXTLEDGER_METRICS_TOKEN:-}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
@@ -222,6 +225,45 @@ services:
       timeout: 10s
       retries: 20
       start_period: 20s
+    restart: unless-stopped
+
+  # --- Observability (profile "observability": make obs-up) ---------------------------
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [observability]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./infrastructure/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    profiles: [observability]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me-local-only}  # bound to 127.0.0.1 only
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./infrastructure/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infrastructure/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/jaeger:2.10.0
+    profiles: [observability]
+    ports:
+      - "127.0.0.1:16686:16686"  # UI
+      - "127.0.0.1:4318:4318"    # OTLP/HTTP from processes on your Mac
     restart: unless-stopped
 
 volumes:

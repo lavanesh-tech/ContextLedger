@@ -25,7 +25,7 @@ TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_P
 .PHONY: help install lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
-        worker worker-once graph-projector graph-once event-relay event-consumers kafka-topics mcp api-docs eval eval-live eval-retrieval frontend-install frontend-dev frontend-check jwt-key bench-vector bench-retrieval
+        worker worker-once graph-projector graph-once event-relay event-consumers kafka-topics mcp api-docs eval eval-live eval-retrieval frontend-install frontend-dev frontend-check obs-up obs-down jwt-key bench-vector bench-retrieval
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -155,6 +155,14 @@ eval-retrieval: ## Retrieval evaluation: Recall@K, Precision@K, MRR, nDCG, tempo
 
 eval-live: ## LIVE OpenAI evaluation (COSTS MONEY): needs CONTEXTLEDGER_OPENAI_API_KEY in the environment
 	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/python -m app.evaluation.runner --mode live --live --model $(EVAL_MODEL) --prompts $(PROMPTS) $(if $(LIMIT),--limit $(LIMIT),) $(if $(PRICE_IN),--price-input $(PRICE_IN),) $(if $(PRICE_OUT),--price-output $(PRICE_OUT),)
+
+# --- Observability (see docs/OBSERVABILITY.md) ---------------------------------------------
+
+obs-up: require-env ## Prometheus :9090, Grafana :3001 (admin / GRAFANA_ADMIN_PASSWORD), Jaeger :16686
+	docker compose --profile observability up -d prometheus grafana jaeger
+
+obs-down: ## Stop the observability containers
+	docker compose --profile observability stop prometheus grafana jaeger
 
 # --- Frontend (Next.js, see frontend/README.md) -------------------------------------------
 

@@ -863,3 +863,31 @@ destroy the evidence of what decisions were based on.
 value until a new version is recorded, which must start later than the revoked
 one. Impact is one hop (version → decisions); transitive effects are not
 modelled. The Neo4j projection does not know about revocations yet.
+
+## ADR-034: Prometheus metrics without tenant labels; OpenTelemetry traces opt-in
+
+**Status:** Accepted (Phase 20)
+
+**Context.** Operators need request rates, latencies, error ratios, retrieval
+behaviour (vector fallback, cache) and model usage (calls, failures, tokens).
+ContextLedger is multi-tenant and handles sensitive facts, so telemetry must
+not become a side channel.
+
+**Decision.**
+- `prometheus-client` metrics on `GET /metrics` of the API. Labels are
+  bounded: route templates (with the router prefix restored), status codes,
+  vector/cache status, model, outcome class. No organization, user, query,
+  value or prompt labels.
+- `/metrics` needs a bearer token in staging and production (settings refuse
+  to start otherwise, unless metrics are disabled).
+- OpenTelemetry SDK with OTLP/HTTP export, only when an endpoint is
+  configured; otherwise the API is a no-op. Standard instrumentation for
+  FastAPI, SQLAlchemy and httpx, plus explicit spans for retrieval, answers,
+  model calls and agent runs, with identifiers and counts only.
+- Logs carry `trace_id` and `span_id` next to the existing `correlation_id`.
+- Prometheus, Grafana (provisioned datasources and dashboard) and Jaeger run
+  locally under a Compose profile, so the default stack is unchanged.
+
+**Consequences.** Per-tenant usage is not visible in metrics (use the activity
+read model or traces for that). Worker metrics and alert rules are follow-ups.
+Tracing every SQL statement adds overhead; the sample ratio is configurable.
