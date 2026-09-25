@@ -52,6 +52,10 @@
     {
       "key": "evidence_id",
       "value": ""
+    },
+    {
+      "key": "run_id",
+      "value": ""
     }
   ],
   "item": [
@@ -1328,6 +1332,77 @@
                 }
               }
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "investigations",
+      "item": [
+        {
+          "name": "Investigate a past decision with a bounded, read-only agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/investigations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "investigations"
+              ]
+            },
+            "description": "Runs the Historical Decision Investigator: a tool-calling agent with read-only\ntools (decision receipt, fact lineage, decisions relying on a fact, fact search),\nall restricted to your organization, permissions and privacy ceiling. Needs\n`facts:read` and `decisions:read`. Citations are checked against ids the tools\nreturned; the run and every tool call are stored as an immutable trace.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"Why was decision 7f1c... approved, and has a fact it relied on changed?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "The stored trace of one of your investigations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/investigations/{{run_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "investigations",
+                "{{run_id}}"
+              ]
+            },
+            "description": "Only the user who requested the investigation can read it back."
           }
         }
       ]

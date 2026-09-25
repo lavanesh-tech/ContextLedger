@@ -18,7 +18,7 @@ import time
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
@@ -40,17 +40,19 @@ class InvestigationStatus(StrEnum):
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
     UNGROUNDED = "ungrounded"
     STEP_LIMIT = "step_limit"
+    FAILED = "failed"  # the model provider failed; recorded in the trace, never answered
 
 
 class InvestigationError(Exception):
-    def __init__(self, message: str, *, cause: str) -> None:
+    def __init__(self, message: str, *, cause: str, partial: "Investigation | None" = None) -> None:
         super().__init__(message)
         self.cause = cause
+        self.partial = partial  # what ran before the failure, for the trace
 
 
 @dataclass
 class Investigation:
-    run_id: str
+    run_id: UUID
     question: str
     status: InvestigationStatus
     answer: str | None
@@ -63,6 +65,7 @@ class Investigation:
     input_tokens: int = 0
     output_tokens: int = 0
     latency_ms: int = 0
+    error: str | None = None
 
 
 class DecisionInvestigator:
@@ -103,7 +106,7 @@ class DecisionInvestigator:
             HumanMessage(self._prompt.render_user(question=question)),
         ]
         result = Investigation(
-            run_id=str(uuid4()),
+            run_id=uuid4(),
             question=question,
             status=InvestigationStatus.STEP_LIMIT,
             answer=None,
@@ -117,7 +120,7 @@ class DecisionInvestigator:
         config: Any = {
             "run_name": "decision_investigator",
             "tags": ["contextledger", "investigator"],
-            "metadata": {"prompt_version": self._prompt.version, "run_id": result.run_id},
+            "metadata": {"prompt_version": self._prompt.version, "run_id": str(result.run_id)},
         }
         calls_made = 0
         while result.steps < self._max_steps:
@@ -125,15 +128,23 @@ class DecisionInvestigator:
             try:
                 reply = await model.ainvoke(messages, config=config)
             except GenerationError as exc:
+                self._fail(result, started, type(exc).__name__)
                 raise InvestigationError(
-                    "the model could not complete the investigation", cause=type(exc).__name__
+                    "the model could not complete the investigation",
+                    cause=type(exc).__name__,
+                    partial=result,
                 ) from exc
             if reply.usage_metadata is not None:
                 result.input_tokens += reply.usage_metadata["input_tokens"]
                 result.output_tokens += reply.usage_metadata["output_tokens"]
             messages.append(reply)
             if not reply.tool_calls:
-                self._finish(result, reply, ledger)
+                try:
+                    self._finish(result, reply, ledger)
+                except InvestigationError as exc:
+                    self._fail(result, started, exc.cause)
+                    exc.partial = result
+                    raise
                 break
             for call in reply.tool_calls:
                 calls_made += 1
@@ -145,6 +156,13 @@ class DecisionInvestigator:
                 messages.append(ToolMessage(content=content, tool_call_id=str(call["id"])))
         result.latency_ms = int((time.perf_counter() - started) * 1000)
         return result
+
+    @staticmethod
+    def _fail(result: Investigation, started: float, cause: str) -> None:
+        result.status = InvestigationStatus.FAILED
+        result.error = cause
+        result.answer = None
+        result.latency_ms = int((time.perf_counter() - started) * 1000)
 
     @staticmethod
     def _finish(result: Investigation, reply: AIMessage, ledger: ToolLedger) -> None:

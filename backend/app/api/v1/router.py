@@ -9,6 +9,7 @@ from app.api.v1.endpoints import (
     decisions,
     facts,
     health,
+    investigations,
     organizations,
     provenance,
     search,
@@ -17,5 +18,16 @@ from app.api.v1.endpoints import (
 
 api_router = APIRouter()
 api_router.include_router(health.router)
-for module in (auth, users, organizations, facts, search, decisions, provenance, activity, answers):
+for module in (
+    auth,
+    users,
+    organizations,
+    facts,
+    search,
+    decisions,
+    provenance,
+    activity,
+    answers,
+    investigations,
+):
     api_router.include_router(module.router)

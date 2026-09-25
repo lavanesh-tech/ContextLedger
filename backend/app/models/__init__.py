@@ -6,6 +6,7 @@ when Alembic autogenerates or checks migrations.
 
 from app.db.base import Base
 from app.models.agent_client import AgentClient
+from app.models.agent_run import AgentRun
 from app.models.decision import (
     ContextSnapshot,
     ContextSnapshotFact,
@@ -26,6 +27,7 @@ from app.models.user import User
 
 __all__ = [
     "AgentClient",
+    "AgentRun",
     "Base",
     "ContextSnapshot",
     "ContextSnapshotFact",

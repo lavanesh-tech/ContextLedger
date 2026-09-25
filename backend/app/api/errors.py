@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.ai.agent.investigator import InvestigationError
 from app.core.correlation import get_correlation_id
 from app.domain.errors import (
     ConflictError,
@@ -160,7 +161,7 @@ async def _rate_limited(request: Request, exc: Exception) -> JSONResponse:
 
 
 async def _generation_failed(request: Request, exc: Exception) -> JSONResponse:
-    failure = cast(AnswerGenerationError, exc)
+    failure = cast(AnswerGenerationError | InvestigationError, exc)
     # Never an invented answer: the client learns that generation failed, and why
     # in general terms (the provider error class), with nothing sensitive.
     return problem_response(
@@ -184,6 +185,7 @@ def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(RateLimitedError, _rate_limited)
     app.add_exception_handler(ServiceUnavailableError, _unavailable)
     app.add_exception_handler(AnswerGenerationError, _generation_failed)
+    app.add_exception_handler(InvestigationError, _generation_failed)
 
 
 # Documented on every endpoint that can fail with these statuses.

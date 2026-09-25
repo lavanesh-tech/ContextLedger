@@ -2996,6 +2996,184 @@
           }
         }
       }
+    },
+    "/api/v1/organizations/{organization_id}/investigations": {
+      "post": {
+        "tags": [
+          "investigations"
+        ],
+        "summary": "Investigate a past decision with a bounded, read-only agent",
+        "description": "Runs the Historical Decision Investigator: a tool-calling agent with read-only\ntools (decision receipt, fact lineage, decisions relying on a fact, fact search),\nall restricted to your organization, permissions and privacy ceiling. Needs\n`facts:read` and `decisions:read`. Citations are checked against ids the tools\nreturned; the run and every tool call are stored as an immutable trace.",
+        "operationId": "investigate_api_v1_organizations__organization_id__investigations_post",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvestigationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Investigation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization_id}/investigations/{run_id}": {
+      "get": {
+        "tags": [
+          "investigations"
+        ],
+        "summary": "The stored trace of one of your investigations",
+        "description": "Only the user who requested the investigation can read it back.",
+        "operationId": "get_investigation_api_v1_organizations__organization_id__investigations__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Investigation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4533,6 +4711,135 @@
         ],
         "title": "ImpactReport"
       },
+      "Investigation": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InvestigationStatus"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "cited_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cited Ids"
+          },
+          "rejected_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rejected Ids"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "steps": {
+            "type": "integer",
+            "title": "Steps"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/ToolRecord"
+            },
+            "type": "array",
+            "title": "Tool Calls"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens",
+            "default": 0
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens",
+            "default": 0
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms",
+            "default": 0
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "question",
+          "status",
+          "answer",
+          "cited_ids",
+          "rejected_ids",
+          "prompt_version",
+          "model",
+          "steps"
+        ],
+        "title": "Investigation"
+      },
+      "InvestigationRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Question",
+            "examples": [
+              "Why was decision 7f1c... approved, and has a fact it relied on changed?"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "InvestigationRequest"
+      },
+      "InvestigationStatus": {
+        "type": "string",
+        "enum": [
+          "answered",
+          "insufficient_evidence",
+          "ungrounded",
+          "step_limit",
+          "failed"
+        ],
+        "title": "InvestigationStatus"
+      },
       "Lineage": {
         "properties": {
           "version": {
@@ -5833,6 +6140,47 @@
         ],
         "title": "TokenResponse"
       },
+      "ToolRecord": {
+        "properties": {
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Arguments"
+          },
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool",
+          "arguments",
+          "ok",
+          "error",
+          "latency_ms"
+        ],
+        "title": "ToolRecord"
+      },
       "UserCreate": {
         "properties": {
           "email": {
@@ -6083,6 +6431,10 @@
     {
       "name": "decisions",
       "description": "Frozen context snapshots and sealed decision receipts."
+    },
+    {
+      "name": "investigations",
+      "description": "A bounded, read-only agent that investigates past decisions, with traces."
     },
     {
       "name": "provenance",

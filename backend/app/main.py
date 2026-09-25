@@ -48,6 +48,10 @@ OPENAPI_TAGS = [
         "description": "Grounded LLM answers over authorized facts, with verified citations.",
     },
     {"name": "decisions", "description": "Frozen context snapshots and sealed decision receipts."},
+    {
+        "name": "investigations",
+        "description": "A bounded, read-only agent that investigates past decisions, with traces.",
+    },
     {"name": "provenance", "description": "Impact analysis and lineage (Neo4j graph)."},
     {"name": "activity", "description": "Tenant activity counted from Kafka events."},
 ]

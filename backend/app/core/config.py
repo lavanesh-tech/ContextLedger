@@ -112,6 +112,9 @@ class Settings(BaseSettings):
     # Prompt used by POST /answers (see app/ai/prompts). Compare versions with the
     # evaluation suite before changing the default.
     llm_answer_prompt_version: str = Field(default="grounded-answer-v2", min_length=1)
+    # Historical Decision Investigator (POST /investigations): hard per-run bounds.
+    llm_agent_max_steps: int = Field(default=6, ge=1, le=12)
+    llm_agent_max_tool_calls: int = Field(default=12, ge=1, le=30)
 
     # --- Neo4j (provenance graph, a projection of PostgreSQL) -------------------
     neo4j_uri: str = Field(default="bolt://localhost:7687", pattern=r"^(bolt|neo4j)(\+s|\+ssc)?://")
