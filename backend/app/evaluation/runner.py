@@ -380,7 +380,10 @@ def _record(
         "mode": mode,
         "date": datetime.now(UTC).isoformat(),
         "commit_sha": _git("rev-parse", "HEAD"),
-        "working_tree_dirty": bool(_git("status", "--porcelain")),
+        # Result files written by earlier runs do not make the code under test dirty.
+        "working_tree_dirty": bool(
+            _git("status", "--porcelain", "--", ".", ":!evaluation/results")
+        ),
         "dataset": {
             "name": dataset.name,
             "version": dataset.version,

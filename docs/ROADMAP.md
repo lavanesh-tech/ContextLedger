@@ -19,7 +19,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 12 | Complete REST API, standardized errors, Swagger, Postman | Done |
 | 13 | JWT, OAuth2, RBAC, tenant/agent/retrieval authorization, cross-tenant tests | Done |
 | 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | Done |
-| 15 | Kafka events and idempotent consumers | In review |
+| 15 | Kafka events and idempotent consumers | Done |
 | 16 | Contradiction detection | Planned |
 | 17 | Revocation impact | Planned |
 | 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Planned |
@@ -36,6 +36,22 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 29 | AWS recruiter demo lifecycle: deploy → demo → destroy → verify → recreate | Planned |
 | 30 | Portfolio polish | Planned |
 | 31 | Full project teaching | Planned |
+
+## Additive AI capability (outside the numbered phases)
+
+Built after Phase 15 without renumbering or replacing any phase. Phase 16
+(contradiction detection) and Phase 18 (RAG evaluation of retrieval: Recall@K,
+Precision@K, MRR) are still planned as defined above. Details: [AI.md](AI.md),
+ADR-031.
+
+| Part | Status |
+|---|---|
+| Generation provider: OpenAI Chat Completions with strict JSON schema, retries, typed errors, fake for tests | Done |
+| Versioned prompts and grounded answers with deterministic citation checks (`POST …/answers`) | Done |
+| LangChain orchestration (`langchain-core` adapter and chains; no LangGraph) | Done |
+| Grounded-answer evaluation: deterministic pipeline metrics (recorded) and live answer metrics (opt-in, paid) | Done (live run not yet recorded) |
+| Historical Decision Investigator agent with read-only tools, limits and traces (`POST …/investigations`) | Done |
+| MCP tools `answer_question` and `investigate_decision` | Done |
 
 ## Known follow-ups carried forward
 
@@ -57,6 +73,9 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 - A DLQ replay command, and a retention job for `processed_events` (older than Kafka retention).
 - MCP over streamable HTTP authenticated with agent access tokens (MCP authorization spec) (Phase 21).
 - Human SSO through an external OIDC provider (JWKS verification) instead of dev tokens.
+- Record a live grounded-answer evaluation (`make eval-live`) and compare prompt versions on answer metrics before changing the default prompt.
+- An investigator evaluation dataset (tool-use correctness, grounded rate) alongside the answer evaluation.
+- Per-tenant token budgets and rate limits for the LLM endpoints (Phase 27/28).
 - Tune rate limits and the retrieval-cache TTL from load tests; consider a sliding-window limiter (Phase 27).
 - Measure the retrieval-cache hit rate and latency with a real workload (Phases 20, 27).
 - Cache agent-revocation and membership checks in Redis only if load tests show they matter (Phase 27).

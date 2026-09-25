@@ -19,6 +19,8 @@ All tenant data lives under `/api/v1/organizations/{organization_id}/…`.
 | Evidence | `POST …/evidence` (201 new, 200 same content already captured); `POST …/fact-versions/{id}/evidence`; `GET …/fact-versions/{id}/provenance` |
 | Search | `POST …/search` |
 | Decisions | `POST …/context-snapshots`; `POST …/decisions`; `GET …/decisions/{id}/receipt`; `GET …/fact-versions/{id}/decisions` |
+| Answers | `POST …/answers` (grounded LLM answer with verified citations; 503 when generation is disabled or fails) |
+| Investigations | `POST …/investigations` (decision-investigator agent; needs `facts:read` and `decisions:read`); `GET …/investigations/{run_id}` (only the requester) |
 | Provenance | `GET …/impact/fact-versions/{id}`, `…/impact/sources/{id}`, `…/impact/evidence/{id}`, `GET …/decisions/{id}/lineage` (503 if Neo4j is not configured) |
 
 Timestamps must include a timezone. A naive `2026-01-15T09:00:00` is a 422,

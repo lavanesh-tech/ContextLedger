@@ -762,3 +762,41 @@ only for PostgreSQL effects. Effects elsewhere must be idempotent. The activity
 read model is eventually consistent. A hot tenant is bounded by one
 partition. Several relays can interleave one tenant's events, so ordering
 guarantees assume one relay.
+
+## ADR-031: LLM features as an additive layer: provider interface, LangChain core only, code-verified grounding, a bounded in-house agent loop
+
+**Status:** Accepted (additive AI capability, after Phase 15)
+
+**Context.** Agents and people want answers and explanations in natural
+language, but ContextLedger's value is that tenant, time, permission, version
+and provenance are decided deterministically. An LLM must not become the place
+where any of those is decided, and CI must not depend on a paid API.
+
+**Decision.**
+- One `GenerationProvider` interface (OpenAI Chat Completions with strict JSON
+  schema output and tool calling; a scripted fake for tests). One deadline per
+  call, bounded retries on 408/409/429/5xx, typed errors. Disabled by default.
+- Retrieval runs first, through the existing services; the model receives only
+  authorized facts, labelled F1..Fn. Citations are checked by code against the
+  supplied labels (answers) or the ids tools returned (agent). Any invented
+  citation withholds the answer (`ungrounded`); no facts means no model call.
+- Prompts are immutable, versioned and fingerprinted; the version is recorded
+  with every answer, evaluation result and agent trace.
+- LangChain is used through `langchain-core` only: a `BaseChatModel` adapter
+  over the provider, prompt templates, chains and `StructuredTool`s. No
+  `langchain-openai`, so every call keeps the provider's controls. No LangGraph:
+  the agent is a small loop in our code with step and tool-call limits.
+- Agent tools are built per request with a server-fixed `TenantContext`, strict
+  argument schemas without tenant fields, and uniform "not found or not
+  accessible" errors. Tool calls go through services that re-check permissions
+  and privacy.
+- Evaluation separates deterministic pipeline metrics (free, run anytime) from
+  live answer metrics (opt-in, paid, recorded with model, prompt, prices and
+  commit). The dataset is synthetic and labelled as such.
+
+**Consequences.** Answer quality depends on the model and is only measured by
+live runs; none has been recorded yet. An in-house loop means no built-in
+checkpointing or parallel tool execution; runs are short and bounded, so this
+is acceptable now. The agent's trace stores tool arguments and outcomes but not
+tool outputs, which may contain values readers of the trace are not allowed to
+see; the answer text is stored and readable only by the requester.

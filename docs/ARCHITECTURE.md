@@ -250,6 +250,14 @@ failed messages go through bounded retries to dead-letter topics. Consumers
 today: a daily activity read model and retrieval-cache invalidation. Details:
 [EVENTS.md](EVENTS.md).
 
+**AI capability (after Phase 15).** `app/ai` holds the generation provider
+(OpenAI Chat Completions, or a scripted fake in tests), versioned prompts, the
+grounding checks, a LangChain adapter and chains, and the decision-investigator
+agent. The model is called only after retrieval has applied tenant, role,
+privacy and time; citations are verified by code; agent tools call the
+existing services and cannot choose a tenant. Every investigator run is stored
+in the append-only `agent_runs` table. Details: [AI.md](AI.md).
+
 ## Backend layout
 
 | Package | Responsibility | Filled in |

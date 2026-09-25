@@ -13,8 +13,9 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 13 of 31, authentication and authorization.** Only what is listed under
-> "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
+> **Status: Phase 15 of 31 done, plus an additive AI capability (grounded answers,
+> LangChain orchestration, evaluation, a decision-investigator agent).** Only what is
+> listed under "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
 ## What works today
 
@@ -35,6 +36,10 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Authentication and authorization: ES256 JWTs; AI agents as OAuth2 clients (client credentials) with scoped tokens, privacy ceilings, and revocation that takes effect before expiry; RBAC re-checked per request; an automatic sweep verifies every tenant route rejects other tenants. See [docs/AUTH.md](docs/AUTH.md)
 - Redis for shared short-lived state: a tenant- and privacy-aware retrieval cache invalidated by generation, distributed per-caller rate limiting, `Idempotency-Key` replay for POSTs, single-use OAuth state, and MCP session state, each with an explicit fail-open or fail-closed policy. See [docs/REDIS.md](docs/REDIS.md)
 - Kafka domain events from a trigger-written transactional outbox: tenant-keyed topics, a CloudEvents-style envelope with drift-tested JSON Schemas, idempotent consumers (dedup in the same transaction as the effect), bounded retries and dead-letter topics. Consumers maintain a daily activity read model and invalidate the retrieval cache. See [docs/EVENTS.md](docs/EVENTS.md)
+- Grounded LLM answers (`POST …/answers`, MCP `answer_question`): OpenAI Chat Completions behind a provider interface with one deadline, bounded retries and typed errors; versioned prompts; facts retrieved under the caller's tenant, role, privacy ceiling and time constraints; every citation verified by code, and an answer with an invented citation is withheld. Disabled by default. See [docs/AI.md](docs/AI.md)
+- LangChain (`langchain-core` only, no LangGraph) orchestrates the prompt → model chains through an adapter over the same provider, so every call keeps the same cost and failure controls
+- A versioned grounded-answer evaluation (synthetic dataset, 18 cases): a free deterministic mode that checks what reaches the model, and an opt-in live mode that measures answer quality and cost. See [evaluation/README.md](evaluation/README.md)
+- Historical Decision Investigator (`POST …/investigations`, MCP `investigate_decision`): a bounded tool-calling agent with four read-only tools over the existing services, step and tool-call limits, citation checks against ids the tools returned, and an immutable trace of every run
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API, embedding worker, graph projector, event relay and event consumers
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -89,6 +94,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Authentication and authorization](docs/AUTH.md)
 - [Redis: cache, rate limits, idempotency, short-lived state](docs/REDIS.md)
 - [Domain events (Kafka)](docs/EVENTS.md)
+- [AI: grounded answers, LangChain, evaluation, investigator agent](docs/AI.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 
 ## Measured results
