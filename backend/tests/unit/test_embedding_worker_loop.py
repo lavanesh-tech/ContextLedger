@@ -50,3 +50,39 @@ async def test_no_heartbeat_while_iterations_fail(tmp_path: Path) -> None:
 
     assert worker.calls == 2
     assert not heartbeat.exists()
+
+
+class DrainWorker(EmbeddingWorker):
+    def __init__(self, script: list[WorkerStats]) -> None:
+        super().__init__(None, DeterministicHashEmbeddingProvider())  # type: ignore[arg-type]
+        self.script = script
+        self.calls = 0
+
+    async def run_once(self) -> WorkerStats:
+        self.calls += 1
+        return self.script.pop(0)
+
+
+async def test_drain_stops_when_nothing_is_pending_and_sums_the_batches() -> None:
+    worker = DrainWorker(
+        [
+            WorkerStats(claimed=2, succeeded=2, embedded=2, tokens=10),
+            WorkerStats(claimed=1, succeeded=0, failed=1),
+            WorkerStats(),
+            WorkerStats(claimed=9),
+        ]
+    )
+
+    totals = await worker.drain(max_batches=10)
+
+    assert worker.calls == 3
+    assert totals == WorkerStats(claimed=3, succeeded=2, failed=1, embedded=2, tokens=10)
+
+
+async def test_drain_respects_the_batch_limit() -> None:
+    worker = DrainWorker([WorkerStats(claimed=1, succeeded=1) for _ in range(5)])
+
+    totals = await worker.drain(max_batches=2)
+
+    assert worker.calls == 2
+    assert totals.succeeded == 2

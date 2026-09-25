@@ -24,6 +24,7 @@ import asyncio
 import contextlib
 import logging
 import signal
+import sys
 import time
 from dataclasses import asdict, dataclass, replace
 from datetime import timedelta
@@ -209,6 +210,24 @@ class EmbeddingWorker:
         )
         return WorkerStats(failed=failed)
 
+    async def drain(self, *, max_batches: int) -> WorkerStats:
+        """Process batches until nothing is claimable or ``max_batches`` is reached.
+
+        Used by the one-shot backfill job (ECS). Returns the totals of all batches.
+        """
+        total = WorkerStats()
+        for _ in range(max_batches):
+            stats = await self.run_once()
+            total = WorkerStats(
+                **{
+                    name: getattr(total, name) + getattr(stats, name)
+                    for name in WorkerStats.__dataclass_fields__
+                }
+            )
+            if stats.claimed == 0:
+                break
+        return total
+
     async def run_forever(
         self,
         *,
@@ -238,7 +257,13 @@ async def _sleep_unless_stopped(stop: asyncio.Event, seconds: float) -> None:
         await asyncio.wait_for(stop.wait(), timeout=seconds)
 
 
-async def _main(settings: Settings, *, once: bool, heartbeat: Path | None = None) -> None:
+async def _main(
+    settings: Settings,
+    *,
+    once: bool,
+    heartbeat: Path | None = None,
+    drain_batches: int | None = None,
+) -> int:
     configure_logging(settings)
     engine = create_engine(settings)
     http_client = (
@@ -257,9 +282,13 @@ async def _main(settings: Settings, *, once: bool, heartbeat: Path | None = None
             retrieval_cache=RetrievalCache(store, ttl_seconds=settings.retrieval_cache_ttl_seconds),
         )
         logger.info("embedding.worker_started", extra={"model": worker.model, "once": once})
+        if drain_batches is not None:
+            totals = await worker.drain(max_batches=drain_batches)
+            logger.info("embedding.drain_finished", extra=asdict(totals))
+            return 1 if totals.failed else 0
         if once:
             await worker.run_once()
-            return
+            return 0
         stop = asyncio.Event()
         loop = asyncio.get_running_loop()
         for signum in (signal.SIGINT, signal.SIGTERM):
@@ -270,6 +299,7 @@ async def _main(settings: Settings, *, once: bool, heartbeat: Path | None = None
             poll_interval=settings.embedding_poll_interval_seconds, stop=stop, heartbeat=heartbeat
         )
         logger.info("embedding.worker_stopped")
+        return 0
     finally:
         await store.close()
         if http_client is not None:
@@ -286,8 +316,23 @@ def main() -> None:
         default=None,
         help="touch this file after every healthy iteration (container health checks)",
     )
+    parser.add_argument(
+        "--drain",
+        type=int,
+        metavar="MAX_BATCHES",
+        default=None,
+        help="process batches until none are pending (at most MAX_BATCHES), then exit; "
+        "exit code 1 if any job failed permanently (batch/backfill mode)",
+    )
     args = parser.parse_args()
-    asyncio.run(_main(get_settings(), once=args.once, heartbeat=args.heartbeat_file))
+    if args.drain is not None and args.drain < 1:
+        parser.error("--drain must be at least 1")
+    code = asyncio.run(
+        _main(
+            get_settings(), once=args.once, heartbeat=args.heartbeat_file, drain_batches=args.drain
+        )
+    )
+    sys.exit(code)
 
 
 if __name__ == "__main__":

@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     # --- Application ---------------------------------------------------------
     app_name: str = Field(default="ContextLedger", min_length=1, max_length=100)
     environment: Environment = Environment.LOCAL
+    # "batch": a one-shot job (e.g. the ECS embedding backfill) that only needs the
+    # database and the embedding provider. It skips the requirements that exist for
+    # serving traffic (JWT key, Redis, Neo4j, metrics token); it never serves HTTP.
+    process_role: Literal["api", "batch"] = "api"
     log_level: LogLevel = "INFO"
     log_json: bool = True
 
@@ -230,7 +234,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _require_neo4j_password_outside_local(self) -> Self:
-        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        deployed = (
+            self.environment in {Environment.STAGING, Environment.PRODUCTION}
+            and self.process_role == "api"
+        )
         if deployed and not self.neo4j_password.get_secret_value():
             raise ValueError("CONTEXTLEDGER_NEO4J_PASSWORD must be set in staging and production")
         return self
@@ -240,13 +247,17 @@ class Settings(BaseSettings):
         deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
         if deployed and self.auth_mode == "development-headers":
             raise ValueError("development-headers auth is not allowed in staging/production")
-        if deployed and not self.jwt_signing_key.get_secret_value():
+        serving = deployed and self.process_role == "api"
+        if serving and not self.jwt_signing_key.get_secret_value():
             raise ValueError("CONTEXTLEDGER_JWT_SIGNING_KEY must be set in staging and production")
         return self
 
     @model_validator(mode="after")
     def _require_redis_outside_local(self) -> Self:
-        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        deployed = (
+            self.environment in {Environment.STAGING, Environment.PRODUCTION}
+            and self.process_role == "api"
+        )
         if deployed and not self.redis_url.get_secret_value():
             raise ValueError("CONTEXTLEDGER_REDIS_URL must be set in staging and production")
         url = self.redis_url.get_secret_value()
@@ -273,7 +284,10 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _require_metrics_token_outside_local(self) -> Self:
         # Checked last, after the more fundamental deployment settings.
-        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        deployed = (
+            self.environment in {Environment.STAGING, Environment.PRODUCTION}
+            and self.process_role == "api"
+        )
         if deployed and self.metrics_enabled and not self.metrics_token.get_secret_value():
             raise ValueError(
                 "set CONTEXTLEDGER_METRICS_TOKEN (or disable metrics) in staging and production"

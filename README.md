@@ -48,6 +48,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Delivery: hash-locked Python dependencies (checked against `pyproject.toml` in CI), a layered non-root API image that runs with a read-only root filesystem, a standalone non-root web image, and CI that lints, type-checks, tests, audits dependencies (pip-audit, npm audit), lints Dockerfiles, scans images (Trivy) and smoke-tests the hardened container; tagged releases push multi-arch images with SBOM and provenance to GHCR. See [docs/CI_CD.md](docs/CI_CD.md)
 - AWS infrastructure as code (Terraform, not applied by default): VPC without a NAT gateway unless enabled, private encrypted RDS PostgreSQL 17 with an RDS-managed master secret, a private TLS-only evidence bucket, ECR with scanning and lifecycle rules, Secrets Manager containers, least-privilege runtime and GitHub OIDC CI roles, log retention, database alarms and an AWS Budget, with deployment, teardown and cost-control guides. See [docs/AWS_DEPLOYMENT.md](docs/AWS_DEPLOYMENT.md)
 - Optional EKS deployment (Terraform + Kustomize, not applied by default): private Spot ARM nodes, Pod Identity for AWS access, Pod Security `restricted`, default-deny NetworkPolicies, a migration Job before rollout, and secrets copied from Secrets Manager. See [docs/EKS.md](docs/EKS.md)
+- ECS/Fargate batch job (Terraform, not applied by default): the embedding backfill drains the queue and exits non-zero on permanent failures, with a least-privilege execution role, an egress-only security group, a disabled-by-default schedule and an SNS alert on failed runs. See [docs/ECS_BATCH.md](docs/ECS_BATCH.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API, embedding worker, graph projector, event relay and event consumers
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -79,7 +80,7 @@ curl -i http://127.0.0.1:8000/api/v1/health -H 'X-Correlation-ID: demo-1'
 
 ```text
 backend/            FastAPI service (app/, tests/, Dockerfile, pyproject.toml)
-infrastructure/     Docker init scripts, Terraform (bootstrap, core, eks), Kubernetes manifests
+infrastructure/     Docker init scripts, Terraform (bootstrap, core, eks, batch), Kubernetes manifests
 benchmarks/         Reproducible measurements -> benchmarks/results/*.json
 evaluation/         Retrieval and grounded-answer evaluation datasets, results
 frontend/           Web UI: Next.js + React + TypeScript (see frontend/README.md)
@@ -106,7 +107,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Revocation impact](docs/REVOCATION.md)
 - [Observability](docs/OBSERVABILITY.md)
 - [CI/CD and images](docs/CI_CD.md)
-- [AWS deployment](docs/AWS_DEPLOYMENT.md), [teardown](docs/AWS_TEARDOWN.md), [cost control](docs/AWS_COST_CONTROL.md), [EKS](docs/EKS.md)
+- [AWS deployment](docs/AWS_DEPLOYMENT.md), [teardown](docs/AWS_TEARDOWN.md), [cost control](docs/AWS_COST_CONTROL.md), [EKS](docs/EKS.md), [ECS batch](docs/ECS_BATCH.md)
 - [AI: grounded answers, LangChain, evaluation, investigator agent](docs/AI.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 

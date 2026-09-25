@@ -1,0 +1,5 @@
+bucket       = "contextledger-tfstate-<account-id>-us-east-1"
+key          = "batch/terraform.tfstate"
+region       = "us-east-1"
+encrypt      = true
+use_lockfile = true

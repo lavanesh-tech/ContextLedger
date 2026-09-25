@@ -28,7 +28,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 21 | Production Docker hardening + full CI/CD | Done |
 | 22 | Terraform + core AWS (VPC, RDS, S3, ECR, Secrets Manager, IAM, CloudWatch) | Done (code; not applied) |
 | 23 | EKS deployment + teardown docs | Done (code; not applied) |
-| 24 | ECS/Fargate batch workload | Planned |
+| 24 | ECS/Fargate batch workload | Done (code; not applied) |
 | 25 | DynamoDB (only if justified) | Planned |
 | 26 | Athena (only if justified) | Planned |
 | 27 | Performance / load testing | Planned |

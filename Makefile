@@ -22,6 +22,7 @@ TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.
 KAFKA_PORT ?= 9092
 TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)'
 
+.PHONY: batch-plan batch-apply batch-destroy batch-run batch-drain
 .PHONY: eks-plan eks-apply eks-destroy k8s-validate k8s-secrets k8s-render k8s-migrate k8s-deploy
 .PHONY: help install lock lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
@@ -66,6 +67,9 @@ run: ## Run the API on your Mac with auto-reload on http://127.0.0.1:8000
 
 worker: ## Run the embedding worker on your Mac (loop; Ctrl+C to stop)
 	cd $(BACKEND) && $(BIN)/python -m app.workers.embeddings
+
+batch-drain: ## Embed everything pending (up to 200 batches) and exit, like the ECS backfill task
+	cd $(BACKEND) && $(BIN)/python -m app.workers.embeddings --drain 200
 
 worker-once: ## Embed one batch of pending fact versions and exit
 	cd $(BACKEND) && $(BIN)/python -m app.workers.embeddings --once
@@ -175,6 +179,7 @@ obs-down: ## Stop the observability containers
 
 TF_CORE := infrastructure/terraform/core
 TF_EKS := infrastructure/terraform/eks
+TF_BATCH := infrastructure/terraform/batch
 K8S := infrastructure/kubernetes
 IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
 
@@ -186,6 +191,8 @@ tf-check: ## terraform fmt + validate for both stacks (no AWS calls)
 	terraform -chdir=$(TF_CORE) validate
 	terraform -chdir=$(TF_EKS) init -backend=false -input=false >/dev/null
 	terraform -chdir=$(TF_EKS) validate
+	terraform -chdir=$(TF_BATCH) init -backend=false -input=false >/dev/null
+	terraform -chdir=$(TF_BATCH) validate
 
 tf-plan: ## Plan the core AWS stack (needs AWS credentials, backend.hcl and terraform.tfvars)
 	terraform -chdir=$(TF_CORE) init -backend-config=backend.hcl -input=false
@@ -247,3 +254,24 @@ k8s-migrate: k8s-render ## Run Alembic migrations as a one-off Job and wait for 
 k8s-deploy: k8s-migrate ## Migrate, then roll out API, workers and web
 	kubectl -n contextledger rollout status deployment/api --timeout=5m
 	kubectl -n contextledger rollout status deployment/web --timeout=5m
+
+batch-plan: ## Plan the ECS/Fargate batch stack (IMAGE_TAG must exist in ECR)
+	terraform -chdir=$(TF_BATCH) init -backend-config=backend.hcl -input=false
+	terraform -chdir=$(TF_BATCH) plan -var image_tag=$(IMAGE_TAG) -out=tfplan
+
+batch-apply: ## Apply the saved batch plan (no cost until a task runs)
+	terraform -chdir=$(TF_BATCH) apply tfplan
+
+batch-destroy: ## Destroy the batch stack (run before destroying core)
+	terraform -chdir=$(TF_BATCH) destroy -var image_tag=$(IMAGE_TAG)
+
+batch-run: ## Run the embedding backfill once on Fargate and wait for it to stop
+	@cluster=$$(terraform -chdir=$(TF_BATCH) output -raw cluster_name); \
+	task=$$(aws ecs run-task --cluster $$cluster --launch-type FARGATE \
+	  --task-definition $$(terraform -chdir=$(TF_BATCH) output -raw task_definition) \
+	  --network-configuration "$$(terraform -chdir=$(TF_BATCH) output -raw run_task_network_configuration)" \
+	  --query 'tasks[0].taskArn' --output text); \
+	echo "started $$task"; \
+	aws ecs wait tasks-stopped --cluster $$cluster --tasks $$task; \
+	aws ecs describe-tasks --cluster $$cluster --tasks $$task \
+	  --query 'tasks[0].{stopped:stoppedReason,exitCode:containers[0].exitCode}' --output table

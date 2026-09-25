@@ -184,3 +184,43 @@ def test_the_answer_prompt_version_must_exist() -> None:
     assert Settings(_env_file=None).llm_answer_prompt_version == "grounded-answer-v2"
     with pytest.raises(ValidationError, match="unknown answer prompt"):
         Settings(_env_file=None, llm_answer_prompt_version="grounded-answer-v9")
+
+
+@pytest.mark.parametrize("environment", [Environment.STAGING, Environment.PRODUCTION])
+def test_batch_role_needs_only_the_database_and_embeddings(environment: Environment) -> None:
+    settings = Settings(
+        _env_file=None,
+        environment=environment,
+        process_role="batch",
+        db_password=SecretStr("x"),
+        embedding_provider="openai",
+        openai_api_key=SecretStr("sk-test-not-real"),
+        auth_mode="jwt",
+    )
+    assert settings.process_role == "batch"
+
+
+def test_batch_role_still_requires_the_database_password_and_real_embeddings() -> None:
+    with pytest.raises(ValidationError, match="DB_PASSWORD"):
+        Settings(_env_file=None, environment=Environment.STAGING, process_role="batch")
+    with pytest.raises(ValidationError, match="openai embedding provider"):
+        Settings(
+            _env_file=None,
+            environment=Environment.STAGING,
+            process_role="batch",
+            db_password=SecretStr("x"),
+            auth_mode="jwt",
+        )
+
+
+def test_batch_role_does_not_allow_header_auth_in_deployed_environments() -> None:
+    with pytest.raises(ValidationError, match="development-headers"):
+        Settings(
+            _env_file=None,
+            environment=Environment.STAGING,
+            process_role="batch",
+            db_password=SecretStr("x"),
+            embedding_provider="openai",
+            openai_api_key=SecretStr("sk-test-not-real"),
+            auth_mode="development-headers",
+        )

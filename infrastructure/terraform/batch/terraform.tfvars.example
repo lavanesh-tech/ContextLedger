@@ -1,0 +1,5 @@
+region       = "us-east-1"
+environment  = "demo"
+owner        = "your-name"
+state_bucket = "contextledger-tfstate-<account-id>-us-east-1"
+image_tag    = "abc1234" # git rev-parse --short HEAD, pushed to ECR

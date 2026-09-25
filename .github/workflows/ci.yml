@@ -191,7 +191,7 @@ jobs:
         run: terraform fmt -check -recursive infrastructure/terraform
       - name: terraform validate (no backend, no AWS credentials)
         run: |
-          for stack in bootstrap core eks; do
+          for stack in bootstrap core eks batch; do
             terraform -chdir=infrastructure/terraform/$stack init -backend=false -input=false
             terraform -chdir=infrastructure/terraform/$stack validate
           done

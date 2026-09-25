@@ -970,3 +970,23 @@ port-forward.
 kubeconform without AWS credentials. Not highly available: single Redis/Neo4j pods,
 fixed node count, no autoscaling, and client-side RDS certificate verification is still
 a follow-up. None of it has been applied or measured under load yet.
+
+## ADR-038: The embedding backfill as an ECS/Fargate task, with a batch process role
+
+**Status:** Accepted (Phase 24)
+
+**Context.** Backfilling embeddings is finite work that arrives in bursts. Keeping more
+worker replicas running for it wastes money; running it inside the Kubernetes cluster
+ties it to a cluster that is usually destroyed.
+
+**Decision.** A separate `batch` Terraform stack defines a Fargate task that runs the
+existing worker with `--drain N` and exits, optionally on a schedule that is off by
+default. It is independent of EKS and depends only on the core stack. A new
+`process_role` setting (`api` | `batch`) lets one-shot jobs start without serving-time
+secrets (JWT key, Redis, Neo4j, metrics token) instead of receiving placeholders; the
+database password, real embeddings and the header-auth ban stay mandatory. Failures
+surface as a non-zero exit code, routed by EventBridge to the existing alerts topic.
+
+**Consequences.** Billed per second only while it runs; no new services to operate.
+The batch task cannot invalidate the Redis retrieval cache, so cached results may be
+stale for up to the cache TTL after a backfill. Not yet run on AWS.

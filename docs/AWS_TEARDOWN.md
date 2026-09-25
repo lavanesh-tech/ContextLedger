@@ -3,7 +3,15 @@
 Goal: after a demo, remove everything that is billed by the hour, and know
 exactly what is left.
 
-## Destroy the EKS stack first (if you created it)
+## Destroy the batch stack first (if you created it)
+
+```bash
+make batch-destroy
+```
+
+It holds a rule in the database security group, so it must go before core.
+
+## Destroy the EKS stack (if you created it)
 
 ```bash
 make eks-destroy
