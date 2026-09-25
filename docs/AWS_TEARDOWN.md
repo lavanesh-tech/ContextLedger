@@ -3,6 +3,21 @@
 Goal: after a demo, remove everything that is billed by the hour, and know
 exactly what is left.
 
+## Destroy the EKS stack first (if you created it)
+
+```bash
+make eks-destroy
+```
+
+This deletes the `contextledger` namespace, then the node group, add-ons and cluster.
+The core stack cannot be destroyed cleanly while the cluster still uses its subnets and
+security groups. Check that no load balancers or ENIs tagged for the cluster remain:
+
+```bash
+aws eks list-clusters
+aws elbv2 describe-load-balancers --query 'LoadBalancers[].LoadBalancerName'
+```
+
 ## Destroy the core stack
 
 ```bash

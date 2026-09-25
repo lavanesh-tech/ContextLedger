@@ -1,0 +1,6 @@
+# The migration Job, applied separately (make k8s-migrate) so it runs before the API rolls.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: contextledger
+resources:
+  - migrate-job.yaml

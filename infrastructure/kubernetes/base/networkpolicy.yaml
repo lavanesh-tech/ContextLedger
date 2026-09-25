@@ -1,0 +1,59 @@
+# Default deny inside the namespace, then only the paths the app needs.
+# Enforced by the VPC CNI network-policy agent (enabled in the eks Terraform stack).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-from-web-and-port-forward
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: api}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: web}}
+      ports: [{port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-ingress
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: web}
+  policyTypes: [Ingress]
+  ingress:
+    - ports: [{port: 3000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-from-app
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: redis}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchExpressions: [{key: app.kubernetes.io/name, operator: In, values: [api, embedding-worker, graph-projector]}]}
+      ports: [{port: 6379}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: neo4j-from-app
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: neo4j}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchExpressions: [{key: app.kubernetes.io/name, operator: In, values: [api, graph-projector]}]}
+      ports: [{port: 7687}]

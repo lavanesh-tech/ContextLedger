@@ -949,3 +949,24 @@ for idle infrastructure, and without long-lived credentials or secrets in code.
 availability; production would enable Multi-AZ, deletion protection and a
 recovery window. Nothing inside the VPC can reach the internet until a NAT
 gateway (or interface endpoints) is enabled in a later phase.
+
+## ADR-037: EKS as an optional, destroyable deployment with Kustomize
+
+**Status:** Accepted (Phase 23)
+
+**Context.** The project needs a credible Kubernetes deployment path, but a running
+cluster costs money every hour and this is a portfolio project without real traffic.
+
+**Decision.** A separate Terraform stack (`eks`) reads the core stack's remote state and
+adds only the cluster, a small Spot ARM node group, add-ons, Pod Identity and a database
+ingress rule, so it can be destroyed without touching RDS, S3 or ECR. Manifests use plain
+Kustomize (base + overlay + a separate migration Job) rather than Helm: there is one
+deployment target, and plain YAML is easier to review. Redis and Neo4j run in-cluster
+as ephemeral pods because their state is rebuildable; Kafka is not deployed and events
+remain in the transactional outbox. There is no public load balancer; access is via
+port-forward.
+
+**Consequences.** Cheap to create and destroy, reviewable, validated in CI with
+kubeconform without AWS credentials. Not highly available: single Redis/Neo4j pods,
+fixed node count, no autoscaling, and client-side RDS certificate verification is still
+a follow-up. None of it has been applied or measured under load yet.

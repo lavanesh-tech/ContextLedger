@@ -191,10 +191,25 @@ jobs:
         run: terraform fmt -check -recursive infrastructure/terraform
       - name: terraform validate (no backend, no AWS credentials)
         run: |
-          for stack in bootstrap core; do
+          for stack in bootstrap core eks; do
             terraform -chdir=infrastructure/terraform/$stack init -backend=false -input=false
             terraform -chdir=infrastructure/terraform/$stack validate
           done
+
+  kubernetes:
+    name: Kubernetes manifests (kustomize + kubeconform)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kustomize and kubeconform
+        run: |
+          curl -fsSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.7.1/kustomize_v5.7.1_linux_amd64.tar.gz | sudo tar xz -C /usr/local/bin kustomize
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | sudo tar xz -C /usr/local/bin kubeconform
+      - name: Render and validate
+        run: |
+          kustomize build infrastructure/kubernetes/overlays/eks | kubeconform -strict -summary -kubernetes-version 1.33.0 -
+          kustomize build infrastructure/kubernetes/jobs | kubeconform -strict -summary -kubernetes-version 1.33.0 -
 
   docker:
     name: Docker build, scan + smoke test

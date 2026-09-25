@@ -1,0 +1,55 @@
+# Demo-only Neo4j: the provenance graph is a projection of PostgreSQL and can be
+# rebuilt at any time (graph projector), so ephemeral storage is acceptable here.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neo4j
+  labels: {app.kubernetes.io/name: neo4j}
+spec:
+  serviceName: neo4j
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: neo4j}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: neo4j, app.kubernetes.io/part-of: contextledger}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 7474
+        runAsGroup: 7474
+        fsGroup: 7474
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: neo4j
+          image: neo4j:5.26-community
+          env:
+            - name: NEO4J_AUTH
+              valueFrom: {secretKeyRef: {name: contextledger-secrets, key: NEO4J_AUTH}}
+            - name: NEO4J_server_memory_heap_max__size
+              value: 512m
+            - name: NEO4J_server_memory_pagecache_size
+              value: 128m
+          ports: [{name: bolt, containerPort: 7687}]
+          readinessProbe:
+            tcpSocket: {port: bolt}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 768Mi}
+            limits: {memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts: [{name: data, mountPath: /data}, {name: logs, mountPath: /logs}]
+      volumes: [{name: data, emptyDir: {}}, {name: logs, emptyDir: {}}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo4j
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: neo4j}
+  ports: [{name: bolt, port: 7687, targetPort: bolt}]

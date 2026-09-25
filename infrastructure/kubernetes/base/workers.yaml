@@ -1,0 +1,73 @@
+# Background workers (same image). The Kafka relay and consumers are not deployed on
+# EKS in this phase: events stay in the PostgreSQL outbox (see docs/EKS.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: embedding-worker
+  labels: {app.kubernetes.io/name: embedding-worker}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: embedding-worker}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: embedding-worker, app.kubernetes.io/part-of: contextledger}
+    spec:
+      serviceAccountName: contextledger-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: embedding-worker
+          image: contextledger-api
+          command: ["python", "-m", "app.workers.embeddings"]
+          envFrom:
+            - configMapRef: {name: contextledger-config}
+            - secretRef: {name: contextledger-secrets}
+          resources:
+            requests: {cpu: 50m, memory: 192Mi}
+            limits: {memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {}}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graph-projector
+  labels: {app.kubernetes.io/name: graph-projector}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: graph-projector}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: graph-projector, app.kubernetes.io/part-of: contextledger}
+    spec:
+      serviceAccountName: contextledger-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: graph-projector
+          image: contextledger-api
+          command: ["python", "-m", "app.workers.graph"]
+          envFrom:
+            - configMapRef: {name: contextledger-config}
+            - secretRef: {name: contextledger-secrets}
+          resources:
+            requests: {cpu: 50m, memory: 192Mi}
+            limits: {memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {}}]

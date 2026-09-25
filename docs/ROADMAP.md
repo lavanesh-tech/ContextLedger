@@ -27,7 +27,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 20 | Observability: OpenTelemetry, Prometheus, Grafana | Done |
 | 21 | Production Docker hardening + full CI/CD | Done |
 | 22 | Terraform + core AWS (VPC, RDS, S3, ECR, Secrets Manager, IAM, CloudWatch) | Done (code; not applied) |
-| 23 | EKS deployment + teardown docs | Planned |
+| 23 | EKS deployment + teardown docs | Done (code; not applied) |
 | 24 | ECS/Fargate batch workload | Planned |
 | 25 | DynamoDB (only if justified) | Planned |
 | 26 | Athena (only if justified) | Planned |

@@ -1,0 +1,5 @@
+region            = "us-east-1"
+environment       = "demo"
+owner             = "your-name"
+state_bucket      = "contextledger-tfstate-<account-id>-us-east-1"
+api_allowed_cidrs = ["203.0.113.7/32"] # your public IP: curl -s https://checkip.amazonaws.com

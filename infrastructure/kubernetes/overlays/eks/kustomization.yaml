@@ -1,0 +1,20 @@
+# `make k8s-deploy` sets the image references and the database host
+# (kustomize edit) from Terraform outputs before applying.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - name: contextledger-api
+    newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/contextledger-api
+    newTag: TAG
+  - name: contextledger-web
+    newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/contextledger-web
+    newTag: TAG
+configMapGenerator:
+  - name: contextledger-config
+    behavior: merge
+    literals:
+      - CONTEXTLEDGER_DB_HOST=set-by-make-k8s-deploy
+generatorOptions:
+  disableNameSuffixHash: true

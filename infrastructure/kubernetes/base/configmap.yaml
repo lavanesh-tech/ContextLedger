@@ -1,0 +1,19 @@
+# Non-secret settings. Secrets come from the contextledger-secrets Secret
+# (scripts/k8s-secrets.sh copies them from AWS Secrets Manager).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contextledger-config
+data:
+  CONTEXTLEDGER_ENVIRONMENT: staging
+  CONTEXTLEDGER_LOG_LEVEL: INFO
+  CONTEXTLEDGER_LOG_JSON: "true"
+  CONTEXTLEDGER_DOCS_ENABLED: "false"
+  CONTEXTLEDGER_AUTH_MODE: jwt
+  CONTEXTLEDGER_DB_PORT: "5432"
+  CONTEXTLEDGER_DB_NAME: contextledger
+  CONTEXTLEDGER_EMBEDDING_PROVIDER: openai
+  CONTEXTLEDGER_EMBEDDING_MODEL: text-embedding-3-small
+  CONTEXTLEDGER_NEO4J_URI: bolt://neo4j:7687
+  # Filled per environment by the overlay (RDS endpoint).
+  CONTEXTLEDGER_DB_HOST: set-by-overlay

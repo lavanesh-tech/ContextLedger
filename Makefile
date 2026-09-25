@@ -22,6 +22,7 @@ TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.
 KAFKA_PORT ?= 9092
 TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)'
 
+.PHONY: eks-plan eks-apply eks-destroy k8s-validate k8s-secrets k8s-render k8s-migrate k8s-deploy
 .PHONY: help install lock lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
@@ -173,6 +174,9 @@ obs-down: ## Stop the observability containers
 # --- Terraform / AWS (see docs/AWS_DEPLOYMENT.md; apply and destroy cost or save money) ----
 
 TF_CORE := infrastructure/terraform/core
+TF_EKS := infrastructure/terraform/eks
+K8S := infrastructure/kubernetes
+IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
 
 tf-check: ## terraform fmt + validate for both stacks (no AWS calls)
 	terraform fmt -check -recursive infrastructure/terraform
@@ -180,6 +184,8 @@ tf-check: ## terraform fmt + validate for both stacks (no AWS calls)
 	terraform -chdir=infrastructure/terraform/bootstrap validate
 	terraform -chdir=$(TF_CORE) init -backend=false -input=false >/dev/null
 	terraform -chdir=$(TF_CORE) validate
+	terraform -chdir=$(TF_EKS) init -backend=false -input=false >/dev/null
+	terraform -chdir=$(TF_EKS) validate
 
 tf-plan: ## Plan the core AWS stack (needs AWS credentials, backend.hcl and terraform.tfvars)
 	terraform -chdir=$(TF_CORE) init -backend-config=backend.hcl -input=false
@@ -205,3 +211,39 @@ frontend-check: ## Web UI type-check, unit tests and production build
 clean: ## Remove caches (not the virtualenv)
 	find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +
 	rm -f $(BACKEND)/.coverage
+
+eks-plan: ## Plan the EKS stack (needs the core stack applied with enable_nat_gateway=true)
+	terraform -chdir=$(TF_EKS) init -backend-config=backend.hcl -input=false
+	terraform -chdir=$(TF_EKS) plan -out=tfplan
+
+eks-apply: ## Apply the saved EKS plan (billable: control plane, nodes, NAT)
+	terraform -chdir=$(TF_EKS) apply tfplan
+
+eks-destroy: ## Destroy the EKS stack (run before destroying core)
+	-kubectl delete namespace contextledger --wait=true --timeout=5m
+	terraform -chdir=$(TF_EKS) destroy
+
+k8s-validate: ## Render the Kubernetes manifests and validate them against the 1.33 schemas
+	kustomize build $(K8S)/overlays/eks | kubeconform -strict -summary -kubernetes-version 1.33.0 -
+	kustomize build $(K8S)/jobs | kubeconform -strict -summary -kubernetes-version 1.33.0 -
+
+k8s-secrets: ## Create/refresh the app Secret from AWS Secrets Manager
+	TF_CORE=$(TF_CORE) scripts/k8s-secrets.sh
+
+k8s-render: ## Render the eks overlay with this commit's images and the RDS host into .k8s-rendered/
+	rm -rf .k8s-rendered && mkdir -p .k8s-rendered && cp -R $(K8S) .k8s-rendered/k
+	cd .k8s-rendered/k/overlays/eks && \
+	  kustomize edit set image contextledger-api=$$(terraform -chdir=../../../../$(TF_CORE) output -json ecr_repository_urls | python3 -c 'import json,sys;print(json.load(sys.stdin)["contextledger-api"])'):$(IMAGE_TAG) && \
+	  kustomize edit set image contextledger-web=$$(terraform -chdir=../../../../$(TF_CORE) output -json ecr_repository_urls | python3 -c 'import json,sys;print(json.load(sys.stdin)["contextledger-web"])'):$(IMAGE_TAG) && \
+	  kustomize edit add configmap contextledger-config --behavior=merge --from-literal=CONTEXTLEDGER_DB_HOST=$$(terraform -chdir=../../../../$(TF_CORE) output -raw db_endpoint)
+	cd .k8s-rendered/k/jobs && kustomize edit set image contextledger-api=$$(terraform -chdir=../../../$(TF_CORE) output -json ecr_repository_urls | python3 -c 'import json,sys;print(json.load(sys.stdin)["contextledger-api"])'):$(IMAGE_TAG)
+
+k8s-migrate: k8s-render ## Run Alembic migrations as a one-off Job and wait for it
+	-kubectl -n contextledger delete job migrate --ignore-not-found
+	kustomize build .k8s-rendered/k/overlays/eks | kubectl apply -f -
+	kustomize build .k8s-rendered/k/jobs | kubectl apply -f -
+	kubectl -n contextledger wait --for=condition=complete job/migrate --timeout=5m
+
+k8s-deploy: k8s-migrate ## Migrate, then roll out API, workers and web
+	kubectl -n contextledger rollout status deployment/api --timeout=5m
+	kubectl -n contextledger rollout status deployment/web --timeout=5m

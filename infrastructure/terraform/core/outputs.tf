@@ -47,3 +47,11 @@ output "ci_role_arn" {
 output "alerts_topic_arn" {
   value = aws_sns_topic.alerts.arn
 }
+
+output "db_security_group_id" {
+  value = aws_security_group.db.id
+}
+
+output "nat_gateway_enabled" {
+  value = var.enable_nat_gateway
+}

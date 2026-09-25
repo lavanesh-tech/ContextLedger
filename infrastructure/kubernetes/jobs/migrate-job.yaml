@@ -1,0 +1,35 @@
+# Run before (re)deploying: `make k8s-migrate`. The same image, one-off, then gone.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: migrate, app.kubernetes.io/part-of: contextledger}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: contextledger-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: migrate
+          image: contextledger-api
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            - configMapRef: {name: contextledger-config}
+            - secretRef: {name: contextledger-secrets}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {}}]
