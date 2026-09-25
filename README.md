@@ -13,7 +13,7 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 17 of 31 done, plus an additive AI capability (grounded answers,
+> **Status: Phase 18 of 31 done, plus an additive AI capability (grounded answers,
 > LangChain orchestration, evaluation, a decision-investigator agent).** Only what is
 > listed under "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
@@ -38,6 +38,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Kafka domain events from a trigger-written transactional outbox: tenant-keyed topics, a CloudEvents-style envelope with drift-tested JSON Schemas, idempotent consumers (dedup in the same transaction as the effect), bounded retries and dead-letter topics. Consumers maintain a daily activity read model and invalidate the retrieval cache. See [docs/EVENTS.md](docs/EVENTS.md)
 - Contradiction detection: a deterministic rule flags a new version that disagrees with a value another source directly observed, in the same transaction as the write, and emits `contradiction.detected`. Both versions are kept, the rules say which one they prefer (authority, confidence, observation time), and people resolve or dismiss it. An optional LLM review suggests conflicts between different properties, validated against the facts it was given. See [docs/CONTRADICTIONS.md](docs/CONTRADICTIONS.md)
 - Revocation impact: a fact version found to be wrong is revoked (append-only, with a reason), which removes it from current and "as known now" answers while "as known before the revocation" queries and decision receipts still show it (marked `revoked_at`). Every decision whose frozen context held it is listed, split into relied-on and merely in context, with `fact.revoked` and `decision.impacted` events. See [docs/REVOCATION.md](docs/REVOCATION.md)
+- Retrieval evaluation: Recall@K, Precision@K, MRR, nDCG and temporal / authorization correctness on a labelled synthetic dataset (22 cases), comparing hybrid, hybrid without trust weighting, and full-text-only retrieval (`make eval-retrieval`, no model calls). See [evaluation/README.md](evaluation/README.md)
 - Grounded LLM answers (`POST …/answers`, MCP `answer_question`): OpenAI Chat Completions behind a provider interface with one deadline, bounded retries and typed errors; versioned prompts; facts retrieved under the caller's tenant, role, privacy ceiling and time constraints; every citation verified by code, and an answer with an invented citation is withheld. Disabled by default. See [docs/AI.md](docs/AI.md)
 - LangChain (`langchain-core` only, no LangGraph) orchestrates the prompt → model chains through an adapter over the same provider, so every call keeps the same cost and failure controls
 - A versioned grounded-answer evaluation (synthetic dataset, 18 cases): a free deterministic mode that checks what reaches the model, and an opt-in live mode that measures answer quality and cost. See [evaluation/README.md](evaluation/README.md)
@@ -75,7 +76,7 @@ curl -i http://127.0.0.1:8000/api/v1/health -H 'X-Correlation-ID: demo-1'
 backend/            FastAPI service (app/, tests/, Dockerfile, pyproject.toml)
 infrastructure/     Docker init scripts now; Terraform / Kubernetes later
 benchmarks/         Reproducible measurements -> benchmarks/results/*.json
-evaluation/         RAG evaluation datasets and runners (Phase 18)
+evaluation/         Retrieval and grounded-answer evaluation datasets, results
 frontend/           Web UI: Next.js + React + TypeScript (Phase 19, not started)
 docs/               Architecture, decisions, roadmap, benchmarks
 scripts/            Developer scripts (local stack smoke test)

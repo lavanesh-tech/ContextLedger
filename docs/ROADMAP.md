@@ -22,7 +22,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 15 | Kafka events and idempotent consumers | Done |
 | 16 | Contradiction detection | Done |
 | 17 | Revocation impact | Done |
-| 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Planned |
+| 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Done |
 | 19 | Frontend: Next.js + React + TypeScript in `frontend/`, consuming the FastAPI `/api/v1` REST API (ADR-008) | Planned |
 | 20 | Observability: OpenTelemetry, Prometheus, Grafana | Planned |
 | 21 | Production Docker hardening + full CI/CD | Planned |
@@ -39,9 +39,8 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 
 ## Additive AI capability (outside the numbered phases)
 
-Built after Phase 15 without renumbering or replacing any phase. Phase 18 (RAG evaluation of retrieval: Recall@K,
-Precision@K, MRR) are still planned as defined above. Details: [AI.md](AI.md),
-ADR-031.
+Built after Phase 15 without renumbering or replacing any phase; Phases 16
+and 18 were then built as defined above. Details: [AI.md](AI.md), ADR-031.
 
 | Part | Status |
 |---|---|

@@ -2,7 +2,7 @@
 
 This capability was added after Phase 15. It does not replace any roadmap
 phase: Phase 16 (contradiction detection) and Phase 18 (retrieval evaluation)
-are still planned. Design decision: ADR-031 in [DECISIONS.md](DECISIONS.md).
+were built separately afterwards. Design decision: ADR-031 in [DECISIONS.md](DECISIONS.md).
 
 The rule throughout: **the model never decides tenant, permission, time,
 version or provenance.** Those are decided by the same deterministic services

@@ -1,0 +1,1667 @@
+{
+  "name": "retrieval",
+  "version": "1.0.0",
+  "synthetic": true,
+  "description": "SYNTHETIC retrieval evaluation dataset. Each case builds its own isolated organization (and a second one for tenant cases). 'relevant' facts must be retrieved; 'forbidden' facts must never be retrieved (reason: not_valid_at_T, superseded, revoked, other_tenant, privacy). Times are hours after 2026-01-15T09:00Z; without valid_at_hours the query is about now.",
+  "cases": [
+    {
+      "id": "lexical-01",
+      "category": "lexical",
+      "query": "credit limit of customer-991",
+      "facts": [
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "customer-991_credit_limit"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "lexical-02",
+      "category": "lexical",
+      "query": "risk score of customer-992",
+      "facts": [
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "customer-992_risk_score"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "lexical-03",
+      "category": "lexical",
+      "query": "account status customer-993",
+      "facts": [
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "customer-993_account_status"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "lexical-04",
+      "category": "lexical",
+      "query": "payment terms of supplier-17",
+      "facts": [
+        {
+          "key": "s17_status",
+          "property": "account_status",
+          "value": "ON_HOLD",
+          "hours": 0,
+          "entity_type": "supplier",
+          "external_id": "supplier-17"
+        },
+        {
+          "key": "s17_terms",
+          "property": "payment_terms",
+          "value": "NET30",
+          "hours": 0,
+          "entity_type": "supplier",
+          "external_id": "supplier-17"
+        },
+        {
+          "key": "s18_terms",
+          "property": "payment_terms",
+          "value": "NET60",
+          "hours": 0,
+          "entity_type": "supplier",
+          "external_id": "supplier-18"
+        },
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "s17_terms"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "lexical-05",
+      "category": "lexical",
+      "query": "credit limit customer-995",
+      "facts": [
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 1000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 2000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-994_credit_limit",
+          "property": "credit_limit",
+          "value": 4000,
+          "hours": 0,
+          "external_id": "customer-994"
+        },
+        {
+          "key": "customer-995_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-995"
+        },
+        {
+          "key": "customer-996_credit_limit",
+          "property": "credit_limit",
+          "value": 6000,
+          "hours": 0,
+          "external_id": "customer-996"
+        },
+        {
+          "key": "customer-997_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-997"
+        },
+        {
+          "key": "customer-998_credit_limit",
+          "property": "credit_limit",
+          "value": 8000,
+          "hours": 0,
+          "external_id": "customer-998"
+        },
+        {
+          "key": "customer-999_credit_limit",
+          "property": "credit_limit",
+          "value": 9000,
+          "hours": 0,
+          "external_id": "customer-999"
+        },
+        {
+          "key": "customer-1000_credit_limit",
+          "property": "credit_limit",
+          "value": 10000,
+          "hours": 0,
+          "external_id": "customer-1000"
+        }
+      ],
+      "relevant": [
+        "customer-995_credit_limit"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "lexical-06",
+      "category": "lexical",
+      "query": "status of order-5531",
+      "facts": [
+        {
+          "key": "o1",
+          "property": "order_status",
+          "value": "SHIPPED",
+          "hours": 0,
+          "entity_type": "order",
+          "external_id": "order-5531"
+        },
+        {
+          "key": "o2",
+          "property": "order_status",
+          "value": "PENDING",
+          "hours": 0,
+          "entity_type": "order",
+          "external_id": "order-5532"
+        },
+        {
+          "key": "o3",
+          "property": "order_total",
+          "value": 129.5,
+          "hours": 0,
+          "entity_type": "order",
+          "external_id": "order-5531"
+        },
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "o1"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "multi-01",
+      "category": "multi_fact",
+      "query": "credit limit and risk score of customer-991",
+      "facts": [
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "customer-991_credit_limit",
+        "customer-991_risk_score"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "paraphrase-01",
+      "category": "paraphrase",
+      "query": "how much can customer-991 borrow",
+      "facts": [
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "customer-991_credit_limit"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "paraphrase-02",
+      "category": "paraphrase",
+      "query": "customer-992 spending cap",
+      "facts": [
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "customer-992_credit_limit"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "paraphrase-03",
+      "category": "paraphrase",
+      "query": "is customer-993 currently allowed to trade",
+      "facts": [
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "customer-993_account_status"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "temporal-01",
+      "category": "temporal",
+      "query": "credit limit of customer-991",
+      "facts": [
+        {
+          "key": "v1",
+          "property": "credit_limit",
+          "value": 2000,
+          "hours": 0
+        },
+        {
+          "key": "v2",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 5
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "v1"
+      ],
+      "forbidden": {
+        "v2": "not_valid_at_T"
+      },
+      "valid_at_hours": 1
+    },
+    {
+      "id": "temporal-02",
+      "category": "temporal",
+      "query": "credit limit of customer-991",
+      "facts": [
+        {
+          "key": "v1",
+          "property": "credit_limit",
+          "value": 2000,
+          "hours": 0
+        },
+        {
+          "key": "v2",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 5
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "v2"
+      ],
+      "forbidden": {
+        "v1": "superseded"
+      },
+      "valid_at_hours": 10
+    },
+    {
+      "id": "temporal-03",
+      "category": "temporal",
+      "query": "credit limit of customer-991",
+      "facts": [
+        {
+          "key": "v1",
+          "property": "credit_limit",
+          "value": 2000,
+          "hours": 0
+        },
+        {
+          "key": "planned",
+          "property": "credit_limit",
+          "value": 9000,
+          "hours": 10000
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "v1"
+      ],
+      "forbidden": {
+        "planned": "not_valid_at_T"
+      }
+    },
+    {
+      "id": "superseded-01",
+      "category": "superseded",
+      "query": "credit limit of customer-991",
+      "facts": [
+        {
+          "key": "v1",
+          "property": "credit_limit",
+          "value": 1000,
+          "hours": 0
+        },
+        {
+          "key": "v2",
+          "property": "credit_limit",
+          "value": 2000,
+          "hours": 3
+        },
+        {
+          "key": "v3",
+          "property": "credit_limit",
+          "value": 4000,
+          "hours": 6
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "v3"
+      ],
+      "forbidden": {
+        "v1": "superseded",
+        "v2": "superseded"
+      }
+    },
+    {
+      "id": "revoked-01",
+      "category": "revoked",
+      "query": "credit limit of customer-991",
+      "facts": [
+        {
+          "key": "v1",
+          "property": "credit_limit",
+          "value": 2000,
+          "hours": 0
+        },
+        {
+          "key": "v2",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 5,
+          "revoked": true
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [],
+      "forbidden": {
+        "v2": "revoked"
+      }
+    },
+    {
+      "id": "revoked-02",
+      "category": "revoked",
+      "query": "credit limit of customer-991",
+      "facts": [
+        {
+          "key": "v1",
+          "property": "credit_limit",
+          "value": 2000,
+          "hours": 0,
+          "revoked": true
+        },
+        {
+          "key": "v2",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 5
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "v2"
+      ],
+      "forbidden": {
+        "v1": "revoked"
+      }
+    },
+    {
+      "id": "tenant-01",
+      "category": "tenant_isolation",
+      "query": "credit limit of customer-991",
+      "facts": [
+        {
+          "key": "mine",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0
+        },
+        {
+          "key": "theirs",
+          "property": "credit_limit",
+          "value": 9999,
+          "hours": 0,
+          "tenant": "other"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "mine"
+      ],
+      "forbidden": {
+        "theirs": "other_tenant"
+      }
+    },
+    {
+      "id": "tenant-02",
+      "category": "tenant_isolation",
+      "query": "credit limit of customer-994",
+      "facts": [
+        {
+          "key": "theirs",
+          "property": "credit_limit",
+          "value": 9999,
+          "hours": 0,
+          "tenant": "other",
+          "external_id": "customer-994"
+        },
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [],
+      "forbidden": {
+        "theirs": "other_tenant"
+      }
+    },
+    {
+      "id": "privacy-01",
+      "category": "privacy",
+      "query": "credit limit and internal notes of customer-991",
+      "facts": [
+        {
+          "key": "limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0
+        },
+        {
+          "key": "notes",
+          "property": "internal_notes",
+          "value": "watch closely",
+          "hours": 0,
+          "privacy_scope": "CONFIDENTIAL"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "limit"
+      ],
+      "forbidden": {
+        "notes": "privacy"
+      },
+      "caller_role": "VIEWER"
+    },
+    {
+      "id": "privacy-02",
+      "category": "privacy",
+      "query": "collections notes and internal notes of customer-991",
+      "facts": [
+        {
+          "key": "internal",
+          "property": "internal_notes",
+          "value": "watch closely",
+          "hours": 0,
+          "privacy_scope": "CONFIDENTIAL"
+        },
+        {
+          "key": "legal",
+          "property": "collections_notes",
+          "value": "legal hold",
+          "hours": 0,
+          "privacy_scope": "RESTRICTED"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "internal"
+      ],
+      "forbidden": {
+        "legal": "privacy"
+      },
+      "caller_role": "ENGINEER"
+    },
+    {
+      "id": "trust-01",
+      "category": "trust",
+      "query": "customer-991 credit limit",
+      "facts": [
+        {
+          "key": "official",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "authority": 95
+        },
+        {
+          "key": "estimate",
+          "property": "credit_limit_estimate",
+          "value": 6500,
+          "hours": 0,
+          "source": "scoring-model",
+          "authority": 20,
+          "confidence": "0.400"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "official"
+      ],
+      "forbidden": {}
+    },
+    {
+      "id": "trust-02",
+      "category": "trust",
+      "query": "supplier-17 payment terms",
+      "facts": [
+        {
+          "key": "contract",
+          "property": "payment_terms",
+          "value": "NET30",
+          "hours": 0,
+          "entity_type": "supplier",
+          "external_id": "supplier-17",
+          "authority": 95
+        },
+        {
+          "key": "guess",
+          "property": "payment_terms_guess",
+          "value": "NET45",
+          "hours": 0,
+          "entity_type": "supplier",
+          "external_id": "supplier-17",
+          "source": "email-parser",
+          "authority": 15,
+          "confidence": "0.300"
+        },
+        {
+          "key": "customer-991_credit_limit",
+          "property": "credit_limit",
+          "value": 5000,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_risk_score",
+          "property": "risk_score",
+          "value": 12,
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-991_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-991"
+        },
+        {
+          "key": "customer-992_credit_limit",
+          "property": "credit_limit",
+          "value": 7000,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_risk_score",
+          "property": "risk_score",
+          "value": 45,
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-992_account_status",
+          "property": "account_status",
+          "value": "ACTIVE",
+          "hours": 0,
+          "external_id": "customer-992"
+        },
+        {
+          "key": "customer-993_credit_limit",
+          "property": "credit_limit",
+          "value": 3000,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_risk_score",
+          "property": "risk_score",
+          "value": 71,
+          "hours": 0,
+          "external_id": "customer-993"
+        },
+        {
+          "key": "customer-993_account_status",
+          "property": "account_status",
+          "value": "SUSPENDED",
+          "hours": 0,
+          "external_id": "customer-993"
+        }
+      ],
+      "relevant": [
+        "contract"
+      ],
+      "forbidden": {}
+    }
+  ]
+}

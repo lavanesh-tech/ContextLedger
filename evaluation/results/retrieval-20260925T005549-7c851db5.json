@@ -1,0 +1,1715 @@
+{
+  "kind": "retrieval-evaluation",
+  "date": "2026-09-25T00:55:49.606529+00:00",
+  "commit_sha": "7c851db55fcc3206e9affaa3da010b19fcb9d93b",
+  "working_tree_dirty": true,
+  "dataset": {
+    "name": "retrieval",
+    "version": "1.0.0",
+    "synthetic": true,
+    "cases": 22
+  },
+  "configuration": {
+    "limit": 10,
+    "embedding_model": "deterministic:hash-v1",
+    "configurations": {
+      "hybrid": {
+        "embeddings": "used",
+        "trust_weight": 0.3
+      },
+      "hybrid_no_trust": {
+        "embeddings": "used",
+        "trust_weight": 0.0
+      },
+      "text_only": {
+        "embeddings": "unavailable",
+        "trust_weight": 0.3
+      }
+    }
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "macOS-26.6.2-arm64-arm-64bit"
+  },
+  "metrics": {
+    "hybrid": {
+      "cases": 22,
+      "cases_with_relevant_facts": 20,
+      "mrr": 0.9667,
+      "recall@1": 0.925,
+      "precision@1": 0.95,
+      "ndcg@1": 0.95,
+      "recall@3": 1.0,
+      "precision@3": 0.35,
+      "ndcg@3": 0.975,
+      "recall@5": 1.0,
+      "precision@5": 0.21,
+      "ndcg@5": 0.975,
+      "recall@10": 1.0,
+      "precision@10": 0.105,
+      "ndcg@10": 0.975,
+      "temporal_correctness": 1.0,
+      "authorization_correctness": 1.0,
+      "forbidden_results": 0,
+      "latency_ms_p50": 13.14,
+      "by_category": {
+        "lexical": {
+          "cases": 6,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "multi_fact": {
+          "cases": 1,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "paraphrase": {
+          "cases": 3,
+          "mrr": 0.7778,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "privacy": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "revoked": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "superseded": {
+          "cases": 1,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "temporal": {
+          "cases": 3,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "tenant_isolation": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "trust": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        }
+      }
+    },
+    "hybrid_no_trust": {
+      "cases": 22,
+      "cases_with_relevant_facts": 20,
+      "mrr": 0.9667,
+      "recall@1": 0.925,
+      "precision@1": 0.95,
+      "ndcg@1": 0.95,
+      "recall@3": 1.0,
+      "precision@3": 0.35,
+      "ndcg@3": 0.975,
+      "recall@5": 1.0,
+      "precision@5": 0.21,
+      "ndcg@5": 0.975,
+      "recall@10": 1.0,
+      "precision@10": 0.105,
+      "ndcg@10": 0.975,
+      "temporal_correctness": 1.0,
+      "authorization_correctness": 1.0,
+      "forbidden_results": 0,
+      "latency_ms_p50": 10.5,
+      "by_category": {
+        "lexical": {
+          "cases": 6,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "multi_fact": {
+          "cases": 1,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "paraphrase": {
+          "cases": 3,
+          "mrr": 0.7778,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "privacy": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "revoked": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "superseded": {
+          "cases": 1,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "temporal": {
+          "cases": 3,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "tenant_isolation": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "trust": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        }
+      }
+    },
+    "text_only": {
+      "cases": 22,
+      "cases_with_relevant_facts": 20,
+      "mrr": 0.9667,
+      "recall@1": 0.925,
+      "precision@1": 0.95,
+      "ndcg@1": 0.95,
+      "recall@3": 1.0,
+      "precision@3": 0.35,
+      "ndcg@3": 0.975,
+      "recall@5": 1.0,
+      "precision@5": 0.21,
+      "ndcg@5": 0.975,
+      "recall@10": 1.0,
+      "precision@10": 0.105,
+      "ndcg@10": 0.975,
+      "temporal_correctness": 1.0,
+      "authorization_correctness": 1.0,
+      "forbidden_results": 0,
+      "latency_ms_p50": 9.78,
+      "by_category": {
+        "lexical": {
+          "cases": 6,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "multi_fact": {
+          "cases": 1,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "paraphrase": {
+          "cases": 3,
+          "mrr": 0.7778,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "privacy": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "revoked": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "superseded": {
+          "cases": 1,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "temporal": {
+          "cases": 3,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "tenant_isolation": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        },
+        "trust": {
+          "cases": 2,
+          "mrr": 1.0,
+          "recall@3": 1.0,
+          "forbidden_results": 0
+        }
+      }
+    }
+  },
+  "cases": {
+    "hybrid": [
+      {
+        "case_id": "lexical-01",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-991_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "customer-991_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 17.17,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-02",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-992_risk_score",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-992_credit_limit",
+          "customer-991_account_status",
+          "customer-993_account_status",
+          "customer-991_credit_limit",
+          "customer-993_credit_limit"
+        ],
+        "relevant": [
+          "customer-992_risk_score"
+        ],
+        "forbidden": {},
+        "latency_ms": 12.16,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-03",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-991_account_status",
+          "customer-993_risk_score",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-991_credit_limit",
+          "customer-991_risk_score"
+        ],
+        "relevant": [
+          "customer-993_account_status"
+        ],
+        "forbidden": {},
+        "latency_ms": 13.14,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-04",
+        "category": "lexical",
+        "ranked_keys": [
+          "s17_terms",
+          "s18_terms",
+          "s17_status",
+          "customer-992_credit_limit",
+          "customer-991_risk_score",
+          "customer-993_account_status",
+          "customer-993_risk_score",
+          "customer-992_risk_score",
+          "customer-991_account_status",
+          "customer-991_credit_limit"
+        ],
+        "relevant": [
+          "s17_terms"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.47,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-05",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-995_credit_limit",
+          "customer-997_credit_limit",
+          "customer-1000_credit_limit",
+          "customer-998_credit_limit",
+          "customer-994_credit_limit",
+          "customer-999_credit_limit",
+          "customer-996_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-991_credit_limit"
+        ],
+        "relevant": [
+          "customer-995_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 13.61,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-06",
+        "category": "lexical",
+        "ranked_keys": [
+          "o1",
+          "o2",
+          "o3",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-991_account_status",
+          "customer-992_credit_limit",
+          "customer-991_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "o1"
+        ],
+        "forbidden": {},
+        "latency_ms": 13.14,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "multi-01",
+        "category": "multi_fact",
+        "ranked_keys": [
+          "customer-991_credit_limit",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-993_credit_limit",
+          "customer-991_account_status",
+          "customer-992_account_status",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "customer-991_credit_limit",
+          "customer-991_risk_score"
+        ],
+        "forbidden": {},
+        "latency_ms": 13.87,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-01",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-991_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_account_status",
+          "customer-993_credit_limit",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "customer-991_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 12.4,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-02",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-992_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-991_account_status",
+          "customer-991_credit_limit",
+          "customer-991_risk_score",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "customer-992_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 11.88,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-03",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-993_account_status",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-992_account_status",
+          "customer-991_credit_limit",
+          "customer-992_credit_limit",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "customer-993_account_status"
+        ],
+        "forbidden": {},
+        "latency_ms": 13.07,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-01",
+        "category": "temporal",
+        "ranked_keys": [
+          "v1",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "v1"
+        ],
+        "forbidden": {
+          "v2": "not_valid_at_T"
+        },
+        "latency_ms": 13.38,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-02",
+        "category": "temporal",
+        "ranked_keys": [
+          "v2",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_account_status",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "v2"
+        ],
+        "forbidden": {
+          "v1": "superseded"
+        },
+        "latency_ms": 12.53,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-03",
+        "category": "temporal",
+        "ranked_keys": [
+          "v1",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "v1"
+        ],
+        "forbidden": {
+          "planned": "not_valid_at_T"
+        },
+        "latency_ms": 12.91,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "superseded-01",
+        "category": "superseded",
+        "ranked_keys": [
+          "v3",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-993_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "v3"
+        ],
+        "forbidden": {
+          "v1": "superseded",
+          "v2": "superseded"
+        },
+        "latency_ms": 14.04,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "revoked-01",
+        "category": "revoked",
+        "ranked_keys": [
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status"
+        ],
+        "relevant": [],
+        "forbidden": {
+          "v2": "revoked"
+        },
+        "latency_ms": 12.41,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "revoked-02",
+        "category": "revoked",
+        "ranked_keys": [
+          "v2",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_risk_score",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "v2"
+        ],
+        "forbidden": {
+          "v1": "revoked"
+        },
+        "latency_ms": 11.69,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "tenant-01",
+        "category": "tenant_isolation",
+        "ranked_keys": [
+          "mine",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "mine"
+        ],
+        "forbidden": {
+          "theirs": "other_tenant"
+        },
+        "latency_ms": 12.87,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "tenant-02",
+        "category": "tenant_isolation",
+        "ranked_keys": [
+          "customer-992_credit_limit",
+          "customer-991_credit_limit",
+          "customer-993_credit_limit",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-993_risk_score"
+        ],
+        "relevant": [],
+        "forbidden": {
+          "theirs": "other_tenant"
+        },
+        "latency_ms": 12.77,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "privacy-01",
+        "category": "privacy",
+        "ranked_keys": [
+          "limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "limit"
+        ],
+        "forbidden": {
+          "notes": "privacy"
+        },
+        "latency_ms": 13.61,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "privacy-02",
+        "category": "privacy",
+        "ranked_keys": [
+          "internal",
+          "customer-993_account_status",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "internal"
+        ],
+        "forbidden": {
+          "legal": "privacy"
+        },
+        "latency_ms": 14.29,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "trust-01",
+        "category": "trust",
+        "ranked_keys": [
+          "official",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "estimate"
+        ],
+        "relevant": [
+          "official"
+        ],
+        "forbidden": {},
+        "latency_ms": 13.25,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "trust-02",
+        "category": "trust",
+        "ranked_keys": [
+          "contract",
+          "guess",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-991_credit_limit",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-991_risk_score",
+          "customer-991_account_status"
+        ],
+        "relevant": [
+          "contract"
+        ],
+        "forbidden": {},
+        "latency_ms": 13.59,
+        "vector_search": "used",
+        "violations": []
+      }
+    ],
+    "hybrid_no_trust": [
+      {
+        "case_id": "lexical-01",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-991_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "customer-991_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 9.85,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-02",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-992_risk_score",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-992_credit_limit",
+          "customer-991_account_status",
+          "customer-993_account_status",
+          "customer-991_credit_limit",
+          "customer-993_credit_limit"
+        ],
+        "relevant": [
+          "customer-992_risk_score"
+        ],
+        "forbidden": {},
+        "latency_ms": 11.85,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-03",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-991_account_status",
+          "customer-993_risk_score",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-991_credit_limit",
+          "customer-991_risk_score"
+        ],
+        "relevant": [
+          "customer-993_account_status"
+        ],
+        "forbidden": {},
+        "latency_ms": 12.53,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-04",
+        "category": "lexical",
+        "ranked_keys": [
+          "s17_terms",
+          "s18_terms",
+          "s17_status",
+          "customer-992_credit_limit",
+          "customer-991_risk_score",
+          "customer-993_account_status",
+          "customer-993_risk_score",
+          "customer-992_risk_score",
+          "customer-991_account_status",
+          "customer-991_credit_limit"
+        ],
+        "relevant": [
+          "s17_terms"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.08,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-05",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-995_credit_limit",
+          "customer-997_credit_limit",
+          "customer-1000_credit_limit",
+          "customer-998_credit_limit",
+          "customer-994_credit_limit",
+          "customer-999_credit_limit",
+          "customer-996_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-991_credit_limit"
+        ],
+        "relevant": [
+          "customer-995_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.52,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-06",
+        "category": "lexical",
+        "ranked_keys": [
+          "o1",
+          "o2",
+          "o3",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-991_account_status",
+          "customer-992_credit_limit",
+          "customer-991_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "o1"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.5,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "multi-01",
+        "category": "multi_fact",
+        "ranked_keys": [
+          "customer-991_credit_limit",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-993_credit_limit",
+          "customer-991_account_status",
+          "customer-992_account_status",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "customer-991_credit_limit",
+          "customer-991_risk_score"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.42,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-01",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-991_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_account_status",
+          "customer-993_credit_limit",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "customer-991_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.05,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-02",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-992_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-991_account_status",
+          "customer-991_credit_limit",
+          "customer-991_risk_score",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "customer-992_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 11.51,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-03",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-993_account_status",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-992_account_status",
+          "customer-991_credit_limit",
+          "customer-992_credit_limit",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "customer-993_account_status"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.65,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-01",
+        "category": "temporal",
+        "ranked_keys": [
+          "v1",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "v1"
+        ],
+        "forbidden": {
+          "v2": "not_valid_at_T"
+        },
+        "latency_ms": 10.07,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-02",
+        "category": "temporal",
+        "ranked_keys": [
+          "v2",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_account_status",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "v2"
+        ],
+        "forbidden": {
+          "v1": "superseded"
+        },
+        "latency_ms": 10.18,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-03",
+        "category": "temporal",
+        "ranked_keys": [
+          "v1",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "v1"
+        ],
+        "forbidden": {
+          "planned": "not_valid_at_T"
+        },
+        "latency_ms": 10.25,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "superseded-01",
+        "category": "superseded",
+        "ranked_keys": [
+          "v3",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-993_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "v3"
+        ],
+        "forbidden": {
+          "v1": "superseded",
+          "v2": "superseded"
+        },
+        "latency_ms": 9.95,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "revoked-01",
+        "category": "revoked",
+        "ranked_keys": [
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status"
+        ],
+        "relevant": [],
+        "forbidden": {
+          "v2": "revoked"
+        },
+        "latency_ms": 11.76,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "revoked-02",
+        "category": "revoked",
+        "ranked_keys": [
+          "v2",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_risk_score",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "v2"
+        ],
+        "forbidden": {
+          "v1": "revoked"
+        },
+        "latency_ms": 9.94,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "tenant-01",
+        "category": "tenant_isolation",
+        "ranked_keys": [
+          "mine",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "mine"
+        ],
+        "forbidden": {
+          "theirs": "other_tenant"
+        },
+        "latency_ms": 10.25,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "tenant-02",
+        "category": "tenant_isolation",
+        "ranked_keys": [
+          "customer-992_credit_limit",
+          "customer-991_credit_limit",
+          "customer-993_credit_limit",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-993_risk_score"
+        ],
+        "relevant": [],
+        "forbidden": {
+          "theirs": "other_tenant"
+        },
+        "latency_ms": 10.5,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "privacy-01",
+        "category": "privacy",
+        "ranked_keys": [
+          "limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "limit"
+        ],
+        "forbidden": {
+          "notes": "privacy"
+        },
+        "latency_ms": 10.76,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "privacy-02",
+        "category": "privacy",
+        "ranked_keys": [
+          "internal",
+          "customer-993_account_status",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "internal"
+        ],
+        "forbidden": {
+          "legal": "privacy"
+        },
+        "latency_ms": 11.13,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "trust-01",
+        "category": "trust",
+        "ranked_keys": [
+          "official",
+          "estimate",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "official"
+        ],
+        "forbidden": {},
+        "latency_ms": 9.81,
+        "vector_search": "used",
+        "violations": []
+      },
+      {
+        "case_id": "trust-02",
+        "category": "trust",
+        "ranked_keys": [
+          "contract",
+          "guess",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-991_credit_limit",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-991_risk_score",
+          "customer-991_account_status"
+        ],
+        "relevant": [
+          "contract"
+        ],
+        "forbidden": {},
+        "latency_ms": 11.05,
+        "vector_search": "used",
+        "violations": []
+      }
+    ],
+    "text_only": [
+      {
+        "case_id": "lexical-01",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-991_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "customer-991_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 9.45,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-02",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-992_risk_score",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-992_credit_limit",
+          "customer-991_account_status",
+          "customer-991_credit_limit",
+          "customer-993_account_status",
+          "customer-993_credit_limit"
+        ],
+        "relevant": [
+          "customer-992_risk_score"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.79,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-03",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-991_account_status",
+          "customer-993_risk_score",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-991_credit_limit",
+          "customer-991_risk_score"
+        ],
+        "relevant": [
+          "customer-993_account_status"
+        ],
+        "forbidden": {},
+        "latency_ms": 36.98,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-04",
+        "category": "lexical",
+        "ranked_keys": [
+          "s17_terms",
+          "s18_terms",
+          "s17_status"
+        ],
+        "relevant": [
+          "s17_terms"
+        ],
+        "forbidden": {},
+        "latency_ms": 9.65,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-05",
+        "category": "lexical",
+        "ranked_keys": [
+          "customer-995_credit_limit",
+          "customer-997_credit_limit",
+          "customer-1000_credit_limit",
+          "customer-998_credit_limit",
+          "customer-994_credit_limit",
+          "customer-999_credit_limit",
+          "customer-996_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-991_credit_limit"
+        ],
+        "relevant": [
+          "customer-995_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.69,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "lexical-06",
+        "category": "lexical",
+        "ranked_keys": [
+          "o1",
+          "o2",
+          "o3",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-991_account_status"
+        ],
+        "relevant": [
+          "o1"
+        ],
+        "forbidden": {},
+        "latency_ms": 11.17,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "multi-01",
+        "category": "multi_fact",
+        "ranked_keys": [
+          "customer-991_credit_limit",
+          "customer-991_risk_score",
+          "customer-993_risk_score",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-993_credit_limit",
+          "customer-991_account_status",
+          "customer-992_account_status",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "customer-991_credit_limit",
+          "customer-991_risk_score"
+        ],
+        "forbidden": {},
+        "latency_ms": 9.96,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-01",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-991_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_account_status",
+          "customer-993_credit_limit",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "customer-991_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 9.61,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-02",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-992_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-991_credit_limit",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "customer-992_credit_limit"
+        ],
+        "forbidden": {},
+        "latency_ms": 11.76,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "paraphrase-03",
+        "category": "paraphrase",
+        "ranked_keys": [
+          "customer-993_account_status",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-991_account_status",
+          "customer-991_credit_limit",
+          "customer-991_risk_score",
+          "customer-992_account_status",
+          "customer-992_credit_limit",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "customer-993_account_status"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.45,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-01",
+        "category": "temporal",
+        "ranked_keys": [
+          "v1",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "v1"
+        ],
+        "forbidden": {
+          "v2": "not_valid_at_T"
+        },
+        "latency_ms": 9.64,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-02",
+        "category": "temporal",
+        "ranked_keys": [
+          "v2",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_account_status",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "v2"
+        ],
+        "forbidden": {
+          "v1": "superseded"
+        },
+        "latency_ms": 9.57,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "temporal-03",
+        "category": "temporal",
+        "ranked_keys": [
+          "v1",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "v1"
+        ],
+        "forbidden": {
+          "planned": "not_valid_at_T"
+        },
+        "latency_ms": 9.05,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "superseded-01",
+        "category": "superseded",
+        "ranked_keys": [
+          "v3",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-993_risk_score",
+          "customer-992_account_status"
+        ],
+        "relevant": [
+          "v3"
+        ],
+        "forbidden": {
+          "v1": "superseded",
+          "v2": "superseded"
+        },
+        "latency_ms": 9.78,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "revoked-01",
+        "category": "revoked",
+        "ranked_keys": [
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status"
+        ],
+        "relevant": [],
+        "forbidden": {
+          "v2": "revoked"
+        },
+        "latency_ms": 9.01,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "revoked-02",
+        "category": "revoked",
+        "ranked_keys": [
+          "v2",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-992_risk_score",
+          "customer-992_account_status",
+          "customer-993_risk_score",
+          "customer-993_account_status"
+        ],
+        "relevant": [
+          "v2"
+        ],
+        "forbidden": {
+          "v1": "revoked"
+        },
+        "latency_ms": 8.92,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "tenant-01",
+        "category": "tenant_isolation",
+        "ranked_keys": [
+          "mine",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "mine"
+        ],
+        "forbidden": {
+          "theirs": "other_tenant"
+        },
+        "latency_ms": 9.63,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "tenant-02",
+        "category": "tenant_isolation",
+        "ranked_keys": [
+          "customer-992_credit_limit",
+          "customer-991_credit_limit",
+          "customer-993_credit_limit",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score",
+          "customer-991_account_status",
+          "customer-991_risk_score",
+          "customer-993_risk_score"
+        ],
+        "relevant": [],
+        "forbidden": {
+          "theirs": "other_tenant"
+        },
+        "latency_ms": 9.66,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "privacy-01",
+        "category": "privacy",
+        "ranked_keys": [
+          "limit",
+          "customer-992_credit_limit",
+          "customer-993_credit_limit",
+          "customer-993_risk_score",
+          "customer-992_account_status",
+          "customer-993_account_status",
+          "customer-992_risk_score"
+        ],
+        "relevant": [
+          "limit"
+        ],
+        "forbidden": {
+          "notes": "privacy"
+        },
+        "latency_ms": 10.05,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "privacy-02",
+        "category": "privacy",
+        "ranked_keys": [
+          "internal",
+          "customer-993_credit_limit",
+          "customer-993_account_status",
+          "customer-992_credit_limit",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "customer-993_risk_score"
+        ],
+        "relevant": [
+          "internal"
+        ],
+        "forbidden": {
+          "legal": "privacy"
+        },
+        "latency_ms": 11.7,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "trust-01",
+        "category": "trust",
+        "ranked_keys": [
+          "official",
+          "customer-993_credit_limit",
+          "customer-992_credit_limit",
+          "customer-993_risk_score",
+          "customer-993_account_status",
+          "customer-992_account_status",
+          "customer-992_risk_score",
+          "estimate"
+        ],
+        "relevant": [
+          "official"
+        ],
+        "forbidden": {},
+        "latency_ms": 8.18,
+        "vector_search": "unavailable",
+        "violations": []
+      },
+      {
+        "case_id": "trust-02",
+        "category": "trust",
+        "ranked_keys": [
+          "contract",
+          "guess"
+        ],
+        "relevant": [
+          "contract"
+        ],
+        "forbidden": {},
+        "latency_ms": 10.51,
+        "vector_search": "unavailable",
+        "violations": []
+      }
+    ]
+  },
+  "note": "SYNTHETIC dataset and an offline feature-hashing embedding model; numbers describe this dataset and baseline only."
+}

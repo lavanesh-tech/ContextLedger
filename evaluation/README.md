@@ -43,8 +43,49 @@ and substring checks can miss a correct answer phrased differently (thousands
 separators are normalized, so "$5,375" matches "5375", but "five thousand" would not). Treat live results as a comparison between prompt
 versions on this dataset, not as a general accuracy figure.
 
-## Retrieval-quality evaluation (planned, Phase 18)
+## Retrieval-quality evaluation (Phase 18)
 
-Recall@K, Precision@K, MRR, temporal correctness and authorization correctness
-of retrieval itself, over a labelled dataset of questions paired with the fact
-versions that should be retrieved.
+```bash
+make eval-retrieval
+```
+
+Free, no model calls. Code: `backend/app/evaluation/retrieval_eval.py` and
+`retrieval_metrics.py`. Dataset: `datasets/retrieval.json` (version 1.0.0,
+**synthetic**, 22 cases in 9 categories: lexical, multi-fact, paraphrase,
+temporal, superseded, revoked, tenant isolation, privacy, trust).
+
+Each case seeds a fresh organization (and a second one for tenant cases),
+revokes the versions marked `revoked`, embeds everything with the offline
+deterministic embedder, and runs the query as the case's caller (ADMIN,
+ENGINEER or VIEWER) through `RetrievalService`, the same code as REST and MCP.
+Every case is labelled with:
+
+- `relevant`: facts that should be retrieved;
+- `forbidden`: facts that must never be retrieved, with the reason:
+  `not_valid_at_T`, `superseded`, `revoked` (temporal) or `other_tenant`,
+  `privacy` (authorization).
+
+Metrics (top 10 results):
+
+| Metric | Definition |
+|---|---|
+| Recall@K | relevant facts in the top K / relevant facts |
+| Precision@K | relevant facts in the top K / K |
+| MRR | mean of 1 / rank of the first relevant fact |
+| nDCG@K | binary-relevance nDCG |
+| temporal correctness | share of cases with temporal forbidden facts where none was retrieved |
+| authorization correctness | the same for other-tenant and privacy forbidden facts |
+
+Ranking metrics use cases with at least one relevant fact; correctness uses
+cases that define forbidden facts of that kind. Each run compares three
+configurations on the same data: `hybrid` (vector + full text, trust weight
+0.3), `hybrid_no_trust` (trust weight 0) and `text_only` (embedding provider
+unavailable, so the full-text fallback runs).
+
+Results go to `results/retrieval-<timestamp>-<commit>.json` with the dataset
+version, configuration, per-case ranked keys and violations.
+
+Limits: 22 synthetic cases; the embedder is a feature-hashing baseline, so
+paraphrase cases measure that baseline, not a semantic model. Temporal and
+authorization correctness come from SQL filters and are expected to be
+exact; the ranking metrics are the ones that vary between configurations.
