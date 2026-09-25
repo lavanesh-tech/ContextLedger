@@ -26,6 +26,7 @@ select = [
 # assertions that narrow Optional types for mypy.
 "backend/tests/**" = ["S101", "S105", "S106", "S311", "S608", "PT018"]
 # CLI scripts: print, run git/docker/pytest, and build SQL from validated integers.
+"scripts/**" = ["T20", "E501"]  # CLI checks: print progress, long assertion lines
 "benchmarks/scripts/**" = ["T20", "S603", "S607", "S608", "E501"]
 "backend/migrations/versions/**" = ["N999"]        # 0001_*.py file names are intentional
 

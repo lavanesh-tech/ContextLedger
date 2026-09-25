@@ -22,7 +22,7 @@ TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.
 KAFKA_PORT ?= 9092
 TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)'
 
-.PHONY: load-test security
+.PHONY: load-test security e2e
 .PHONY: analytics-export analytics-plan analytics-apply analytics-destroy analytics-upload analytics-query
 .PHONY: batch-plan batch-apply batch-destroy batch-run batch-drain
 .PHONY: eks-plan eks-apply eks-destroy k8s-validate k8s-secrets k8s-render k8s-migrate k8s-deploy
@@ -324,3 +324,6 @@ security: ## Local security checks: secrets in history, IaC/Dockerfile misconfig
 	$(BIN)/pip install --quiet pip-audit
 	$(BIN)/pip-audit -r backend/requirements.lock --require-hashes --disable-pip --progress-spinner off
 	cd frontend && npm audit --omit=dev --audit-level=high
+
+e2e: require-env ## End-to-end check of the running stack (make up); LLM=1 adds real OpenAI calls
+	$(BIN)/python scripts/e2e_local.py $(if $(LLM),--llm,)

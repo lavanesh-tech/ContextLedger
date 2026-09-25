@@ -202,7 +202,12 @@ def test_batch_role_needs_only_the_database_and_embeddings(environment: Environm
     assert settings.process_role == "batch"
 
 
-def test_batch_role_still_requires_the_database_password_and_real_embeddings() -> None:
+def test_batch_role_still_requires_the_database_password_and_real_embeddings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # CI exports CONTEXTLEDGER_DB_PASSWORD and friends; this test needs them unset.
+    for name in ("DB_PASSWORD", "EMBEDDING_PROVIDER", "OPENAI_API_KEY"):
+        monkeypatch.delenv(f"CONTEXTLEDGER_{name}", raising=False)
     with pytest.raises(ValidationError, match="DB_PASSWORD"):
         Settings(_env_file=None, environment=Environment.STAGING, process_role="batch")
     with pytest.raises(ValidationError, match="openai embedding provider"):
