@@ -227,6 +227,24 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  # --- Web UI (profile "web": docker compose --profile web up -d web) ---------------------
+  web:
+    build:
+      context: ./frontend
+      args:
+        CONTEXTLEDGER_API_URL: http://api:8000
+    image: contextledger-web:latest
+    profiles: [web]
+    ports:
+      - "127.0.0.1:3000:3000"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      - api
+    restart: unless-stopped
+
   # --- Observability (profile "observability": make obs-up) ---------------------------
   prometheus:
     image: prom/prometheus:v3.5.0

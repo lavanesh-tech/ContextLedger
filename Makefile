@@ -22,7 +22,7 @@ TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.
 KAFKA_PORT ?= 9092
 TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)'
 
-.PHONY: help install lint format typecheck test test-unit check run \
+.PHONY: help install lock lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
         worker worker-once graph-projector graph-once event-relay event-consumers kafka-topics mcp api-docs eval eval-live eval-retrieval frontend-install frontend-dev frontend-check obs-up obs-down jwt-key bench-vector bench-retrieval
@@ -34,7 +34,12 @@ help: ## Show available targets
 install: ## Create backend/.venv and install the backend with dev tools
 	$(PYTHON) -m venv $(VENV)
 	$(BIN)/pip install --upgrade pip
-	$(BIN)/pip install -e "$(BACKEND)[dev]"
+	$(BIN)/pip install --require-hashes --no-deps -r $(BACKEND)/requirements-dev.lock
+	$(BIN)/pip install --no-deps -e "$(BACKEND)[dev]"
+
+lock: ## Re-resolve backend/requirements*.lock from pyproject.toml (needs uv: brew install uv)
+	cd $(BACKEND) && uv pip compile pyproject.toml --universal --python-version 3.12 --generate-hashes -o requirements.lock -q
+	cd $(BACKEND) && uv pip compile pyproject.toml --extra dev --universal --python-version 3.12 --generate-hashes -o requirements-dev.lock -q
 
 lint: ## Ruff lint + format check
 	$(BIN)/ruff check .
@@ -128,8 +133,9 @@ ps: ## Show service status
 smoke: require-env ## Verify every running service actually answers
 	./scripts/smoke_local_stack.sh
 
-docker-build: ## Build the API image on its own
+docker-build: ## Build the API and web images
 	docker build -t contextledger-api:local $(BACKEND)
+	docker build -t contextledger-web:local frontend
 
 # --- Benchmarks -----------------------------------------------------------------
 metrics: ## Record foundation metrics (test count, image size) to benchmarks/results/

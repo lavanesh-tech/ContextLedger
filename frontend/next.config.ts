@@ -7,6 +7,8 @@ const apiUrl = process.env.CONTEXTLEDGER_API_URL ?? "http://127.0.0.1:8000";
 
 const config: NextConfig = {
   reactStrictMode: true,
+  // A self-contained server in .next/standalone for the container image.
+  output: "standalone",
   poweredByHeader: false,
   async rewrites() {
     return [{ source: "/api/v1/:path*", destination: `${apiUrl}/api/v1/:path*` }];

@@ -100,12 +100,28 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: backend/pyproject.toml
+          cache-dependency-path: backend/requirements-dev.lock
 
-      - name: Install backend
+      - name: Install backend (hash-checked lock file)
         run: |
           python -m pip install --upgrade pip
-          pip install -e "backend[dev]"
+          pip install --require-hashes --no-deps -r backend/requirements-dev.lock
+          pip install --no-deps -e "backend[dev]"
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Lock files match pyproject.toml
+        working-directory: backend
+        run: |
+          uv pip compile pyproject.toml --universal --python-version 3.12 --generate-hashes -o /tmp/requirements.lock -q
+          uv pip compile pyproject.toml --extra dev --universal --python-version 3.12 --generate-hashes -o /tmp/requirements-dev.lock -q
+          diff <(grep -v '^#' requirements.lock) <(grep -v '^#' /tmp/requirements.lock)
+          diff <(grep -v '^#' requirements-dev.lock) <(grep -v '^#' /tmp/requirements-dev.lock)
+
+      - name: Dependency vulnerability audit (pip-audit)
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/requirements.lock --require-hashes --disable-pip --progress-spinner off
 
       - name: Ruff lint
         run: ruff check .
@@ -151,6 +167,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install (lock file)
         run: npm ci
+      - name: Dependency audit (shipped packages, high and critical)
+        run: npm audit --omit=dev --audit-level=high
       - name: Type-check
         run: npm run typecheck
       - name: Unit tests
@@ -161,9 +179,9 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
 
   docker:
-    name: Docker build + smoke test
+    name: Docker build, scan + smoke test
     runs-on: ubuntu-latest
-    needs: backend
+    needs: [backend, frontend]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -173,15 +191,41 @@ jobs:
           cp .env.example .env
           docker compose config --quiet
 
+      - name: Lint Dockerfiles (hadolint)
+        run: |
+          docker run --rm -i hadolint/hadolint:v2.12.0 hadolint --failure-threshold error - < backend/Dockerfile
+          docker run --rm -i hadolint/hadolint:v2.12.0 hadolint --failure-threshold error - < frontend/Dockerfile
+
       - name: Build API image
-        run: docker build -t contextledger-api:ci backend
+        run: docker build --build-arg REVISION=${{ github.sha }} -t contextledger-api:ci backend
+
+      - name: Build web image
+        run: docker build -t contextledger-web:ci frontend
+
+      - name: Scan API image (Trivy; fail on fixable critical)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: contextledger-api:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Report high findings (Trivy; informational)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: contextledger-api:ci
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
 
       - name: Report image size
         run: docker image inspect contextledger-api:ci --format 'image size bytes={{.Size}}'
 
       - name: Smoke test /api/v1/health (liveness needs no database)
         run: |
-          docker run -d --name api -p 8000:8000 contextledger-api:ci
+          # Hardened the way production runs it: read-only root, no capabilities.
+          docker run -d --name api -p 8000:8000 --read-only --tmpfs /tmp \
+            --cap-drop ALL --security-opt no-new-privileges contextledger-api:ci
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8000/api/v1/health; then exit 0; fi
             sleep 1

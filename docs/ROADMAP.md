@@ -25,7 +25,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Done |
 | 19 | Frontend: Next.js + React + TypeScript in `frontend/`, consuming the FastAPI `/api/v1` REST API (ADR-008) | Done |
 | 20 | Observability: OpenTelemetry, Prometheus, Grafana | Done |
-| 21 | Production Docker hardening + full CI/CD | Planned |
+| 21 | Production Docker hardening + full CI/CD | Done |
 | 22 | Terraform + core AWS (VPC, RDS, S3, ECR, Secrets Manager, IAM, CloudWatch) | Planned |
 | 23 | EKS deployment + teardown docs | Planned |
 | 24 | ECS/Fargate batch workload | Planned |
@@ -53,9 +53,7 @@ and 18 were then built as defined above. Details: [AI.md](AI.md), ADR-031.
 
 ## Known follow-ups carried forward
 
-- Add a dependency lock file (e.g. `uv lock`) for reproducible installs (by Phase 21).
-- Split dependency installation into its own Docker layer for faster rebuilds (Phase 21).
-- Pin container images by digest (Phase 21).
+- Pin base images by digest (Dependabot keeps tags current today; digests need registry access to resolve) and sign release images with cosign.
 - Tune DB pool size and statement timeout with load-test measurements (Phase 27).
 - Restrict who can call the readiness endpoint, or trim its detail, in production (Phase 28).
 - PostgreSQL Row-Level Security as a second tenant-isolation layer (evaluate in Phase 13 / 28).
@@ -69,7 +67,7 @@ and 18 were then built as defined above. Details: [AI.md](AI.md), ADR-031.
 - Sign decision receipts with a key held outside the database (e.g. AWS KMS), optionally chain receipt hashes (Phase 28).
 - Feed the graph projector from Kafka events instead of its own outbox; alert on outbox size, projection lag and consumer lag (Phase 20).
 - A DLQ replay command, and a retention job for `processed_events` (older than Kafka retention).
-- MCP over streamable HTTP authenticated with agent access tokens (MCP authorization spec) (Phase 21).
+- MCP over streamable HTTP authenticated with agent access tokens (MCP authorization spec).
 - Human SSO through an external OIDC provider (JWKS verification) instead of dev tokens.
 - Record a live grounded-answer evaluation (`make eval-live`) and compare prompt versions on answer metrics before changing the default prompt.
 - An investigator evaluation dataset (tool-use correctness, grounded rate) alongside the answer evaluation.

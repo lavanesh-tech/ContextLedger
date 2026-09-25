@@ -123,7 +123,7 @@ async def test_revocation_lists_every_decision_that_had_the_version(
     assert all(d["recorded_at_revocation"] for d in report["decisions"])
 
     async with engine.connect() as connection:
-        types = (
+        types: list[str] = list(
             (
                 await connection.execute(
                     text(
