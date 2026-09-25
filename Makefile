@@ -22,7 +22,7 @@ TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.
 KAFKA_PORT ?= 9092
 TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)'
 
-.PHONY: load-test
+.PHONY: load-test security
 .PHONY: analytics-export analytics-plan analytics-apply analytics-destroy analytics-upload analytics-query
 .PHONY: batch-plan batch-apply batch-destroy batch-run batch-drain
 .PHONY: eks-plan eks-apply eks-destroy k8s-validate k8s-secrets k8s-render k8s-migrate k8s-deploy
@@ -317,3 +317,10 @@ analytics-query: ## Run a named Athena query: make analytics-query Q=best-recall
 	while state=$$(aws athena get-query-execution --query-execution-id $$qid --query QueryExecution.Status.State --output text); \
 	  [ "$$state" = QUEUED ] || [ "$$state" = RUNNING ]; do sleep 1; done; \
 	echo "$$state"; aws athena get-query-results --query-execution-id $$qid --output table
+
+security: ## Local security checks: secrets in history, IaC/Dockerfile misconfig, dependencies (brew install trivy gitleaks)
+	gitleaks git --redact --no-banner .
+	trivy config --severity HIGH,CRITICAL --exit-code 1 --ignorefile .trivyignore.yaml --skip-dirs frontend/node_modules --skip-dirs backend/.venv .
+	$(BIN)/pip install --quiet pip-audit
+	$(BIN)/pip-audit -r backend/requirements.lock --require-hashes --disable-pip --progress-spinner off
+	cd frontend && npm audit --omit=dev --audit-level=high

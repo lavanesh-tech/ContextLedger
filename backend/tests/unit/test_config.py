@@ -28,6 +28,7 @@ def test_values_are_read_from_prefixed_environment_variables(
     monkeypatch.setenv("CONTEXTLEDGER_LOG_LEVEL", "warning")
     monkeypatch.setenv("CONTEXTLEDGER_DOCS_ENABLED", "false")
     monkeypatch.setenv("CONTEXTLEDGER_METRICS_TOKEN", "scrape-token")
+    monkeypatch.setenv("CONTEXTLEDGER_DB_SSL_MODE", "require")
 
     settings = Settings(_env_file=None)
 
@@ -193,6 +194,7 @@ def test_batch_role_needs_only_the_database_and_embeddings(environment: Environm
         environment=environment,
         process_role="batch",
         db_password=SecretStr("x"),
+        db_ssl_mode="require",
         embedding_provider="openai",
         openai_api_key=SecretStr("sk-test-not-real"),
         auth_mode="jwt",

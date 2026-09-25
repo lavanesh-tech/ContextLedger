@@ -127,6 +127,33 @@ resource "aws_cloudwatch_log_group" "cluster" {
   retention_in_days = 7
 }
 
+# Envelope encryption of Kubernetes Secrets in etcd with a customer-managed key
+# (security review finding F-03). About 1 USD per month while the key exists; it is
+# scheduled for deletion with the stack (7-day window).
+resource "aws_kms_key" "eks_secrets" {
+  description             = "${local.name} EKS secrets envelope encryption"
+  enable_key_rotation     = true
+  deletion_window_in_days = 7
+}
+
+resource "aws_kms_alias" "eks_secrets" {
+  name          = "alias/${local.name}-eks-secrets"
+  target_key_id = aws_kms_key.eks_secrets.key_id
+}
+
+data "aws_iam_policy_document" "cluster_kms" {
+  statement {
+    actions   = ["kms:Encrypt", "kms:Decrypt", "kms:DescribeKey", "kms:ListGrants", "kms:CreateGrant"]
+    resources = [aws_kms_key.eks_secrets.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "cluster_kms" {
+  name   = "eks-secrets-kms"
+  role   = aws_iam_role.cluster.id
+  policy = data.aws_iam_policy_document.cluster_kms.json
+}
+
 resource "aws_eks_cluster" "main" {
   name     = local.name
   version  = var.kubernetes_version
@@ -144,9 +171,20 @@ resource "aws_eks_cluster" "main" {
     bootstrap_cluster_creator_admin_permissions = true
   }
 
+  encryption_config {
+    resources = ["secrets"]
+    provider {
+      key_arn = aws_kms_key.eks_secrets.arn
+    }
+  }
+
   enabled_cluster_log_types = ["api", "audit", "authenticator"]
 
-  depends_on = [aws_iam_role_policy_attachment.cluster, aws_cloudwatch_log_group.cluster]
+  depends_on = [
+    aws_iam_role_policy_attachment.cluster,
+    aws_iam_role_policy.cluster_kms,
+    aws_cloudwatch_log_group.cluster,
+  ]
 }
 
 # --- nodes ----------------------------------------------------------------------------

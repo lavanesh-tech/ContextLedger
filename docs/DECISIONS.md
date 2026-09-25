@@ -1029,3 +1029,18 @@ design; those questions stay in PostgreSQL behind tenant isolation.
 **Consequences.** Cheap, independent and destroyable, with no crawler to run. The dataset
 is small and synthetic, so this demonstrates the pattern rather than producing new
 findings. Not yet queried on real AWS.
+
+## ADR-041: Security hardening from the Phase 28 review
+
+**Status:** Accepted (Phase 28)
+
+**Decision.** Add security headers and a request body limit as pure ASGI middleware;
+make database TLS configurable (`disable` | `require` | `verify-full`) and refuse
+`disable` outside local; verify RDS certificates on EKS with the public RDS CA bundle;
+envelope-encrypt EKS Secrets with a customer-managed KMS key; gate CI on gitleaks (full
+history) and `trivy config`, with accepted findings listed with reasons in
+`.trivyignore.yaml`.
+
+**Consequences.** Five findings are fixed with tests or scans. Still open: row-level
+security in PostgreSQL, CA verification in the ECS task and a nonce-based frontend CSP.
+The KMS key costs about 1 USD/month while the EKS stack exists.

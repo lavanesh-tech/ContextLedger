@@ -51,6 +51,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - ECS/Fargate batch job (Terraform, not applied by default): the embedding backfill drains the queue and exits non-zero on permanent failures, with a least-privilege execution role, an egress-only security group, a disabled-by-default schedule and an SNS alert on failed runs. See [docs/ECS_BATCH.md](docs/ECS_BATCH.md)
 - Athena over retrieval-evaluation results (Terraform, not applied by default): unit-tested JSON Lines export, Glue tables with partition projection, a workgroup with a per-query scan limit, and named queries comparing configurations across commits. DynamoDB was evaluated and deliberately not added (ADR-039). See [docs/ATHENA.md](docs/ATHENA.md)
 - HTTP load test (`make load-test`): seeds a synthetic tenant through the REST API and measures p50/p95/p99 latency, throughput, errors and 429s per scenario at several concurrency levels, with no paid API calls. See [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
+- Security review (self-review, not an external audit): STRIDE threat model mapped to code and tests, fixes for missing security headers, request body limits, unverified database TLS and unencrypted EKS secrets, plus CI gates for secrets in git history and IaC misconfiguration, with open findings listed. See [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API, embedding worker, graph projector, event relay and event consumers
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -109,7 +110,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Revocation impact](docs/REVOCATION.md)
 - [Observability](docs/OBSERVABILITY.md)
 - [CI/CD and images](docs/CI_CD.md)
-- [AWS deployment](docs/AWS_DEPLOYMENT.md), [teardown](docs/AWS_TEARDOWN.md), [cost control](docs/AWS_COST_CONTROL.md), [EKS](docs/EKS.md), [ECS batch](docs/ECS_BATCH.md), [Athena](docs/ATHENA.md), [performance](docs/PERFORMANCE.md)
+- [AWS deployment](docs/AWS_DEPLOYMENT.md), [teardown](docs/AWS_TEARDOWN.md), [cost control](docs/AWS_COST_CONTROL.md), [EKS](docs/EKS.md), [ECS batch](docs/ECS_BATCH.md), [Athena](docs/ATHENA.md), [performance](docs/PERFORMANCE.md), [security review](docs/SECURITY_REVIEW.md)
 - [AI: grounded answers, LangChain, evaluation, investigator agent](docs/AI.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 

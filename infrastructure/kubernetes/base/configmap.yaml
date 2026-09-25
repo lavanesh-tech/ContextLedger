@@ -12,6 +12,10 @@ data:
   CONTEXTLEDGER_AUTH_MODE: jwt
   CONTEXTLEDGER_DB_PORT: "5432"
   CONTEXTLEDGER_DB_NAME: contextledger
+  # TLS to RDS, certificate and host name verified against the AWS RDS CA bundle
+  # (ConfigMap rds-ca, created by scripts/k8s-secrets.sh).
+  CONTEXTLEDGER_DB_SSL_MODE: verify-full
+  CONTEXTLEDGER_DB_SSL_ROOT_CERT: /etc/contextledger/rds-ca/global-bundle.pem
   CONTEXTLEDGER_EMBEDDING_PROVIDER: openai
   CONTEXTLEDGER_EMBEDDING_MODEL: text-embedding-3-small
   CONTEXTLEDGER_NEO4J_URI: bolt://neo4j:7687

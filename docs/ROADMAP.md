@@ -32,7 +32,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 25 | DynamoDB (only if justified) | Evaluated: not adopted, PostgreSQL + Redis cover it (ADR-039) |
 | 26 | Athena (only if justified) | Done (code; not applied): evaluation results only (ADR-040) |
 | 27 | Performance / load testing | Done (tooling; results only from real runs, see docs/PERFORMANCE.md) |
-| 28 | Security review | Planned |
+| 28 | Security review | Done (self-review; open findings listed in docs/SECURITY_REVIEW.md) |
 | 29 | AWS recruiter demo lifecycle: deploy → demo → destroy → verify → recreate | Planned |
 | 30 | Portfolio polish | Planned |
 | 31 | Full project teaching | Planned |

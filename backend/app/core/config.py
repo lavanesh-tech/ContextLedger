@@ -92,6 +92,11 @@ class Settings(BaseSettings):
     # Server-side cap on any single statement, so one bad query cannot hold a
     # connection (and a pool slot) forever.
     db_statement_timeout_ms: int = Field(default=30_000, ge=0)
+    # TLS to PostgreSQL. "disable" (local Compose), "require" (encrypted, server not
+    # verified) or "verify-full" (encrypted + CA and hostname verified with
+    # db_ssl_root_cert, e.g. the AWS RDS CA bundle). Staging/production refuse "disable".
+    db_ssl_mode: Literal["disable", "require", "verify-full"] = "disable"
+    db_ssl_root_cert: Path | None = None
     db_echo: bool = False
 
     # --- Embeddings -------------------------------------------------------------
@@ -147,6 +152,8 @@ class Settings(BaseSettings):
     retrieval_cache_ttl_seconds: int = Field(default=60, ge=1, le=3600)
     # Per authenticated user or agent client, per minute, across all processes. 0 disables.
     rate_limit_requests_per_minute: int = Field(default=600, ge=0)
+    # Largest accepted request body; larger ones get 413 before parsing. 0 disables.
+    max_request_body_bytes: int = Field(default=1_048_576, ge=0)
     # Per client_id on /oauth/token (caps client-secret guessing). 0 disables.
     rate_limit_token_requests_per_minute: int = Field(default=30, ge=0)
     idempotency_ttl_seconds: int = Field(default=86_400, ge=60, le=7 * 86_400)
@@ -292,6 +299,17 @@ class Settings(BaseSettings):
             raise ValueError(
                 "set CONTEXTLEDGER_METRICS_TOKEN (or disable metrics) in staging and production"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _require_database_tls_outside_local(self) -> Self:
+        deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
+        if deployed and self.db_ssl_mode == "disable":
+            raise ValueError(
+                "CONTEXTLEDGER_DB_SSL_MODE must be require or verify-full outside local"
+            )
+        if self.db_ssl_mode == "verify-full" and self.db_ssl_root_cert is None:
+            raise ValueError("CONTEXTLEDGER_DB_SSL_ROOT_CERT is required with verify-full")
         return self
 
 

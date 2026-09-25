@@ -56,8 +56,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities: {drop: [ALL]}
-          volumeMounts: [{name: tmp, mountPath: /tmp}]
-      volumes: [{name: tmp, emptyDir: {}}]
+          volumeMounts: [{name: tmp, mountPath: /tmp}, {name: rds-ca, mountPath: /etc/contextledger/rds-ca, readOnly: true}]
+      volumes: [{name: tmp, emptyDir: {}}, {name: rds-ca, configMap: {name: rds-ca}}]
 ---
 apiVersion: v1
 kind: Service

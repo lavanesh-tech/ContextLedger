@@ -1,0 +1,29 @@
+# Accepted IaC findings from `trivy config` (security review, docs/SECURITY_REVIEW.md).
+# Every entry states why it is accepted; anything new fails CI.
+misconfigurations:
+  - id: AWS-0040
+    paths: ["infrastructure/terraform/eks/main.tf"]
+    statement: >-
+      F-10: EKS public endpoint is restricted to api_allowed_cidrs (the operator's IP) for
+      a demo without a VPN or bastion; the private endpoint is also enabled.
+  - id: AWS-0104
+    paths:
+      - "infrastructure/terraform/core/network.tf"
+      - "infrastructure/terraform/batch/main.tf"
+    statement: >-
+      F-11: HTTPS egress to 0.0.0.0/0 is needed for ECR, Secrets Manager, CloudWatch and the
+      embedding API without paid VPC interface endpoints. No ingress is open.
+  - id: AWS-0132
+    statement: >-
+      F-12: S3 buckets use SSE-S3 (AES-256) instead of a customer-managed KMS key: no
+      cross-account sharing or key-level audit requirement, and it avoids KMS cost.
+  - id: AWS-0095
+    paths: ["infrastructure/terraform/core/monitoring.tf"]
+    statement: >-
+      F-13: The alerts topic carries alarm metadata only (no tenant data); encrypting it
+      would need a customer-managed key with a CloudWatch/EventBridge key policy.
+  - id: KSV-0014
+    paths: ["infrastructure/kubernetes/base/neo4j.yaml"]
+    statement: >-
+      F-14: Neo4j writes to its home directory at startup; the pod still runs non-root,
+      drops all capabilities and uses RuntimeDefault seccomp. Demo-only, rebuildable data.

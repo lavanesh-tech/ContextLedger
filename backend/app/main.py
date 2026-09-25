@@ -24,9 +24,10 @@ from app.cache.idempotency import IdempotencyMiddleware
 from app.cache.rate_limit import RateLimiter
 from app.cache.retrieval import RetrievalCache
 from app.cache.store import build_store
-from app.core.config import API_V1_PREFIX, Settings, get_settings
+from app.core.config import API_V1_PREFIX, Environment, Settings, get_settings
 from app.core.correlation import CorrelationIdMiddleware
 from app.core.logging import configure_logging
+from app.core.security import BodySizeLimitMiddleware, SecurityHeadersMiddleware
 from app.db.migrations import expected_schema_revision
 from app.db.session import create_engine, create_session_factory
 from app.observability.metrics import MetricsMiddleware, metrics_endpoint
@@ -149,7 +150,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ttl_seconds=settings.idempotency_ttl_seconds,
         lock_seconds=settings.idempotency_lock_seconds,
     )
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_request_body_bytes)
     app.add_middleware(CorrelationIdMiddleware, header_name=settings.correlation_id_header)
+    app.add_middleware(
+        SecurityHeadersMiddleware,
+        hsts=settings.environment in {Environment.STAGING, Environment.PRODUCTION},
+    )
     if settings.metrics_enabled:
         # Outermost: times everything, including correlation and idempotency handling.
         app.add_middleware(MetricsMiddleware)

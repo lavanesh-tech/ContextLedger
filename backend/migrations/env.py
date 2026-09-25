@@ -20,6 +20,7 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.db.base import Base
 from app.db.migrations import include_name
+from app.db.session import ssl_context
 
 config = context.config
 target_metadata = Base.metadata
@@ -60,7 +61,13 @@ def _run_with_connection(connection: Connection) -> None:
 
 
 async def _run_async() -> None:
-    engine = create_async_engine(_database_url(), poolclass=pool.NullPool)
+    # Same TLS settings as the application when connecting from settings (RDS).
+    connect_args = (
+        {} if config.attributes.get("database_url") else {"ssl": ssl_context(get_settings())}
+    )
+    engine = create_async_engine(
+        _database_url(), poolclass=pool.NullPool, connect_args=connect_args
+    )
     try:
         async with engine.connect() as connection:
             await connection.run_sync(_run_with_connection)

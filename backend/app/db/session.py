@@ -14,6 +14,8 @@ Transaction boundaries belong to services (``async with session.begin():``),
 not to routers or repositories.
 """
 
+import ssl
+
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -22,6 +24,26 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.core.config import Settings
+
+
+def ssl_context(settings: Settings) -> ssl.SSLContext | bool:
+    """asyncpg ``ssl`` argument for ``db_ssl_mode``.
+
+    ``require``: encrypted, certificate not checked (protects against passive sniffing
+    only). ``verify-full``: the server certificate must chain to ``db_ssl_root_cert``
+    and match the host name, which also defeats an active man in the middle.
+    """
+    if settings.db_ssl_mode == "disable":
+        return False
+    if settings.db_ssl_mode == "require":
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        return context
+    context = ssl.create_default_context(cafile=str(settings.db_ssl_root_cert))
+    context.check_hostname = True
+    context.verify_mode = ssl.CERT_REQUIRED
+    return context
 
 
 def create_engine(settings: Settings) -> AsyncEngine:
@@ -36,6 +58,7 @@ def create_engine(settings: Settings) -> AsyncEngine:
         echo=settings.db_echo,
         connect_args={
             "timeout": settings.db_connect_timeout_seconds,
+            "ssl": ssl_context(settings),
             "server_settings": {
                 "application_name": settings.db_application_name,
                 "statement_timeout": str(settings.db_statement_timeout_ms),

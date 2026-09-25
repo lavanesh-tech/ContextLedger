@@ -228,6 +228,9 @@ resource "aws_ecs_task_definition" "backfill" {
       { name = "CONTEXTLEDGER_METRICS_ENABLED", value = "false" },
       { name = "CONTEXTLEDGER_DB_HOST", value = local.core.db_endpoint },
       { name = "CONTEXTLEDGER_DB_NAME", value = "contextledger" },
+      # Encrypted but not certificate-verified: the task has no CA bundle mounted yet
+      # (docs/SECURITY_REVIEW.md, finding F-05).
+      { name = "CONTEXTLEDGER_DB_SSL_MODE", value = "require" },
       { name = "CONTEXTLEDGER_EMBEDDING_PROVIDER", value = "openai" },
     ]
     secrets = [

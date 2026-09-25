@@ -36,3 +36,11 @@ kubectl -n "$NAMESPACE" create secret generic contextledger-secrets \
   --from-literal=NEO4J_AUTH="neo4j/${neo4j_pass}" \
   --dry-run=client -o yaml | kubectl apply -f - >/dev/null
 echo "secret contextledger-secrets applied in namespace $NAMESPACE"
+
+# Public AWS RDS CA bundle, so the app verifies the database certificate (verify-full).
+ca="$(mktemp)"; trap 'rm -f "$ca"' EXIT
+curl -fsSL https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o "$ca"
+grep -q "BEGIN CERTIFICATE" "$ca"
+kubectl -n "$NAMESPACE" create configmap rds-ca --from-file=global-bundle.pem="$ca" \
+  --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+echo "configmap rds-ca applied in namespace $NAMESPACE"
