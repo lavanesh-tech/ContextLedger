@@ -32,6 +32,8 @@ services:
       CONTEXTLEDGER_EMBEDDING_PROVIDER: ${CONTEXTLEDGER_EMBEDDING_PROVIDER:-deterministic}
       CONTEXTLEDGER_EMBEDDING_MODEL: ${CONTEXTLEDGER_EMBEDDING_MODEL:-text-embedding-3-small}
       CONTEXTLEDGER_OPENAI_API_KEY: ${CONTEXTLEDGER_OPENAI_API_KEY:-}
+      # Grounded answers / investigator: disabled (default) or openai (real, paid calls).
+      CONTEXTLEDGER_LLM_PROVIDER: ${CONTEXTLEDGER_LLM_PROVIDER:-disabled}
       CONTEXTLEDGER_NEO4J_URI: bolt://neo4j:7687
       CONTEXTLEDGER_NEO4J_PASSWORD: ${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env (min 8 chars)}
       # Keep REDIS_PASSWORD URL-safe (letters, digits, - _ .): it is embedded in this URL.
