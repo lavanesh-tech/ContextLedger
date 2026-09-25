@@ -41,6 +41,7 @@ in the README or a résumé can be traced to a JSON file in `benchmarks/results/
 | 15 | Kafka consumer throughput, duplicate-delivery handling | Event pipeline evidence |
 | 18 | Recall@K, Precision@K, MRR, temporal correctness %, authorization correctness % | Retrieval quality |
 | 21 | CI duration, final image size | DevOps evidence |
+| 27 | HTTP p50/p95/p99 latency, throughput and error rate per scenario at several concurrency levels | End-to-end API behavior under load (docs/PERFORMANCE.md) |
 | 29 | Terraform apply / destroy duration | AWS demo lifecycle evidence |
 
 ## Results so far

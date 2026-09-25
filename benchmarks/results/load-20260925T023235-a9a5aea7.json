@@ -1,0 +1,266 @@
+{
+  "benchmark": "http_load",
+  "commit_sha": "a9a5aea715aa9be2a9d6146756c8990038b2c93d",
+  "working_tree_dirty": true,
+  "date": "2026-09-25T02:32:36+00:00",
+  "dataset": "synthetic benchmark dataset (seeded customers seeded through the REST API)",
+  "dataset_size": {
+    "entities": 300,
+    "fact_versions_seeded": 1000
+  },
+  "environment": "local (Docker Compose API; load generator on the same machine)",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64"
+  },
+  "configuration": {
+    "url": "http://127.0.0.1:8000",
+    "mix_weights": {
+      "search": 50,
+      "entity_facts": 30,
+      "fact_write": 10,
+      "health": 10
+    },
+    "duration_s": 30.0,
+    "warmup_s": 5.0,
+    "levels": [
+      1,
+      8,
+      32
+    ],
+    "seed": 27,
+    "model": "closed loop (each worker waits for its response)"
+  },
+  "seed_seconds": 8.13,
+  "metrics": {
+    "levels": [
+      {
+        "concurrency": 1,
+        "duration_s": 30.0,
+        "requests": 353,
+        "throughput_rps": 11.8,
+        "error_rate": 0.1161,
+        "rate_limited_429": 0,
+        "transport_errors": {},
+        "scenarios": {
+          "entity_facts": {
+            "requests": 100,
+            "ok": 100,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 100
+            },
+            "latency_ms": {
+              "p50": 5.67,
+              "p95": 7.45,
+              "p99": 7.75,
+              "max": 8.24,
+              "mean": 5.81
+            }
+          },
+          "fact_write": {
+            "requests": 41,
+            "ok": 0,
+            "rate_limited_429": 0,
+            "errors": 41,
+            "status_codes": {
+              "422": 41
+            },
+            "latency_ms": {
+              "p50": 4.09,
+              "p95": 4.93,
+              "p99": 6.56,
+              "max": 6.56,
+              "mean": 4.09
+            }
+          },
+          "health": {
+            "requests": 33,
+            "ok": 33,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 33
+            },
+            "latency_ms": {
+              "p50": 1.8,
+              "p95": 2.12,
+              "p99": 2.3,
+              "max": 2.3,
+              "mean": 1.78
+            }
+          },
+          "search": {
+            "requests": 179,
+            "ok": 179,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 179
+            },
+            "latency_ms": {
+              "p50": 23.82,
+              "p95": 942.37,
+              "p99": 2218.56,
+              "max": 2228.21,
+              "mean": 160.07
+            }
+          }
+        }
+      },
+      {
+        "concurrency": 8,
+        "duration_s": 30.0,
+        "requests": 7263,
+        "throughput_rps": 242.1,
+        "error_rate": 0.1045,
+        "rate_limited_429": 0,
+        "transport_errors": {},
+        "scenarios": {
+          "entity_facts": {
+            "requests": 2176,
+            "ok": 2176,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 2176
+            },
+            "latency_ms": {
+              "p50": 27.28,
+              "p95": 55.63,
+              "p99": 70.74,
+              "max": 94.9,
+              "mean": 30.93
+            }
+          },
+          "fact_write": {
+            "requests": 759,
+            "ok": 0,
+            "rate_limited_429": 0,
+            "errors": 759,
+            "status_codes": {
+              "422": 759
+            },
+            "latency_ms": {
+              "p50": 22.23,
+              "p95": 48.18,
+              "p99": 63.45,
+              "max": 104.36,
+              "mean": 25.79
+            }
+          },
+          "health": {
+            "requests": 734,
+            "ok": 734,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 734
+            },
+            "latency_ms": {
+              "p50": 5.15,
+              "p95": 16.46,
+              "p99": 27.48,
+              "max": 37.64,
+              "mean": 6.48
+            }
+          },
+          "search": {
+            "requests": 3594,
+            "ok": 3594,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 3594
+            },
+            "latency_ms": {
+              "p50": 36.05,
+              "p95": 79.18,
+              "p99": 102.52,
+              "max": 129.92,
+              "mean": 41.19
+            }
+          }
+        }
+      },
+      {
+        "concurrency": 32,
+        "duration_s": 30.0,
+        "requests": 9570,
+        "throughput_rps": 319.0,
+        "error_rate": 0.0932,
+        "rate_limited_429": 0,
+        "transport_errors": {},
+        "scenarios": {
+          "entity_facts": {
+            "requests": 2958,
+            "ok": 2958,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 2958
+            },
+            "latency_ms": {
+              "p50": 88.17,
+              "p95": 131.57,
+              "p99": 153.76,
+              "max": 182.3,
+              "mean": 92.08
+            }
+          },
+          "fact_write": {
+            "requests": 892,
+            "ok": 0,
+            "rate_limited_429": 0,
+            "errors": 892,
+            "status_codes": {
+              "422": 892
+            },
+            "latency_ms": {
+              "p50": 76.36,
+              "p95": 116.72,
+              "p99": 132.14,
+              "max": 156.84,
+              "mean": 80.96
+            }
+          },
+          "health": {
+            "requests": 933,
+            "ok": 933,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 933
+            },
+            "latency_ms": {
+              "p50": 14.88,
+              "p95": 23.14,
+              "p99": 53.53,
+              "max": 66.58,
+              "mean": 16.24
+            }
+          },
+          "search": {
+            "requests": 4787,
+            "ok": 4787,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 4787
+            },
+            "latency_ms": {
+              "p50": 118.65,
+              "p95": 191.73,
+              "p99": 241.01,
+              "max": 308.63,
+              "mean": 125.39
+            }
+          }
+        }
+      }
+    ]
+  },
+  "note": "Client-side latency on one laptop; not a production capacity figure."
+}

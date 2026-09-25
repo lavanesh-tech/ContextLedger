@@ -22,6 +22,7 @@ TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.
 KAFKA_PORT ?= 9092
 TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)'
 
+.PHONY: load-test
 .PHONY: analytics-export analytics-plan analytics-apply analytics-destroy analytics-upload analytics-query
 .PHONY: batch-plan batch-apply batch-destroy batch-run batch-drain
 .PHONY: eks-plan eks-apply eks-destroy k8s-validate k8s-secrets k8s-render k8s-migrate k8s-deploy
@@ -154,6 +155,16 @@ bench-vector: ## HNSW vs IVFFlat vs exact search on a synthetic dataset (needs `
 BENCH_FACT_VERSIONS ?= 10000
 bench-retrieval: ## Hybrid retrieval latency on a synthetic dataset (needs `make up`)
 	CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/python benchmarks/scripts/retrieval_benchmark.py --fact-versions $(BENCH_FACT_VERSIONS)
+
+LOAD_LEVELS ?= 1,8,32
+LOAD_DURATION ?= 30
+LOAD_ENTITIES ?= 300
+load-test: require-env ## HTTP load test of the Compose API (synthetic data, offline embeddings, no paid calls)
+	CONTEXTLEDGER_RATE_LIMIT_REQUESTS_PER_MINUTE=0 CONTEXTLEDGER_EMBEDDING_PROVIDER=deterministic \
+	  docker compose up -d --wait api worker
+	$(BIN)/python benchmarks/scripts/load_test.py --levels $(LOAD_LEVELS) \
+	  --duration $(LOAD_DURATION) --entities $(LOAD_ENTITIES); status=$$?; \
+	  docker compose up -d --wait api worker; exit $$status
 
 # --- Evaluation (see evaluation/README.md) ----------------------------------------
 PROMPTS ?= grounded-answer-v1,grounded-answer-v2

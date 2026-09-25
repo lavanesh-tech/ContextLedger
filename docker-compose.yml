@@ -37,6 +37,8 @@ services:
       # Keep REDIS_PASSWORD URL-safe (letters, digits, - _ .): it is embedded in this URL.
       CONTEXTLEDGER_REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379/0
       CONTEXTLEDGER_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      # Per caller per minute; 0 disables (make load-test restarts the API with 0).
+      CONTEXTLEDGER_RATE_LIMIT_REQUESTS_PER_MINUTE: ${CONTEXTLEDGER_RATE_LIMIT_REQUESTS_PER_MINUTE:-600}
       # Traces go to Jaeger when the observability profile runs (make obs-up); empty: off.
       CONTEXTLEDGER_OTEL_EXPORTER_OTLP_ENDPOINT: ${CONTEXTLEDGER_OTEL_EXPORTER_OTLP_ENDPOINT:-}
       CONTEXTLEDGER_METRICS_TOKEN: ${CONTEXTLEDGER_METRICS_TOKEN:-}

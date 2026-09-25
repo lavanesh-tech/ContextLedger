@@ -31,7 +31,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 24 | ECS/Fargate batch workload | Done (code; not applied) |
 | 25 | DynamoDB (only if justified) | Evaluated: not adopted, PostgreSQL + Redis cover it (ADR-039) |
 | 26 | Athena (only if justified) | Done (code; not applied): evaluation results only (ADR-040) |
-| 27 | Performance / load testing | Planned |
+| 27 | Performance / load testing | Done (tooling; results only from real runs, see docs/PERFORMANCE.md) |
 | 28 | Security review | Planned |
 | 29 | AWS recruiter demo lifecycle: deploy → demo → destroy → verify → recreate | Planned |
 | 30 | Portfolio polish | Planned |
