@@ -1,0 +1,272 @@
+{
+  "benchmark": "http_load",
+  "commit_sha": "0f7bb54ddb4d7bd4d1b3ca2c5bff0ab3093f9d31",
+  "working_tree_dirty": true,
+  "date": "2026-09-25T02:36:55+00:00",
+  "dataset": "synthetic benchmark dataset (seeded customers seeded through the REST API)",
+  "dataset_size": {
+    "entities": 300,
+    "fact_versions_seeded": 1000
+  },
+  "environment": "local (Docker Compose API; load generator on the same machine)",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64"
+  },
+  "configuration": {
+    "url": "http://127.0.0.1:8000",
+    "mix_weights": {
+      "search": 50,
+      "entity_facts": 30,
+      "fact_write": 10,
+      "health": 10
+    },
+    "duration_s": 30.0,
+    "warmup_s": 5.0,
+    "levels": [
+      1,
+      8,
+      32
+    ],
+    "seed": 27,
+    "model": "closed loop (each worker waits for its response)"
+  },
+  "seed_seconds": 8.12,
+  "metrics": {
+    "levels": [
+      {
+        "concurrency": 1,
+        "duration_s": 30.0,
+        "requests": 1738,
+        "throughput_rps": 57.9,
+        "error_rate": 0.0,
+        "rate_limited_429": 0,
+        "transport_errors": {},
+        "error_samples": {},
+        "scenarios": {
+          "entity_facts": {
+            "requests": 526,
+            "ok": 526,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 526
+            },
+            "latency_ms": {
+              "p50": 5.0,
+              "p95": 6.05,
+              "p99": 7.02,
+              "max": 115.58,
+              "mean": 6.05
+            }
+          },
+          "fact_write": {
+            "requests": 193,
+            "ok": 193,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "201": 193
+            },
+            "latency_ms": {
+              "p50": 9.0,
+              "p95": 11.68,
+              "p99": 13.68,
+              "max": 17.7,
+              "mean": 9.33
+            }
+          },
+          "health": {
+            "requests": 171,
+            "ok": 171,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 171
+            },
+            "latency_ms": {
+              "p50": 1.63,
+              "p95": 2.01,
+              "p99": 2.22,
+              "max": 3.14,
+              "mean": 1.64
+            }
+          },
+          "search": {
+            "requests": 848,
+            "ok": 848,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 848
+            },
+            "latency_ms": {
+              "p50": 22.31,
+              "p95": 25.15,
+              "p99": 397.38,
+              "max": 402.68,
+              "mean": 29.01
+            }
+          }
+        }
+      },
+      {
+        "concurrency": 8,
+        "duration_s": 30.0,
+        "requests": 4067,
+        "throughput_rps": 135.6,
+        "error_rate": 0.0,
+        "rate_limited_429": 0,
+        "transport_errors": {},
+        "error_samples": {},
+        "scenarios": {
+          "entity_facts": {
+            "requests": 1205,
+            "ok": 1205,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 1205
+            },
+            "latency_ms": {
+              "p50": 34.34,
+              "p95": 67.55,
+              "p99": 84.58,
+              "max": 125.23,
+              "mean": 38.0
+            }
+          },
+          "fact_write": {
+            "requests": 431,
+            "ok": 431,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "201": 431
+            },
+            "latency_ms": {
+              "p50": 60.96,
+              "p95": 103.46,
+              "p99": 121.8,
+              "max": 131.36,
+              "mean": 64.54
+            }
+          },
+          "health": {
+            "requests": 394,
+            "ok": 394,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 394
+            },
+            "latency_ms": {
+              "p50": 6.38,
+              "p95": 16.03,
+              "p99": 23.58,
+              "max": 30.65,
+              "mean": 7.44
+            }
+          },
+          "search": {
+            "requests": 2037,
+            "ok": 2037,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 2037
+            },
+            "latency_ms": {
+              "p50": 75.49,
+              "p95": 121.23,
+              "p99": 147.33,
+              "max": 186.6,
+              "mean": 80.2
+            }
+          }
+        }
+      },
+      {
+        "concurrency": 32,
+        "duration_s": 30.0,
+        "requests": 4865,
+        "throughput_rps": 162.2,
+        "error_rate": 0.0002,
+        "rate_limited_429": 0,
+        "transport_errors": {},
+        "error_samples": {
+          "fact_write 409": "{\"type\":\"about:blank\",\"title\":\"Conflict\",\"status\":409,\"code\":\"conflict\",\"detail\":\"new version must start after version 3 (valid_from 2026-09-25T02:36:53.664500+00:00); rewriting history requires a revocation\",\"instance\":\"/api/v1/organizations/2f2e834e-7de9-4085-9e60-1566120414ae/facts\",\"correlation_id\":\"f4811931-a423-4a4b-a339-33603fbebf0c\"}"
+        },
+        "scenarios": {
+          "entity_facts": {
+            "requests": 1522,
+            "ok": 1522,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 1522
+            },
+            "latency_ms": {
+              "p50": 123.79,
+              "p95": 192.58,
+              "p99": 229.87,
+              "max": 271.44,
+              "mean": 129.28
+            }
+          },
+          "fact_write": {
+            "requests": 473,
+            "ok": 472,
+            "rate_limited_429": 0,
+            "errors": 1,
+            "status_codes": {
+              "201": 472,
+              "409": 1
+            },
+            "latency_ms": {
+              "p50": 221.96,
+              "p95": 312.69,
+              "p99": 343.66,
+              "max": 396.62,
+              "mean": 227.32
+            }
+          },
+          "health": {
+            "requests": 488,
+            "ok": 488,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 488
+            },
+            "latency_ms": {
+              "p50": 16.71,
+              "p95": 22.84,
+              "p99": 65.86,
+              "max": 70.99,
+              "mean": 17.78
+            }
+          },
+          "search": {
+            "requests": 2382,
+            "ok": 2382,
+            "rate_limited_429": 0,
+            "errors": 0,
+            "status_codes": {
+              "200": 2382
+            },
+            "latency_ms": {
+              "p50": 267.1,
+              "p95": 359.25,
+              "p99": 413.6,
+              "max": 566.65,
+              "mean": 271.79
+            }
+          }
+        }
+      }
+    ]
+  },
+  "note": "Client-side latency on one laptop; not a production capacity figure."
+}

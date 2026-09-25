@@ -83,6 +83,8 @@ class LevelStats:
     latencies: dict[str, list[float]] = field(default_factory=lambda: defaultdict(list))
     statuses: dict[str, Counter[int]] = field(default_factory=lambda: defaultdict(Counter))
     transport_errors: Counter[str] = field(default_factory=Counter)
+    # First response body per (scenario, status >= 400): makes a failing run diagnosable.
+    error_samples: dict[str, str] = field(default_factory=dict)
 
     def summary(self, seconds: float) -> dict[str, Any]:
         scenarios: dict[str, Any] = {}
@@ -116,6 +118,7 @@ class LevelStats:
             "error_rate": round((errors + transport) / total, 4) if total else 0.0,
             "rate_limited_429": throttled,
             "transport_errors": dict(self.transport_errors),
+            "error_samples": self.error_samples,
             "scenarios": scenarios,
         }
 
@@ -183,6 +186,7 @@ def request_for(scenario: str, tenant: Tenant, rng: random.Random) -> tuple[str,
             "property": "risk_score",
             "value": rng.randint(1, 100),
             "source_id": tenant.source_id,
+            "valid_from": datetime.now(UTC).isoformat(),
         }
         return "POST", f"{tenant.base}/facts", body
     return "GET", "/health", None
@@ -220,6 +224,9 @@ async def run_level(
             if sent >= record_from and status is not None:
                 stats.latencies[scenario].append(elapsed_ms)
                 stats.statuses[scenario][status] += 1
+                key = f"{scenario} {status}"
+                if status >= 400 and key not in stats.error_samples:
+                    stats.error_samples[key] = response.text[:500]
 
     await asyncio.gather(*(worker(i) for i in range(concurrency)))
     return {"concurrency": concurrency, **stats.summary(duration)}
@@ -245,6 +252,8 @@ async def main_async(args: argparse.Namespace) -> Path:
                 client, tenant, level, args.duration, args.warmup, args.seed + level
             )
             levels.append(result)
+            if result["error_samples"]:
+                print(f"  errors: {result['error_samples']}")
             print(
                 f"  {result['throughput_rps']} req/s, error rate {result['error_rate']}, "
                 f"429s {result['rate_limited_429']}, "
