@@ -13,7 +13,7 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 21 of 31 done, plus an additive AI capability (grounded answers,
+> **Status: Phase 22 of 31 done, plus an additive AI capability (grounded answers,
 > LangChain orchestration, evaluation, a decision-investigator agent).** Only what is
 > listed under "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
@@ -46,6 +46,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - Web UI (Next.js 15, React 19, strict TypeScript): search with valid-at / as-known-at and score breakdown, entity timelines, decision receipts with integrity and revocation markers, contradictions, revocation impact and grounded answers, all through the REST API (`make frontend-dev`). See [frontend/README.md](frontend/README.md)
 - Observability: Prometheus `/metrics` (route templates, retrieval, LLM calls and tokens, answers, agent runs, contradictions, revocations; no tenant labels; token-protected outside local), optional OpenTelemetry traces (FastAPI, SQLAlchemy, httpx plus retrieval, model and agent spans) with trace ids in the JSON logs, and a provisioned Grafana dashboard (`make obs-up`). See [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)
 - Delivery: hash-locked Python dependencies (checked against `pyproject.toml` in CI), a layered non-root API image that runs with a read-only root filesystem, a standalone non-root web image, and CI that lints, type-checks, tests, audits dependencies (pip-audit, npm audit), lints Dockerfiles, scans images (Trivy) and smoke-tests the hardened container; tagged releases push multi-arch images with SBOM and provenance to GHCR. See [docs/CI_CD.md](docs/CI_CD.md)
+- AWS infrastructure as code (Terraform, not applied by default): VPC without a NAT gateway unless enabled, private encrypted RDS PostgreSQL 17 with an RDS-managed master secret, a private TLS-only evidence bucket, ECR with scanning and lifecycle rules, Secrets Manager containers, least-privilege runtime and GitHub OIDC CI roles, log retention, database alarms and an AWS Budget, with deployment, teardown and cost-control guides. See [docs/AWS_DEPLOYMENT.md](docs/AWS_DEPLOYMENT.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API, embedding worker, graph projector, event relay and event consumers
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -104,6 +105,7 @@ scripts/            Developer scripts (local stack smoke test)
 - [Revocation impact](docs/REVOCATION.md)
 - [Observability](docs/OBSERVABILITY.md)
 - [CI/CD and images](docs/CI_CD.md)
+- [AWS deployment](docs/AWS_DEPLOYMENT.md), [teardown](docs/AWS_TEARDOWN.md), [cost control](docs/AWS_COST_CONTROL.md)
 - [AI: grounded answers, LangChain, evaluation, investigator agent](docs/AI.md)
 - [Benchmarks methodology](docs/BENCHMARKS.md)
 

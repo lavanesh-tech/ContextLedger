@@ -920,3 +920,32 @@ but not scanned, and there was no release process.
 can fail when a new critical CVE with a fix lands in the base image; the fix is
 a rebuild or a Dependabot base-image bump. Tags, not digests, pin base images
 and actions for now.
+
+## ADR-036: Terraform for AWS foundations, built to be destroyed and recreated
+
+**Status:** Accepted (Phase 22)
+
+**Context.** The project must be deployable to AWS for demos without paying
+for idle infrastructure, and without long-lived credentials or secrets in code.
+
+**Decision.**
+- Two Terraform stacks: `bootstrap` (state bucket, kept) and `core`
+  (everything else, destroyed after demos). S3-native state locking instead of
+  a DynamoDB table.
+- No NAT gateway by default; an S3 gateway endpoint covers private S3 access.
+  RDS is single-AZ, smallest Graviton class, private, encrypted, TLS-only.
+- RDS generates and stores the master password in Secrets Manager; app secrets
+  are created empty and filled with the CLI, so no secret enters Terraform
+  state or git.
+- GitHub Actions reaches AWS through OIDC with a role limited to pushing two
+  ECR repositories from `main` and version tags; the runtime role is limited to
+  its secrets, evidence objects and log groups.
+- Defaults favour teardown (no deletion protection, forced deletion of buckets
+  and repositories, zero secret recovery window) and keep a final database
+  snapshot.
+- Budget, tags and log retention are part of the stack, not a manual step.
+
+**Consequences.** Single-AZ RDS and no NAT are not production-grade
+availability; production would enable Multi-AZ, deletion protection and a
+recovery window. Nothing inside the VPC can reach the internet until a NAT
+gateway (or interface endpoints) is enabled in a later phase.

@@ -1,0 +1,6 @@
+region             = "us-east-1"
+environment        = "demo"
+owner              = "your-name"
+alert_email        = "you@example.com"
+monthly_budget_usd = 30
+# enable_nat_gateway = false   # billed per hour while it exists

@@ -25,7 +25,7 @@ TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_P
 .PHONY: help install lock lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
-        worker worker-once graph-projector graph-once event-relay event-consumers kafka-topics mcp api-docs eval eval-live eval-retrieval frontend-install frontend-dev frontend-check obs-up obs-down jwt-key bench-vector bench-retrieval
+        worker worker-once graph-projector graph-once event-relay event-consumers kafka-topics mcp api-docs eval eval-live eval-retrieval frontend-install frontend-dev frontend-check obs-up obs-down tf-check tf-plan tf-apply tf-destroy jwt-key bench-vector bench-retrieval
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -169,6 +169,27 @@ obs-up: require-env ## Prometheus :9090, Grafana :3001 (admin / GRAFANA_ADMIN_PA
 
 obs-down: ## Stop the observability containers
 	docker compose --profile observability stop prometheus grafana jaeger
+
+# --- Terraform / AWS (see docs/AWS_DEPLOYMENT.md; apply and destroy cost or save money) ----
+
+TF_CORE := infrastructure/terraform/core
+
+tf-check: ## terraform fmt + validate for both stacks (no AWS calls)
+	terraform fmt -check -recursive infrastructure/terraform
+	terraform -chdir=infrastructure/terraform/bootstrap init -backend=false -input=false >/dev/null
+	terraform -chdir=infrastructure/terraform/bootstrap validate
+	terraform -chdir=$(TF_CORE) init -backend=false -input=false >/dev/null
+	terraform -chdir=$(TF_CORE) validate
+
+tf-plan: ## Plan the core AWS stack (needs AWS credentials, backend.hcl and terraform.tfvars)
+	terraform -chdir=$(TF_CORE) init -backend-config=backend.hcl -input=false
+	terraform -chdir=$(TF_CORE) plan -out=core.tfplan
+
+tf-apply: ## Apply the saved plan (CREATES BILLABLE AWS RESOURCES)
+	terraform -chdir=$(TF_CORE) apply core.tfplan
+
+tf-destroy: ## Destroy the core AWS stack (see docs/AWS_TEARDOWN.md for what remains)
+	terraform -chdir=$(TF_CORE) destroy
 
 # --- Frontend (Next.js, see frontend/README.md) -------------------------------------------
 

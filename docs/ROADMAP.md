@@ -26,7 +26,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 19 | Frontend: Next.js + React + TypeScript in `frontend/`, consuming the FastAPI `/api/v1` REST API (ADR-008) | Done |
 | 20 | Observability: OpenTelemetry, Prometheus, Grafana | Done |
 | 21 | Production Docker hardening + full CI/CD | Done |
-| 22 | Terraform + core AWS (VPC, RDS, S3, ECR, Secrets Manager, IAM, CloudWatch) | Planned |
+| 22 | Terraform + core AWS (VPC, RDS, S3, ECR, Secrets Manager, IAM, CloudWatch) | Done (code; not applied) |
 | 23 | EKS deployment + teardown docs | Planned |
 | 24 | ECS/Fargate batch workload | Planned |
 | 25 | DynamoDB (only if justified) | Planned |

@@ -178,6 +178,24 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: "1"
 
+  terraform:
+    name: Terraform format + validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.3"
+      - name: terraform fmt
+        run: terraform fmt -check -recursive infrastructure/terraform
+      - name: terraform validate (no backend, no AWS credentials)
+        run: |
+          for stack in bootstrap core; do
+            terraform -chdir=infrastructure/terraform/$stack init -backend=false -input=false
+            terraform -chdir=infrastructure/terraform/$stack validate
+          done
+
   docker:
     name: Docker build, scan + smoke test
     runs-on: ubuntu-latest
