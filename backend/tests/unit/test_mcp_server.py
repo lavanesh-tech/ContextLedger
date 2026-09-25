@@ -26,6 +26,8 @@ EXPECTED_TOOLS = {
     "get_session_context",
     "analyze_impact",
     "get_decision_lineage",
+    "answer_question",
+    "investigate_decision",
 }
 
 

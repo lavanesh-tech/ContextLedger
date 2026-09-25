@@ -18,6 +18,7 @@ import uuid
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
+from app.ai.providers import build_generation_provider
 from app.cache.retrieval import RetrievalCache
 from app.cache.store import build_store
 from app.core.config import Settings, get_settings
@@ -40,11 +41,18 @@ ContextLedger is the system of record for facts your decisions depend on.
   The returned receipt proves what you knew and when.
 - get_session_context shows what this session remembers (it expires after inactivity).
 - Use analyze_impact to see which decisions depend on a fact, source or evidence.
+- answer_question answers from facts with verified citations; investigate_decision
+  explains a past decision. Both call an LLM and are only as good as the facts: a
+  status other than "answered" means there is no trustworthy answer.
 You cannot choose the organization or user: they are fixed by the server's configuration.
 """
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False)
 WRITES = ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=False)
+# Calls an external LLM (not idempotent: answers may differ between calls).
+GENERATES = ToolAnnotations(readOnlyHint=True, idempotentHint=False, openWorldHint=True)
+# Also stores an immutable trace of the run.
+INVESTIGATES = ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=True)
 
 
 def build_server(runtime: McpRuntime) -> FastMCP:
@@ -60,6 +68,8 @@ def build_server(runtime: McpRuntime) -> FastMCP:
         (tools.get_session_context, READ_ONLY),
         (tools.analyze_impact, READ_ONLY),
         (tools.get_decision_lineage, READ_ONLY),
+        (tools.answer_question, GENERATES),
+        (tools.investigate_decision, INVESTIGATES),
     ):
         server.add_tool(handler, name=handler.__name__, annotations=annotations)
     return server
@@ -82,9 +92,8 @@ def identity_from(settings: Settings) -> McpIdentity:
 async def _main(settings: Settings) -> None:
     identity = identity_from(settings)
     engine = create_engine(settings)
-    http_client = (
-        build_openai_http_client(settings) if settings.embedding_provider == "openai" else None
-    )
+    uses_openai = settings.embedding_provider == "openai" or settings.llm_provider == "openai"
+    http_client = build_openai_http_client(settings) if uses_openai else None
     driver = build_driver(settings) if settings.neo4j_password.get_secret_value() else None
     store = build_store(settings)
     # One stdio process serves one client session.
@@ -104,6 +113,11 @@ async def _main(settings: Settings) -> None:
                 session_id=session_id,
                 ttl_seconds=settings.mcp_session_ttl_seconds,
             ),
+            generator=build_generation_provider(settings, http_client),
+            answer_prompt_version=settings.llm_answer_prompt_version,
+            max_output_tokens=settings.llm_max_output_tokens,
+            agent_max_steps=settings.llm_agent_max_steps,
+            agent_max_tool_calls=settings.llm_agent_max_tool_calls,
         )
         logger.info(
             "mcp.server_started",

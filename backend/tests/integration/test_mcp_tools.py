@@ -1,5 +1,6 @@
 """MCP tools end to end: FastMCP → tool handlers → services → PostgreSQL (and Neo4j)."""
 
+import dataclasses
 import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -9,11 +10,13 @@ import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.ai.providers import FakeGenerationProvider, GenerationUnavailableError, ToolCall
 from app.domain.facts import PrivacyScope
 from app.domain.roles import MembershipRole
 from app.domain.tenancy import TenantContext
 from app.mcp.server import build_server
 from app.mcp.tools import McpIdentity, McpRuntime, ToolHandlers
+from app.models.agent_run import AgentRun
 from app.models.source import FactSource
 from app.providers.embeddings import DeterministicHashEmbeddingProvider
 from app.services.facts import RecordFactVersion
@@ -224,3 +227,85 @@ async def test_tools_are_callable_through_fastmcp(sessions: Sessions) -> None:
     assert [r["value"] for r in result["results"]] == [5000]
     with pytest.raises(ToolError):
         await server.call_tool("get_decision_receipt", {"decision_id": "not-a-uuid"})
+
+
+# --- AI tools (scripted model: no network, no key) ------------------------------------------
+
+
+def with_model(tools: ToolHandlers, model: FakeGenerationProvider) -> ToolHandlers:
+    return ToolHandlers(dataclasses.replace(tools._rt, generator=model))
+
+
+async def test_answer_question_cites_only_facts_under_the_agents_ceiling(
+    sessions: Sessions,
+) -> None:
+    base, _, _, _ = await agent(sessions)
+    model = FakeGenerationProvider(
+        responder=lambda _: json.dumps(
+            {
+                "answer": "5000",
+                "insufficient_evidence": False,
+                "cited_facts": ["F1"],
+                "inferences": [],
+            }
+        )
+    )
+    tools = with_model(base, model)
+
+    answer = await tools.answer_question("credit limit and internal risk notes of customer-991")
+
+    assert answer["status"] == "answered" and answer["answer"] == "5000"
+    prompt = model.requests[0].messages[-1].content
+    assert "credit_limit" in prompt
+    assert "internal_risk_notes" not in prompt  # CONFIDENTIAL: above the agent's ceiling
+
+
+async def test_investigate_decision_runs_the_agent_and_stores_a_trace(sessions: Sessions) -> None:
+    base, _, _, _ = await agent(sessions)
+    context = await base.capture_decision_context("credit limit customer-991")
+    version = next(f for f in context["facts"] if f["property"] == "credit_limit")[
+        "fact_version_id"
+    ]
+    decision = await base.record_decision(
+        snapshot_id=UUID(context["snapshot_id"]),
+        action="credit.approve_increase",
+        outcome={"approved": True},
+        relied_on=[UUID(version)],
+    )
+    model = FakeGenerationProvider(
+        responses=[
+            [ToolCall("c1", "get_decision_receipt", {"decision_id": decision["decision_id"]})],
+            json.dumps(
+                {
+                    "answer": "Approved on the 5000 limit.",
+                    "insufficient_evidence": False,
+                    "cited_ids": [decision["decision_id"], version],
+                }
+            ),
+        ]
+    )
+    tools = with_model(base, model)
+
+    run = await tools.investigate_decision("Why was the increase approved?")
+
+    assert run["status"] == "answered"
+    assert run["cited_ids"] == [decision["decision_id"], version]
+    assert [c["tool"] for c in run["tool_calls"]] == ["get_decision_receipt"]
+    async with sessions() as session:
+        stored = await session.get(AgentRun, UUID(run["run_id"]))
+    assert stored is not None and stored.status == "answered"
+
+
+async def test_ai_tools_fail_cleanly_without_a_model(sessions: Sessions) -> None:
+    tools, _, _, _ = await agent(sessions)
+    with pytest.raises(ToolError, match="disabled"):
+        await tools.answer_question("credit limit")
+    with pytest.raises(ToolError, match="disabled"):
+        await tools.investigate_decision("why?")
+
+
+async def test_a_model_failure_is_a_tool_error_not_an_answer(sessions: Sessions) -> None:
+    base, _, _, _ = await agent(sessions)
+    tools = with_model(base, FakeGenerationProvider(responses=[GenerationUnavailableError("down")]))
+    with pytest.raises(ToolError, match="GenerationUnavailableError"):
+        await tools.answer_question("credit limit customer-991")

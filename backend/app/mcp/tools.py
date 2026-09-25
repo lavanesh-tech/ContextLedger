@@ -9,6 +9,9 @@ Rules every tool follows:
   role (ADR-023).
 * Tenant, time, permissions and provenance are decided by the services
   underneath, never by the model.
+* The AI tools (``answer_question``, ``investigate_decision``) run the same
+  services as REST, with the agent's privacy ceiling folded into the tenant
+  context, so the model behind them sees only what this agent may see.
 * Domain errors become clean tool errors. Anything unexpected is logged with
   details server-side and reported to the agent as "internal error".
 """
@@ -16,7 +19,7 @@ Rules every tool follows:
 import logging
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
@@ -25,17 +28,23 @@ from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.ai.agent.investigator import DecisionInvestigator, InvestigationError
+from app.ai.agent.tools import ServiceBackend
+from app.ai.prompts.grounded_answer import DEFAULT_GROUNDED_ANSWER_PROMPT
+from app.ai.providers import GenerationProvider
 from app.cache.retrieval import RetrievalCache
 from app.cache.store import StoreUnavailableError
 from app.domain.errors import DomainError
 from app.domain.facts import PrivacyScope
-from app.domain.retrieval import MAX_LIMIT, visible_privacy_scopes
+from app.domain.retrieval import MAX_LIMIT, PRIVACY_ORDER, visible_privacy_scopes
 from app.domain.tenancy import TenantContext
 from app.mcp.serialization import to_jsonable
 from app.mcp.state import McpSessionState
 from app.provenance.graph import GraphReader
 from app.providers.embeddings import EmbeddingProvider
+from app.services.answers import AnswerGenerationError, AnswerQuery, GroundedAnswerService
 from app.services.decisions import DecisionService, RecordDecision
+from app.services.investigations import InvestigationService
 from app.services.provenance import ProvenanceService
 from app.services.retrieval import RetrievalQuery, RetrievalService
 from app.services.temporal import TemporalService
@@ -66,6 +75,11 @@ class McpRuntime:
     graph: GraphReader | None = None  # None: impact tools report the graph as unavailable
     cache: RetrievalCache | None = None  # shared retrieval cache (Redis)
     state: McpSessionState | None = None  # temporary per-session state (Redis)
+    generator: GenerationProvider | None = None  # None: the AI tools report LLM as disabled
+    answer_prompt_version: str = DEFAULT_GROUNDED_ANSWER_PROMPT
+    max_output_tokens: int = 800
+    agent_max_steps: int = 6
+    agent_max_tool_calls: int = 12
 
 
 @asynccontextmanager
@@ -74,6 +88,9 @@ async def tool_errors(tool: str) -> AsyncIterator[None]:
         yield
     except DomainError as exc:
         raise ToolError(f"{type(exc).__name__}: {exc}") from exc
+    except (AnswerGenerationError, InvestigationError) as exc:
+        # Never an invented answer: the agent learns generation failed, and the class.
+        raise ToolError(f"the language model could not answer ({exc.cause})") from exc
     except ToolError:
         raise
     except Exception as exc:
@@ -93,6 +110,19 @@ class ToolHandlers:
             return await TenancyService(session).resolve(
                 organization_id=identity.organization_id, user_id=identity.user_id
             )
+
+    async def _agent_tenant(self) -> TenantContext:
+        """The tenant context with this agent's privacy ceiling folded in, for services
+        (and models) that read ``ctx.max_privacy_scope``."""
+        ctx = await self._tenant()
+        visible = self._visible(ctx)
+        ceiling = max(visible, key=PRIVACY_ORDER.index)
+        return replace(ctx, max_privacy_scope=ceiling)
+
+    def _generator(self) -> GenerationProvider:
+        if self._rt.generator is None:
+            raise ToolError("LLM generation is disabled for this server")
+        return self._rt.generator
 
     def _visible(self, ctx: TenantContext) -> frozenset[PrivacyScope]:
         return visible_privacy_scopes(
@@ -357,6 +387,64 @@ class ToolHandlers:
             "no snapshot_id given and none captured in this session; "
             "call capture_decision_context first or pass snapshot_id"
         )
+
+    # --- AI: grounded answers and the decision investigator ------------------------------
+
+    async def answer_question(
+        self,
+        question: Annotated[str, Field(min_length=1, max_length=1000)],
+        valid_at: Instant = None,
+        known_at: Instant = None,
+        limit: Annotated[int, Field(ge=1, le=20)] = 8,
+    ) -> Json:
+        """Answer a question from facts this agent may see, as of `valid_at` using what was
+        known at `known_at`. Every citation is verified; an ungrounded answer is withheld.
+        Calls the configured LLM."""
+        async with tool_errors("answer_question"):
+            generator = self._generator()
+            ctx = await self._agent_tenant()
+            async with self._rt.sessions() as session:
+                retrieval = RetrievalService(session, self._rt.provider, cache=self._rt.cache)
+                answer = await GroundedAnswerService(
+                    retrieval.search,
+                    generator,
+                    prompt_version=self._rt.answer_prompt_version,
+                    max_output_tokens=self._rt.max_output_tokens,
+                ).answer(
+                    ctx,
+                    AnswerQuery(
+                        question=question, valid_at=valid_at, known_at=known_at, limit=limit
+                    ),
+                )
+            result: Json = to_jsonable(answer)
+            return result
+
+    async def investigate_decision(
+        self, question: Annotated[str, Field(min_length=1, max_length=1000)]
+    ) -> Json:
+        """Investigate a past decision (why it was made, what it relied on, whether those
+        facts changed) with a bounded, read-only agent. The run is stored as a trace.
+        Calls the configured LLM."""
+        async with tool_errors("investigate_decision"):
+            generator = self._generator()
+            ctx = await self._agent_tenant()
+            async with self._rt.sessions() as session:
+                investigator = DecisionInvestigator(
+                    ServiceBackend(
+                        decisions=DecisionService(session, self._rt.provider),
+                        temporal=TemporalService(session),
+                        retrieval=RetrievalService(
+                            session, self._rt.provider, cache=self._rt.cache
+                        ),
+                    ),
+                    generator,
+                    max_steps=self._rt.agent_max_steps,
+                    max_tool_calls=self._rt.agent_max_tool_calls,
+                    max_output_tokens=self._rt.max_output_tokens,
+                )
+                run = await InvestigationService(session, investigator).investigate(ctx, question)
+            result: Json = to_jsonable(run)
+            return result
 
     # --- provenance graph ---------------------------------------------------------------
 
