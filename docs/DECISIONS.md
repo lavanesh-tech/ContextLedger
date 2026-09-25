@@ -990,3 +990,42 @@ surface as a non-zero exit code, routed by EventBridge to the existing alerts to
 **Consequences.** Billed per second only while it runs; no new services to operate.
 The batch task cannot invalidate the Redis retrieval cache, so cached results may be
 stale for up to the cache TTL after a backfill. Not yet run on AWS.
+
+## ADR-039: No DynamoDB; PostgreSQL and Redis already cover the candidate uses
+
+**Status:** Accepted (Phase 25)
+
+**Context.** The roadmap allows DynamoDB only with a real architectural reason. The
+candidates were TTL-based MCP session state, temporary execution state and high-volume
+idempotency records.
+
+**Decision.** Do not add DynamoDB.
+- MCP session state, OAuth state, rate limits and idempotency keys already live in Redis
+  with per-key TTLs (docs/REDIS.md), behind a `KeyValueStore` interface with an in-memory
+  fallback for tests.
+- Agent execution traces (`agent_runs`) must be joinable with facts, decisions and
+  tenants, and must be auditable, so they belong in PostgreSQL.
+- Nothing here has traffic that would outgrow Redis or PostgreSQL. Claiming a scaling
+  need would be invented.
+
+**Consequences.** One fewer datastore to secure, pay for, test and tear down. The
+`KeyValueStore` interface means a DynamoDB-backed store could be added later without
+touching callers. Revisit if MCP session state must survive Redis loss across regions,
+or if idempotency volume makes Redis memory the bottleneck. Neither is true today.
+
+## ADR-040: Athena only for evaluation results
+
+**Status:** Accepted (Phase 26)
+
+**Context.** The project produces append-only evaluation result files. Comparing them
+across commits and configurations is read-only analytics over files.
+
+**Decision.** Export retrieval results to partitioned JSON Lines, query them with Athena
+through Glue tables with partition projection, in a standalone `analytics` stack with an
+enforced workgroup and a per-query scan cap. Live tenant data (contradictions, agent
+runs) is **not** exported, because that would need a tenant-aware export and retention
+design; those questions stay in PostgreSQL behind tenant isolation.
+
+**Consequences.** Cheap, independent and destroyable, with no crawler to run. The dataset
+is small and synthetic, so this demonstrates the pattern rather than producing new
+findings. Not yet queried on real AWS.

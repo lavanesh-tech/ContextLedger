@@ -44,3 +44,4 @@ crash.log
 .DS_Store
 
 .k8s-rendered/
+evaluation/analytics/

@@ -3,7 +3,15 @@
 Goal: after a demo, remove everything that is billed by the hour, and know
 exactly what is left.
 
-## Destroy the batch stack first (if you created it)
+## Destroy the analytics stack (if you created it)
+
+```bash
+make analytics-destroy
+```
+
+Independent of the other stacks; its bucket holds only re-exportable derived data.
+
+## Destroy the batch stack (if you created it)
 
 ```bash
 make batch-destroy

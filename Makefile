@@ -22,6 +22,7 @@ TEST_REDIS_ENV = CONTEXTLEDGER_TEST_REDIS_URL='redis://:$(REDIS_PASSWORD)@127.0.
 KAFKA_PORT ?= 9092
 TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_PORT)'
 
+.PHONY: analytics-export analytics-plan analytics-apply analytics-destroy analytics-upload analytics-query
 .PHONY: batch-plan batch-apply batch-destroy batch-run batch-drain
 .PHONY: eks-plan eks-apply eks-destroy k8s-validate k8s-secrets k8s-render k8s-migrate k8s-deploy
 .PHONY: help install lock lint format typecheck test test-unit check run \
@@ -180,6 +181,7 @@ obs-down: ## Stop the observability containers
 TF_CORE := infrastructure/terraform/core
 TF_EKS := infrastructure/terraform/eks
 TF_BATCH := infrastructure/terraform/batch
+TF_ANALYTICS := infrastructure/terraform/analytics
 K8S := infrastructure/kubernetes
 IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
 
@@ -193,6 +195,8 @@ tf-check: ## terraform fmt + validate for both stacks (no AWS calls)
 	terraform -chdir=$(TF_EKS) validate
 	terraform -chdir=$(TF_BATCH) init -backend=false -input=false >/dev/null
 	terraform -chdir=$(TF_BATCH) validate
+	terraform -chdir=$(TF_ANALYTICS) init -backend=false -input=false >/dev/null
+	terraform -chdir=$(TF_ANALYTICS) validate
 
 tf-plan: ## Plan the core AWS stack (needs AWS credentials, backend.hcl and terraform.tfvars)
 	terraform -chdir=$(TF_CORE) init -backend-config=backend.hcl -input=false
@@ -275,3 +279,30 @@ batch-run: ## Run the embedding backfill once on Fargate and wait for it to stop
 	aws ecs wait tasks-stopped --cluster $$cluster --tasks $$task; \
 	aws ecs describe-tasks --cluster $$cluster --tasks $$task \
 	  --query 'tasks[0].{stopped:stoppedReason,exitCode:containers[0].exitCode}' --output table
+
+analytics-export: ## Retrieval results -> partitioned JSON Lines in evaluation/analytics (no AWS)
+	cd $(BACKEND) && $(BIN)/python -m app.evaluation.analytics_export
+
+analytics-plan: ## Plan the Athena analytics stack
+	terraform -chdir=$(TF_ANALYTICS) init -backend-config=backend.hcl -input=false
+	terraform -chdir=$(TF_ANALYTICS) plan -out=tfplan
+
+analytics-apply: ## Apply the saved analytics plan
+	terraform -chdir=$(TF_ANALYTICS) apply tfplan
+
+analytics-destroy: ## Destroy the analytics stack (bucket contents are re-exportable)
+	terraform -chdir=$(TF_ANALYTICS) destroy
+
+analytics-upload: analytics-export ## Sync the exported rows to the analytics bucket
+	aws s3 sync evaluation/analytics $$(terraform -chdir=$(TF_ANALYTICS) output -raw upload_prefix) --delete
+
+analytics-query: ## Run a named Athena query: make analytics-query Q=best-recall-at-5
+	@wg=$$(terraform -chdir=$(TF_ANALYTICS) output -raw workgroup); \
+	ids=$$(aws athena list-named-queries --work-group $$wg --query NamedQueryIds --output text); \
+	sql=$$(aws athena batch-get-named-query --named-query-ids $$ids \
+	  --query "NamedQueries[?Name=='$(Q)'].QueryString | [0]" --output text); \
+	[ -n "$$sql" ] && [ "$$sql" != None ] || { echo "unknown query $(Q)"; exit 1; }; \
+	qid=$$(aws athena start-query-execution --work-group $$wg --query-string "$$sql" --query QueryExecutionId --output text); \
+	while state=$$(aws athena get-query-execution --query-execution-id $$qid --query QueryExecution.Status.State --output text); \
+	  [ "$$state" = QUEUED ] || [ "$$state" = RUNNING ]; do sleep 1; done; \
+	echo "$$state"; aws athena get-query-results --query-execution-id $$qid --output table
