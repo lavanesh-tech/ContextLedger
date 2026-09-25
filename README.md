@@ -13,7 +13,7 @@ ContextLedger returns v19 for "what is the limit now?" and reconstructs v18 for
 "what did the agent know when it decided at 11:00?", deterministically and
 tenant-isolated, with the LLM kept out of every correctness decision.
 
-> **Status: Phase 18 of 31 done, plus an additive AI capability (grounded answers,
+> **Status: Phase 19 of 31 done, plus an additive AI capability (grounded answers,
 > LangChain orchestration, evaluation, a decision-investigator agent).** Only what is
 > listed under "What works today" exists. Everything else is on the [roadmap](docs/ROADMAP.md).
 
@@ -43,6 +43,7 @@ tenant-isolated, with the LLM kept out of every correctness decision.
 - LangChain (`langchain-core` only, no LangGraph) orchestrates the prompt → model chains through an adapter over the same provider, so every call keeps the same cost and failure controls
 - A versioned grounded-answer evaluation (synthetic dataset, 18 cases): a free deterministic mode that checks what reaches the model, and an opt-in live mode that measures answer quality and cost. See [evaluation/README.md](evaluation/README.md)
 - Historical Decision Investigator (`POST …/investigations`, MCP `investigate_decision`): a bounded tool-calling agent with four read-only tools over the existing services, step and tool-call limits, citation checks against ids the tools returned, and an immutable trace of every run
+- Web UI (Next.js 15, React 19, strict TypeScript): search with valid-at / as-known-at and score breakdown, entity timelines, decision receipts with integrity and revocation markers, contradictions, revocation impact and grounded answers, all through the REST API (`make frontend-dev`). See [frontend/README.md](frontend/README.md)
 - Docker Compose stack: PostgreSQL 17 + pgvector, Redis, Neo4j, Kafka (KRaft), API, embedding worker, graph projector, event relay and event consumers
 - Ruff, mypy `--strict`, pytest + pytest-asyncio, PostgreSQL integration tests, GitHub Actions CI with a Postgres service
 
@@ -77,7 +78,7 @@ backend/            FastAPI service (app/, tests/, Dockerfile, pyproject.toml)
 infrastructure/     Docker init scripts now; Terraform / Kubernetes later
 benchmarks/         Reproducible measurements -> benchmarks/results/*.json
 evaluation/         Retrieval and grounded-answer evaluation datasets, results
-frontend/           Web UI: Next.js + React + TypeScript (Phase 19, not started)
+frontend/           Web UI: Next.js + React + TypeScript (see frontend/README.md)
 docs/               Architecture, decisions, roadmap, benchmarks
 scripts/            Developer scripts (local stack smoke test)
 ```

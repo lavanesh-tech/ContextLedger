@@ -25,7 +25,7 @@ TEST_KAFKA_ENV = CONTEXTLEDGER_TEST_KAFKA_BOOTSTRAP_SERVERS='127.0.0.1:$(KAFKA_P
 .PHONY: help install lint format typecheck test test-unit check run \
         migrate migration migrate-check migrate-docker \
         require-env up down down-volumes logs ps smoke docker-build metrics clean \
-        worker worker-once graph-projector graph-once event-relay event-consumers kafka-topics mcp api-docs eval eval-live eval-retrieval jwt-key bench-vector bench-retrieval
+        worker worker-once graph-projector graph-once event-relay event-consumers kafka-topics mcp api-docs eval eval-live eval-retrieval frontend-install frontend-dev frontend-check jwt-key bench-vector bench-retrieval
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -155,6 +155,17 @@ eval-retrieval: ## Retrieval evaluation: Recall@K, Precision@K, MRR, nDCG, tempo
 
 eval-live: ## LIVE OpenAI evaluation (COSTS MONEY): needs CONTEXTLEDGER_OPENAI_API_KEY in the environment
 	cd $(BACKEND) && CONTEXTLEDGER_TEST_DATABASE_URL='$(TEST_DATABASE_URL)' $(BIN)/python -m app.evaluation.runner --mode live --live --model $(EVAL_MODEL) --prompts $(PROMPTS) $(if $(LIMIT),--limit $(LIMIT),) $(if $(PRICE_IN),--price-input $(PRICE_IN),) $(if $(PRICE_OUT),--price-output $(PRICE_OUT),)
+
+# --- Frontend (Next.js, see frontend/README.md) -------------------------------------------
+
+frontend-install: ## Install the web UI's dependencies from its lock file
+	cd frontend && npm ci
+
+frontend-dev: ## Web UI on http://localhost:3000 (forwards /api/v1 to `make run`)
+	cd frontend && NEXT_TELEMETRY_DISABLED=1 npm run dev
+
+frontend-check: ## Web UI type-check, unit tests and production build
+	cd frontend && NEXT_TELEMETRY_DISABLED=1 npm run check
 
 clean: ## Remove caches (not the virtualenv)
 	find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +

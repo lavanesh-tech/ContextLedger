@@ -23,7 +23,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 16 | Contradiction detection | Done |
 | 17 | Revocation impact | Done |
 | 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Done |
-| 19 | Frontend: Next.js + React + TypeScript in `frontend/`, consuming the FastAPI `/api/v1` REST API (ADR-008) | Planned |
+| 19 | Frontend: Next.js + React + TypeScript in `frontend/`, consuming the FastAPI `/api/v1` REST API (ADR-008) | Done |
 | 20 | Observability: OpenTelemetry, Prometheus, Grafana | Planned |
 | 21 | Production Docker hardening + full CI/CD | Planned |
 | 22 | Terraform + core AWS (VPC, RDS, S3, ECR, Secrets Manager, IAM, CloudWatch) | Planned |
