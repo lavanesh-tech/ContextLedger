@@ -2493,6 +2493,359 @@
         }
       }
     },
+    "/api/v1/organizations/{organization_id}/facts/{fact_id}/revoke": {
+      "post": {
+        "tags": [
+          "revocations"
+        ],
+        "summary": "Revoke a fact version and see which decisions depended on it",
+        "description": "Marks a version as wrong (not merely superseded). It stops appearing in current\nand \"as known now\" answers, stays in the history and in decision receipts (marked\n`revoked_at`), and every decision whose frozen context held it is listed, with\n`relied_on` when the decision cited it. Needs `facts:write` and `decisions:read`.",
+        "operationId": "revoke_api_v1_organizations__organization_id__facts__fact_id__revoke_post",
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Fact Id"
+            }
+          },
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevocationReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization_id}/facts/{fact_id}/impact": {
+      "get": {
+        "tags": [
+          "revocations"
+        ],
+        "summary": "Revoked versions of a fact and the decisions they affect",
+        "operationId": "fact_impact_api_v1_organizations__organization_id__facts__fact_id__impact_get",
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Fact Id"
+            }
+          },
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RevocationReport"
+                  },
+                  "title": "Response Fact Impact Api V1 Organizations  Organization Id  Facts  Fact Id  Impact Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization_id}/fact-versions/{version_id}/revocation": {
+      "get": {
+        "tags": [
+          "revocations"
+        ],
+        "summary": "The revocation of one fact version and its impact",
+        "operationId": "version_revocation_api_v1_organizations__organization_id__fact_versions__version_id__revocation_get",
+        "parameters": [
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevocationReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization_id}/revocations": {
+      "get": {
+        "tags": [
+          "revocations"
+        ],
+        "summary": "Recent revocations",
+        "operationId": "list_revocations_api_v1_organizations__organization_id__revocations_get",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RevocationReport"
+                  },
+                  "title": "Response List Revocations Api V1 Organizations  Organization Id  Revocations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{organization_id}/search": {
       "post": {
         "tags": [
@@ -5328,6 +5681,64 @@
         ],
         "title": "ImpactReport"
       },
+      "ImpactedDecision": {
+        "properties": {
+          "decision_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Decision Id"
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Snapshot Id"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decided At"
+          },
+          "relied_on": {
+            "type": "boolean",
+            "title": "Relied On"
+          },
+          "recorded_at_revocation": {
+            "type": "boolean",
+            "title": "Recorded At Revocation"
+          },
+          "decided_after_revocation": {
+            "type": "boolean",
+            "title": "Decided After Revocation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision_id",
+          "snapshot_id",
+          "action",
+          "agent",
+          "decided_at",
+          "relied_on",
+          "recorded_at_revocation",
+          "decided_after_revocation"
+        ],
+        "title": "ImpactedDecision"
+      },
       "Investigation": {
         "properties": {
           "run_id": {
@@ -6246,6 +6657,18 @@
             },
             "type": "array",
             "title": "Evidence"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
           }
         },
         "type": "object",
@@ -6533,6 +6956,112 @@
           "model"
         ],
         "title": "ReviewResult"
+      },
+      "RevocationReport": {
+        "properties": {
+          "revocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Revocation Id"
+          },
+          "fact_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Fact Id"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "property": {
+            "type": "string",
+            "title": "Property"
+          },
+          "version": {
+            "$ref": "#/components/schemas/VersionSnapshot"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "revoked_by_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Revoked By User Id"
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Revoked At"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/ImpactedDecision"
+            },
+            "type": "array",
+            "title": "Decisions"
+          },
+          "decisions_relied_on": {
+            "type": "integer",
+            "title": "Decisions Relied On"
+          },
+          "decisions_with_version_in_context": {
+            "type": "integer",
+            "title": "Decisions With Version In Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revocation_id",
+          "fact_id",
+          "entity_type",
+          "external_id",
+          "property",
+          "version",
+          "reason",
+          "revoked_by_user_id",
+          "revoked_at",
+          "decisions",
+          "decisions_relied_on",
+          "decisions_with_version_in_context"
+        ],
+        "title": "RevocationReport"
+      },
+      "RevokeRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "examples": [
+              "Billing import used the wrong currency for this limit."
+            ]
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id",
+            "description": "The version to revoke (default: the fact's latest version)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "RevokeRequest"
       },
       "SearchRequest": {
         "properties": {
@@ -7098,6 +7627,10 @@
     {
       "name": "search",
       "description": "Hybrid temporal retrieval (vector + full text)."
+    },
+    {
+      "name": "revocations",
+      "description": "Revoke wrong fact versions and see which decisions depended on them."
     },
     {
       "name": "contradictions",

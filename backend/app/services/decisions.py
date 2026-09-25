@@ -22,6 +22,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.decisions import (
@@ -41,6 +42,7 @@ from app.domain.retrieval import visible_privacy_scopes
 from app.domain.roles import Permission
 from app.domain.tenancy import TenantContext
 from app.models.decision import ContextSnapshot, ContextSnapshotFact, Decision, DecisionFact
+from app.models.revocation import FactRevocation
 from app.providers.embeddings import EmbeddingProvider
 from app.repositories.decisions import DecisionRepository, SnapshotFactRow
 from app.repositories.evidence import EvidenceRepository
@@ -97,6 +99,9 @@ class ReceiptFact:
     version: VersionSnapshot | None  # as known at the snapshot's known_at
     ranking: dict[str, Any]
     evidence: tuple[ReceiptEvidence, ...]
+    # Set when the version was later revoked (Phase 17). Not part of the sealed
+    # receipt hash: the receipt proves what was known then; this says what is known now.
+    revoked_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -303,6 +308,7 @@ class DecisionService:
                 raise NotFoundError("context snapshot not found")
             rows = await repository.snapshot_rows(snapshot.id)
             relied_on = await repository.relied_on(decision.id)
+            revoked = await self._revocations([row.version.id for row in rows], ctx.organization_id)
             evidence_repository = EvidenceRepository(self._session, ctx.organization_id)
             facts = []
             for row in rows:
@@ -338,6 +344,7 @@ class DecisionService:
                             if link.linked_at <= snapshot.known_at
                             and PrivacyScope(evidence.privacy_scope) in visible
                         ),
+                        revoked_at=revoked.get(row.version.id),
                     )
                 )
             recomputed = receipt_hash(_content(decision, snapshot, rows, relied_on))
@@ -375,6 +382,19 @@ class DecisionService:
                 self._session, ctx.organization_id
             ).decisions_relying_on(fact_version_id)
             return [d.id for d in decisions]
+
+    async def _revocations(
+        self, version_ids: list[UUID], organization_id: UUID
+    ) -> dict[UUID, datetime]:
+        if not version_ids:
+            return {}
+        result = await self._session.execute(
+            select(FactRevocation.fact_version_id, FactRevocation.revoked_at).where(
+                FactRevocation.organization_id == organization_id,
+                FactRevocation.fact_version_id.in_(version_ids),
+            )
+        )
+        return dict(result.tuples().all())
 
     @staticmethod
     def _redacted(

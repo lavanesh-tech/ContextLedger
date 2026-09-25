@@ -12,18 +12,34 @@ Condition "version is valid at T as known at K":
           OR valid_until_recorded_at > K                  -- end not yet known at K
           OR T < valid_until )                            -- not yet ended at T
 
-With K = "latest knowledge", the first and fourth lines are dropped.
+    AND NOT revoked as known at K                         -- Phase 17
+
+With K = "latest knowledge", the first and fourth lines are dropped, and any
+revocation counts. A revocation recorded after K does not change what was
+known at K.
 """
 
 from collections.abc import Sequence
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, and_, or_, select
+from sqlalchemy import ColumnElement, and_, exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.entity import Entity
 from app.models.fact import Fact, FactVersion
+from app.models.revocation import FactRevocation
+
+
+def not_revoked_condition(known_at: datetime | None) -> ColumnElement[bool]:
+    """SQL condition: the version had not been revoked as known at ``known_at``."""
+    revoked = exists().where(
+        FactRevocation.organization_id == FactVersion.organization_id,
+        FactRevocation.fact_version_id == FactVersion.id,
+    )
+    if known_at is not None:
+        revoked = revoked.where(FactRevocation.revoked_at <= known_at)
+    return ~revoked
 
 
 def valid_at_condition(valid_at: datetime, known_at: datetime | None) -> ColumnElement[bool]:
@@ -32,8 +48,10 @@ def valid_at_condition(valid_at: datetime, known_at: datetime | None) -> ColumnE
         return and_(
             FactVersion.valid_from <= valid_at,
             or_(FactVersion.valid_until.is_(None), FactVersion.valid_until > valid_at),
+            not_revoked_condition(None),
         )
     return and_(
+        not_revoked_condition(known_at),
         FactVersion.recorded_at <= known_at,
         FactVersion.valid_from <= valid_at,
         or_(

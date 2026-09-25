@@ -163,6 +163,46 @@
         "type": "object"
       }
     },
+    "decision.impacted": {
+      "topic": "contextledger.decisions.v1",
+      "data": {
+        "properties": {
+          "revocation_id": {
+            "format": "uuid",
+            "title": "Revocation Id",
+            "type": "string"
+          },
+          "decision_id": {
+            "format": "uuid",
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "format": "uuid",
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "fact_version_id": {
+            "format": "uuid",
+            "title": "Fact Version Id",
+            "type": "string"
+          },
+          "relied_on": {
+            "title": "Relied On",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revocation_id",
+          "decision_id",
+          "snapshot_id",
+          "fact_version_id",
+          "relied_on"
+        ],
+        "title": "DecisionImpacted",
+        "type": "object"
+      }
+    },
     "decision.recorded": {
       "topic": "contextledger.decisions.v1",
       "data": {
@@ -341,6 +381,41 @@
           "created_at"
         ],
         "title": "FactEmbeddingStored",
+        "type": "object"
+      }
+    },
+    "fact.revoked": {
+      "topic": "contextledger.facts.v1",
+      "data": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "fact_version_id": {
+            "format": "uuid",
+            "title": "Fact Version Id",
+            "type": "string"
+          },
+          "revoked_by_user_id": {
+            "format": "uuid",
+            "title": "Revoked By User Id",
+            "type": "string"
+          },
+          "revoked_at": {
+            "format": "date-time",
+            "title": "Revoked At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fact_version_id",
+          "revoked_by_user_id",
+          "revoked_at"
+        ],
+        "title": "FactRevoked",
         "type": "object"
       }
     },

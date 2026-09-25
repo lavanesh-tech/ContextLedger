@@ -834,3 +834,32 @@ source that omits it (observed = valid_from) never triggers it, so a late,
 conflicting report without observation times is treated as an update.
 Numeric tolerance and cross-entity conflicts are not covered yet. The LLM
 review's precision is unmeasured.
+
+## ADR-033: Revocation is a separate append-only record that is bitemporal on read
+
+**Status:** Accepted (Phase 17)
+
+**Context.** Sometimes a recorded value was simply wrong. Superseding it with
+a new version would say "it changed", which is false, and deleting it would
+destroy the evidence of what decisions were based on.
+
+**Decision.**
+- A revocation is its own append-only row (`fact_revocations`: version, reason,
+  who, when), at most one per version. Fact versions stay untouched.
+- Reads treat revocation like any other transaction-time fact: a version
+  revoked at R is excluded from "valid at T as known at K" when K >= R (and from
+  "latest"), and still returned when K < R. The condition lives in
+  `valid_at_condition`, so temporal queries, hybrid retrieval, grounded answers
+  and new decision contexts all follow it.
+- Decision receipts are not changed (their hash still verifies); each fact
+  carries `revoked_at` when it was later revoked.
+- Impact is computed in PostgreSQL from `context_snapshot_facts` and
+  `decision_facts` in the revocation's transaction and stored in append-only
+  `revocation_impacts` (which also emit `decision.impacted`). Reading an impact
+  report recomputes it, flagging decisions recorded after the revocation from
+  an older context.
+
+**Consequences.** After revoking the latest version, a fact has no current
+value until a new version is recorded, which must start later than the revoked
+one. Impact is one hop (version → decisions); transitive effects are not
+modelled. The Neo4j projection does not know about revocations yet.

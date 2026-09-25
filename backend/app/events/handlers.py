@@ -5,7 +5,8 @@
   NOT idempotent, which is exactly why the dedup record matters: a redelivered
   event must not count twice.
 * ``RetrievalCacheInvalidator`` bumps the tenant's retrieval-cache generation
-  whenever a fact version or an embedding is stored. Because the events come
+  whenever a fact version or an embedding is stored, or a version is
+  revoked. Because the events come
   from database triggers, this also covers writes that bypass the API (scripts,
   backfills), which the in-request invalidation of Phase 14 cannot see.
 """
@@ -41,7 +42,7 @@ class ActivityProjector:
 class RetrievalCacheInvalidator:
     name = "retrieval-cache-invalidator"
     topics = (FACTS_TOPIC,)
-    event_types = frozenset({"fact.version_recorded", "fact.embedding_stored"})
+    event_types = frozenset({"fact.version_recorded", "fact.embedding_stored", "fact.revoked"})
 
     def __init__(self, cache: RetrievalCache) -> None:
         self._cache = cache

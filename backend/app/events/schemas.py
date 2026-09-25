@@ -108,16 +108,33 @@ class ContradictionDetected(EventData):
     detected_at: AwareDatetime
 
 
+class FactRevoked(EventData):
+    id: UUID
+    fact_version_id: UUID
+    revoked_by_user_id: UUID
+    revoked_at: AwareDatetime
+
+
+class DecisionImpacted(EventData):
+    revocation_id: UUID
+    decision_id: UUID
+    snapshot_id: UUID
+    fact_version_id: UUID
+    relied_on: bool
+
+
 # event type -> (topic, payload schema). The database triggers (migration 0010)
-# emit exactly these types (contradiction.detected: migration 0012).
+# emit exactly these types (contradiction.detected: 0012; fact.revoked, decision.impacted: 0013).
 EVENT_TYPES: Final[dict[str, tuple[str, type[EventData]]]] = {
     "fact.version_recorded": (FACTS_TOPIC, FactVersionRecorded),
     "fact.embedding_stored": (FACTS_TOPIC, FactEmbeddingStored),
     "contradiction.detected": (FACTS_TOPIC, ContradictionDetected),
+    "fact.revoked": (FACTS_TOPIC, FactRevoked),
     "evidence.captured": (EVIDENCE_TOPIC, EvidenceCaptured),
     "evidence.linked": (EVIDENCE_TOPIC, EvidenceLinked),
     "context.captured": (DECISIONS_TOPIC, ContextCaptured),
     "decision.recorded": (DECISIONS_TOPIC, DecisionRecorded),
+    "decision.impacted": (DECISIONS_TOPIC, DecisionImpacted),
 }
 
 

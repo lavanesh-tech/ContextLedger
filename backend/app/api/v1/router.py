@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     investigations,
     organizations,
     provenance,
+    revocations,
     search,
     users,
 )
@@ -25,6 +26,7 @@ for module in (
     organizations,
     facts,
     contradictions,
+    revocations,
     search,
     decisions,
     provenance,

@@ -21,7 +21,7 @@ Built strictly phase by phase. A phase is **Done** only after its verification
 | 14 | Redis: retrieval cache, rate limiting, OAuth state, idempotency, MCP state | Done |
 | 15 | Kafka events and idempotent consumers | Done |
 | 16 | Contradiction detection | Done |
-| 17 | Revocation impact | Planned |
+| 17 | Revocation impact | Done |
 | 18 | RAG evaluation: Recall@K, Precision@K, MRR, temporal/authorization correctness | Planned |
 | 19 | Frontend: Next.js + React + TypeScript in `frontend/`, consuming the FastAPI `/api/v1` REST API (ADR-008) | Planned |
 | 20 | Observability: OpenTelemetry, Prometheus, Grafana | Planned |
@@ -75,6 +75,8 @@ ADR-031.
 - Record a live grounded-answer evaluation (`make eval-live`) and compare prompt versions on answer metrics before changing the default prompt.
 - An investigator evaluation dataset (tool-use correctness, grounded rate) alongside the answer evaluation.
 - Per-tenant token budgets and rate limits for the LLM endpoints (Phase 27/28).
+- Project revocations into the Neo4j graph (a revoked-version node flag) so graph impact queries can filter on it; and transitive impact (decisions whose outcomes fed later facts).
+- Correcting a revoked version in place requires a new version starting later than it; consider an explicit "replacement" version type.
 - More contradiction rules (numeric tolerance, cross-entity), and measuring the LLM review's precision on a labelled set before relying on it.
 - Tune rate limits and the retrieval-cache TTL from load tests; consider a sliding-window limiter (Phase 27).
 - Measure the retrieval-cache hit rate and latency with a real workload (Phases 20, 27).

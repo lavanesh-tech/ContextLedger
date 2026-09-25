@@ -31,9 +31,9 @@ backfills) emit events too.
 
 | Topic | Events | Partitions (local) |
 |---|---|---|
-| `contextledger.facts.v1` | `fact.version_recorded`, `fact.embedding_stored`, `contradiction.detected` | 6 |
+| `contextledger.facts.v1` | `fact.version_recorded`, `fact.embedding_stored`, `contradiction.detected`, `fact.revoked` | 6 |
 | `contextledger.evidence.v1` | `evidence.captured`, `evidence.linked` | 6 |
-| `contextledger.decisions.v1` | `context.captured`, `decision.recorded` | 6 |
+| `contextledger.decisions.v1` | `context.captured`, `decision.recorded`, `decision.impacted` | 6 |
 | `<topic>.dlq` | messages a consumer gave up on | 1 |
 
 - **The message key is the organization id.** Every event of one tenant lands in

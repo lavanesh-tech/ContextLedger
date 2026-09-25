@@ -27,6 +27,7 @@ EXPECTED_TOOLS = {
     "analyze_impact",
     "get_decision_lineage",
     "get_contradictions",
+    "get_revocation_impact",
     "answer_question",
     "investigate_decision",
 }

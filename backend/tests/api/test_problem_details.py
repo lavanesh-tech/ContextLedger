@@ -131,6 +131,7 @@ async def test_openapi_documents_every_area_and_the_problem_schema(client: Async
         "answers",
         "contradictions",
         "investigations",
+        "revocations",
         "auth",
         "users",
         "organizations",

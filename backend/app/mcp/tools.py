@@ -49,6 +49,7 @@ from app.services.decisions import DecisionService, RecordDecision
 from app.services.investigations import InvestigationService
 from app.services.provenance import ProvenanceService
 from app.services.retrieval import RetrievalQuery, RetrievalService
+from app.services.revocations import RevocationService
 from app.services.temporal import TemporalService
 from app.services.tenancy import TenancyService
 
@@ -413,6 +414,18 @@ class ToolHandlers:
                     limit=limit,
                 )
             return {"contradictions": to_jsonable(views)}
+
+    # --- revocation impact -------------------------------------------------------------
+
+    async def get_revocation_impact(self, fact_version_id: UUID) -> Json:
+        """If this fact version was revoked (found to be wrong): why, when, and every
+        decision whose context held it (`relied_on` when the decision cited it)."""
+        async with tool_errors("get_revocation_impact"):
+            ctx = await self._agent_tenant()
+            async with self._rt.sessions() as session:
+                report = await RevocationService(session).impact_of_version(ctx, fact_version_id)
+            result: Json = to_jsonable(report)
+            return result
 
     # --- AI: grounded answers and the decision investigator ------------------------------
 

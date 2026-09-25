@@ -1108,6 +1108,141 @@
       ]
     },
     {
+      "name": "revocations",
+      "item": [
+        {
+          "name": "Revoke a fact version and see which decisions depended on it",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/facts/{{fact_id}}/revoke",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "facts",
+                "{{fact_id}}",
+                "revoke"
+              ]
+            },
+            "description": "Marks a version as wrong (not merely superseded). It stops appearing in current\nand \"as known now\" answers, stays in the history and in decision receipts (marked\n`revoked_at`), and every decision whose frozen context held it is listed, with\n`relied_on` when the decision cited it. Needs `facts:write` and `decisions:read`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Billing import used the wrong currency for this limit.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Revoked versions of a fact and the decisions they affect",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/facts/{{fact_id}}/impact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "facts",
+                "{{fact_id}}",
+                "impact"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "The revocation of one fact version and its impact",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/fact-versions/{{version_id}}/revocation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "fact-versions",
+                "{{version_id}}",
+                "revocation"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Recent revocations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ContextLedger-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organizations/{{organization_id}}/revocations?limit=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "{{organization_id}}",
+                "revocations"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
       "name": "search",
       "item": [
         {

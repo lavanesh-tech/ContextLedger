@@ -143,6 +143,7 @@ def build_tools(
                 {
                     **_version(fact.version),
                     "relied_on": fact.relied_on,
+                    "revoked_at": None if fact.revoked_at is None else fact.revoked_at.isoformat(),
                     "entity": f"{fact.entity_type}:{fact.external_id}",
                     "property": fact.property,
                     "source": fact.source_name,

@@ -22,6 +22,7 @@ from app.models.fact import Fact, FactVersion
 from app.models.membership import OrganizationMembership
 from app.models.organization import Organization
 from app.models.outbox import GraphOutboxEvent
+from app.models.revocation import FactRevocation, RevocationImpact
 from app.models.search import FactSearchDocument
 from app.models.source import FactSource
 from app.models.user import User
@@ -40,6 +41,7 @@ __all__ = [
     "Evidence",
     "Fact",
     "FactEmbedding",
+    "FactRevocation",
     "FactSearchDocument",
     "FactSource",
     "FactVersion",
@@ -50,5 +52,6 @@ __all__ = [
     "OrganizationMembership",
     "OutboxEvent",
     "ProcessedEvent",
+    "RevocationImpact",
     "User",
 ]

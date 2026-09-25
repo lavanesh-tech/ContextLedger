@@ -38,6 +38,19 @@ SAMPLES: dict[str, dict[str, Any]] = {
         "recorded_at": "2026-01-15T09:00:00.123456+00:00",
     },
     "fact.embedding_stored": {"fact_version_id": ID, "model": "m", "created_at": AT},
+    "fact.revoked": {
+        "id": ID,
+        "fact_version_id": ID,
+        "revoked_by_user_id": ID,
+        "revoked_at": AT,
+    },
+    "decision.impacted": {
+        "revocation_id": ID,
+        "decision_id": ID,
+        "snapshot_id": ID,
+        "fact_version_id": ID,
+        "relied_on": True,
+    },
     "contradiction.detected": {
         "id": ID,
         "entity_id": ID,
