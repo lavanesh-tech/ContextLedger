@@ -216,7 +216,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: trivy config
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           scan-type: config
           scan-ref: .
@@ -265,7 +265,7 @@ jobs:
         run: docker build -t contextledger-web:ci frontend
 
       - name: Scan API image (Trivy; fail on fixable critical)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: contextledger-api:ci
           severity: CRITICAL
@@ -273,7 +273,7 @@ jobs:
           exit-code: "1"
 
       - name: Report high findings (Trivy; informational)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: contextledger-api:ci
           severity: HIGH
