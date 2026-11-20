@@ -21,7 +21,7 @@ dependencies = [
     "pyjwt[crypto]>=2.10",
     "python-multipart>=0.0.9",
     "redis>=5.2,<9",
-    "aiokafka>=0.11,<0.15",
+    "aiokafka>=0.11,<0.16",
     # LangChain core only: prompts, runnables, messages, tools. No LangGraph, no
     # langchain-openai (model access goes through app/ai/providers.py).
     "langchain-core>=1.0,<2",
